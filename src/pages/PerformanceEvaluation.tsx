@@ -407,6 +407,7 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              )}
             </>
           }
         />
