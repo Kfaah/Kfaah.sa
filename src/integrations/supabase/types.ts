@@ -1063,6 +1063,7 @@ export type Database = {
           questions_generated: number
           recommendations: Json | null
           social_insights: Json | null
+          source_breakdown: Json | null
           source_previews: Json | null
           sources: Json
           started_at: string
@@ -1094,6 +1095,7 @@ export type Database = {
           questions_generated?: number
           recommendations?: Json | null
           social_insights?: Json | null
+          source_breakdown?: Json | null
           source_previews?: Json | null
           sources?: Json
           started_at?: string
@@ -1125,6 +1127,7 @@ export type Database = {
           questions_generated?: number
           recommendations?: Json | null
           social_insights?: Json | null
+          source_breakdown?: Json | null
           source_previews?: Json | null
           sources?: Json
           started_at?: string
