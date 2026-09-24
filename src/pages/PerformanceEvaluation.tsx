@@ -609,6 +609,13 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
                         {(() => {
                           // Use real avg if any real scores exist; otherwise compute demo avg.
                           const realCount = criteria.reduce((n, c) => n + (getScore(e.user_id!, c.id) ? 1 : 0), 0);
+                          if (realCount === 0 && !canManage) {
+                            return (
+                              <td className="py-1.5 px-3 text-center bg-amber-50/40 border-r border-amber-100">
+                                <span className="text-muted-foreground text-sm font-semibold">—</span>
+                              </td>
+                            );
+                          }
                           const finalShown = realCount > 0
                             ? final
                             : Math.round(criteria.reduce((sum, c) => sum + demoScore(e.user_id!, c.id), 0) / Math.max(1, criteria.length));
