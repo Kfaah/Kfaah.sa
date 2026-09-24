@@ -429,7 +429,8 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
               <Filter className="w-4 h-4" />
               الفلاتر
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3" dir="rtl">
+            <div className={cn("grid grid-cols-1 gap-3", canManage && "md:grid-cols-3")} dir="rtl">
+              {canManage && (
               <div>
                 <Label className="text-xs mb-1.5 block">القسم</Label>
                 <Select value={deptFilter} onValueChange={(v) => { setDeptFilter(v); setEmpFilter("all"); }} dir="rtl">
@@ -440,6 +441,8 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
                   </SelectContent>
                 </Select>
               </div>
+              )}
+              {canManage && (
               <div>
                 <Label className="text-xs mb-1.5 block">الموظف</Label>
                 <Select value={empFilter} onValueChange={setEmpFilter} dir="rtl">
@@ -450,6 +453,7 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
                   </SelectContent>
                 </Select>
               </div>
+              )}
               <div>
                 <Label className="text-xs mb-1.5 block">الفترة الزمنية</Label>
                 <Select value={period} onValueChange={setPeriod} dir="rtl">
@@ -512,7 +516,7 @@ export default function PerformanceEvaluation({ embedded = false, orgId: orgIdPr
                           <div className="flex items-center justify-center gap-1.5">
                             <Icon className="w-3.5 h-3.5" />
                             <span>{c.name}</span>
-                            {!c.is_automatic && (
+                            {canManage && !c.is_automatic && (
                               <button onClick={() => deleteCriterion(c.id)}
                                       className="text-white/60 hover:text-rose-200 ms-0.5">
                                 <Trash2 className="w-3 h-3" />
