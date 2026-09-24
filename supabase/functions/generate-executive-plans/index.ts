@@ -667,6 +667,9 @@ serve(async (req) => {
 1. كل يوم تنفيذي يحتاج 3-5 مهام كحد أدنى
 2. المهام يجب أن تكون عملية ومحددة وقابلة للقياس
 3. اجعل المهام متناسبة مع طبيعة النشاط
+4. ممنوع منعاً باتاً تكرار نفس المهمة أو صياغتها العامة في أيام مختلفة من النشاط نفسه. كل يوم يجب أن يمثل مرحلة مختلفة متسلسلة (تخطيط، إعداد، تنفيذ جزء محدد، قياس، تحسين، توثيق...)
+5. اذكر في كل مهمة موضوعها المحدد أو رقم الدفعة أو المناسبة أو الفئة المستهدفة، واربطها باسم النشاط، ولا تكتب مهام عامة مثل «الرد على التعليقات» أو «جدولة المحتوى» دون تفاصيل تميزها
+6. الأنشطة المختلفة يجب أن تكون مهامها مختلفة تماماً وخاصة بها
 
 يجب أن ترد باستخدام الأداة distribute_targets_with_tasks فقط.`;
 
@@ -894,11 +897,29 @@ ${i + 1}. النشاط: ${p.activityName}
       }[] = [];
 
       // تحويل التوزيعات إلى خطط تنفيذية
+      const normTask = (s: string) => String(s || "").replace(/[.،,:؛\s]+/g, " ").trim();
       for (const dist of distributions.distributions) {
         const planData = plansData[dist.activityIndex];
         if (!planData) continue;
 
-        for (const dayData of dist.days) {
+        // منع تكرار نفس المهمة حرفياً بين أيام النشاط نفسه
+        const seenTasks = new Set<string>();
+        const sortedDays = [...(dist.days || [])].sort((a: any, b: any) => a.day - b.day);
+        sortedDays.forEach((dayData: any, dayIdx: number) => {
+          const t = dayData.tasks || { before: [], during: [], after: [] };
+          for (const phase of ["before", "during", "after"] as const) {
+            t[phase] = (t[phase] || []).map((title: string) => {
+              const key = normTask(title);
+              if (!seenTasks.has(key)) { seenTasks.add(key); return title; }
+              const variant = `${normTask(title)} — الدفعة ${dayIdx + 1} (${planData.activityName.slice(0, 40)})`;
+              seenTasks.add(normTask(variant));
+              return variant;
+            });
+          }
+          dayData.tasks = t;
+        });
+
+        for (const dayData of sortedDays) {
           executivePlansToInsert.push({
             operational_plan_month_id: planData.planMonthId,
             day: dayData.day,
