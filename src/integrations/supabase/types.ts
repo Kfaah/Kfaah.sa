@@ -5963,6 +5963,7 @@ export type Database = {
         }
         Returns: number
       }
+      notify_overdue_tasks: { Args: never; Returns: number }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
