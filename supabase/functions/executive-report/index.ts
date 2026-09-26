@@ -12,8 +12,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY");
+    if (!KFAAH_AI_API_KEY) throw new Error("KFAAH_AI_API_KEY not configured");
     const { metrics, period_label } = await req.json();
     if (!metrics) {
       return new Response(JSON.stringify({ error: "metrics required" }), {
@@ -51,9 +51,9 @@ Deno.serve(async (req) => {
 
 يجب أن تشمل الأقسام: "أداء جمع التبرعات", "قاعدة المتبرعين", "كفاءة العمليات وخدمة المتبرع", "الأداء التشغيلي والفريق", "التقييم العام". كل قسم يحوي 3-5 صفوف على الأقل. لا نص خارج JSON.`;
 
-    const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const r = await fetch((Deno.env.get("KFAAH_AI_CHAT_URL") || "http://127.0.0.1:11434/v1/chat/completions"), {
       method: "POST",
-      headers: { "Authorization": `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      headers: { "Authorization": `Bearer ${KFAAH_AI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         temperature: 0.2,
