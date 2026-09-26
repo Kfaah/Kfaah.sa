@@ -3,7 +3,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY")!;
 
 interface Row { id: string; description: string; amount?: number; vendor?: string }
 
@@ -27,9 +27,9 @@ ${projectList}
 المصروفات المراد تصنيفها:
 ${rows.map((r, i) => `${i + 1}. وصف: "${r.description}" | المورد: "${r.vendor || ""}" | المبلغ: ${r.amount || ""}`).join("\n")}`;
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const resp = await fetch((Deno.env.get("KFAAH_AI_CHAT_URL") || "http://127.0.0.1:11434/v1/chat/completions"), {
       method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${KFAAH_AI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
