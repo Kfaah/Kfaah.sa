@@ -100,8 +100,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY غير مهيّأ");
+    const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY");
+    if (!KFAAH_AI_API_KEY) throw new Error("KFAAH_AI_API_KEY غير مهيّأ");
 
     const payload = await req.json();
 
@@ -132,10 +132,10 @@ ${JSON.stringify(payload.elite_breakdown, null, 2)}
 اجعل الأفكار عملية، رقمية، قابلة للقياس، ومبتكرة بصدق.`;
     }
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResp = await fetch((Deno.env.get("KFAAH_AI_CHAT_URL") || "http://127.0.0.1:11434/v1/chat/completions"), {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${KFAAH_AI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
