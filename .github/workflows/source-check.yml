@@ -1,0 +1,35 @@
+name: Kfaah source check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: https://kfaah.sa
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      KFAAH_DEPLOY_TARGET: production
+      KFAAH_EXPECTED_API_URL: https://kfaah.sa
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: bash deploy/build-frontend.sh
+      - name: Verify production bundle is independent
+        run: |
+          set -euo pipefail
+          test -f dist/index.html
+          if grep -REni 'lovable\.app|lovable\.dev|ai\.gateway\.lovable|\.supabase\.co' dist; then
+            echo "Production bundle still contains a legacy cloud dependency" >&2
+            exit 1
+          fi
