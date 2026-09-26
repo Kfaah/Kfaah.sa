@@ -1,73 +1,85 @@
-# Welcome to your Lovable project
+# منصة كفاءة
 
-## Project info
+منصة كفاءة لإدارة التسويق الإلكتروني للجمعيات. المصدر في هذا المستودع هو المصدر المعتمد للواجهة والتطوير.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## التشغيل الحالي
 
-## How can I edit this code?
+- الموقع العام: https://kfaah.sa
+- الاستضافة: Hetzner
+- الواجهة: React + TypeScript + Vite
+- قاعدة البيانات والمصادقة والتخزين: البنية الذاتية الخاصة بكفاءة
+- البريد: Zoho عبر خدمة كفاءة المستقلة
+- الذكاء الاصطناعي: وظائف كفاءة تستخدم إعدادات `KFAAH_AI_*` ولا تعتمد على بوابة Lovable
 
-There are several ways of editing your application.
+## التطوير المحلي
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+يتطلب Node.js 22 وnpm:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+npm ci
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+لبناء نسخة إنتاج:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```sh
+npm run build
+```
 
-**Use GitHub Codespaces**
+## إعداد الواجهة
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+يجب أن تشير الواجهة إلى بوابة كفاءة نفسها:
 
-## What technologies are used for this project?
+```env
+VITE_SUPABASE_URL=https://kfaah.sa
+VITE_SUPABASE_PUBLISHABLE_KEY=...
+```
 
-This project is built with:
+لا تضع مفاتيح خاصة أو كلمات مرور داخل المستودع.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## الذكاء الاصطناعي
 
-## How can I deploy this project?
+وظائف الذكاء تستخدم متغيرات كفاءة المحايدة:
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+```env
+KFAAH_AI_CHAT_URL=...
+KFAAH_AI_RESPONSES_URL=...
+KFAAH_AI_API_KEY=...
+```
 
-## Can I connect a custom domain to my Lovable project?
+يمكن توجيهها إلى خدمة OpenAI-compatible محلية أو مستقلة. لا توجد حاجة إلى بوابة Lovable في المصدر الحالي.
 
-Yes, you can!
+## البريد
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+البريد التشغيلي يستخدم Zoho/خدمة كفاءة. الإعدادات الحساسة تحفظ كأسرار على الخادم ولا تحفظ في GitHub. من متغيرات التوافق في المصدر:
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+```env
+ZOHO_MAIL_USER=info@kfaah.sa
+ZOHO_MAIL_APP_PASSWORD=...
+KFAAH_EMAIL_SEND_URL=...
+KFAAH_EMAIL_API_KEY=...
+KFAAH_EMAIL_WEBHOOK_SECRET=...
+```
+
+## النشر
+
+المسار المعتمد:
+
+1. تعديل المصدر في GitHub.
+2. نجاح فحص `Kfaah source check`.
+3. تشغيل `.github/workflows/deploy-kfaah.yml` إلى staging.
+4. مراجعة staging.
+5. الترقية الصريحة إلى الموقع الحي فقط بعد الاعتماد.
+
+النشر لا يستخدم Docker لإعادة بناء الخادم ولا يغيّر قاعدة البيانات.
+
+## فحوص الاستقلال
+
+بناء الإنتاج يرفض وجود روابط تشغيلية إلى:
+
+- `lovable.app`
+- `lovable.dev`
+- `ai.gateway.lovable.dev`
+- نطاقات Supabase السحابية القديمة
+
+الملفات الموجودة تحت `docs/legacy-plans` هي أرشيف تاريخي فقط وليست جزءًا من التشغيل.
