@@ -48,9 +48,9 @@ serve(async (req) => {
     const hasPlanFilter = filterOperationalIds.length > 0 || filterExcelIds.length > 0;
     const activeOrganizationId = typeof organizationId === "string" && organizationId.trim() ? organizationId.trim() : null;
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY");
+    if (!KFAAH_AI_API_KEY) {
+      throw new Error("KFAAH_AI_API_KEY is not configured");
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -789,10 +789,10 @@ ${i + 1}. النشاط: ${p.activityName}
 
           try {
             console.log(`Trying model ${model}, attempt ${attempt} for month ${targetMonth}`);
-            const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            const response = await fetch((Deno.env.get("KFAAH_AI_CHAT_URL") || "http://127.0.0.1:11434/v1/chat/completions"), {
               method: "POST",
               headers: {
-                Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                Authorization: `Bearer ${KFAAH_AI_API_KEY}`,
                 "Content-Type": "application/json",
               },
               body: JSON.stringify(buildAiBody(model)),
