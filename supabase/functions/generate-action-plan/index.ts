@@ -583,7 +583,7 @@ async function generateInsight(admin: any, apiKey: string, metrics: OrgMetrics, 
 5) 6-8 توصيات قابلة للتنفيذ مع مستوى التأثير، مرتبة من الأعلى أثرًا إلى الأقل.
 راجع إجابتك داخليًا قبل الإرسال للتأكد من الشمول والدقة والثبات وعدم وجود نقص أو أخطاء.`;
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const response = await fetch((Deno.env.get("KFAAH_AI_CHAT_URL") || "http://127.0.0.1:11434/v1/chat/completions"), {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${apiKey}`,
@@ -663,8 +663,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY");
+    if (!KFAAH_AI_API_KEY) throw new Error("KFAAH_AI_API_KEY not configured");
     const supaUrl = Deno.env.get("SUPABASE_URL")!;
     const supaKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const admin = createClient(supaUrl, supaKey);
@@ -695,7 +695,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      cached = await generateInsight(admin, LOVABLE_API_KEY, selectedMetrics, allMetrics);
+      cached = await generateInsight(admin, KFAAH_AI_API_KEY, selectedMetrics, allMetrics);
     }
 
     const recs = (cached!.insight.recommendations || []) as { title: string; impact: string; action: string }[];
@@ -772,9 +772,9 @@ Deno.serve(async (req) => {
 - استخدم العربية الاحترافية المباشرة.`;
       const userPrompt = `الموظفون المتاحون:\n${JSON.stringify(empList, null, 2)}\n\nالتوصيات:\n${recs.map((r, i) => `${i}) [${r.impact}] ${r.title}\n   الإجراء: ${r.action}`).join("\n\n")}`;
 
-      const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const aiRes = await fetch((Deno.env.get("KFAAH_AI_CHAT_URL") || "http://127.0.0.1:11434/v1/chat/completions"), {
         method: "POST",
-        headers: { "Authorization": `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        headers: { "Authorization": `Bearer ${KFAAH_AI_API_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "google/gemini-3-flash-preview",
           temperature: 0,
