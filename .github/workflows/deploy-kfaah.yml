@@ -1,0 +1,46 @@
+name: Deploy Kfaah frontend to Hetzner
+
+# Manual only. Creating or merging this workflow does not change the server.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      VITE_SUPABASE_URL: https://kfaah.sa
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.KFAAH_SUPABASE_ANON_KEY }}
+      KFAAH_DEPLOY_TARGET: production
+      KFAAH_EXPECTED_API_URL: https://kfaah.sa
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Build frontend for kfaah.sa
+        run: bash deploy/build-frontend.sh
+      - name: Upload dist to the existing static site
+        env:
+          KFAAH_SSH_HOST: ${{ secrets.KFAAH_SSH_HOST }}
+          KFAAH_SSH_USER: ${{ secrets.KFAAH_SSH_USER }}
+          KFAAH_SSH_KEY: ${{ secrets.KFAAH_SSH_PRIVATE_KEY }}
+          KFAAH_SSH_KNOWN_HOSTS: ${{ secrets.KFAAH_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          : "${KFAAH_SSH_HOST:?Set KFAAH_SSH_HOST}"
+          : "${KFAAH_SSH_USER:?Set KFAAH_SSH_USER}"
+          : "${KFAAH_SSH_KEY:?Set KFAAH_SSH_PRIVATE_KEY}"
+          : "${KFAAH_SSH_KNOWN_HOSTS:?Set KFAAH_SSH_KNOWN_HOSTS}"
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$KFAAH_SSH_KEY" > "$HOME/.ssh/id_kfaah_deploy"
+          chmod 600 "$HOME/.ssh/id_kfaah_deploy"
+          printf '%s\n' "$KFAAH_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          rsync -rtz --delay-updates \
+            -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" \
+            dist/ "$KFAAH_SSH_USER@$KFAAH_SSH_HOST:/var/www/kfaah/"
