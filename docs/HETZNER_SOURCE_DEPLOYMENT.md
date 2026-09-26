@@ -1,54 +1,61 @@
-# Kfaah source deployment on Hetzner
+# Kfaah frontend source and staging upload
 
-The React/TypeScript frontend source is in this repository. The currently
-running `/var/www/kfaah` site was copied as a Vite build; it is not connected
-to this repository. The running `kfaah-functions` service is a separate server
-implementation and must not be replaced by this repository's original
-`supabase/functions` without a separate review.
+The original React/TypeScript source is in this repository. The running
+`/var/www/kfaah` frontend is an earlier Vite build. The live server's
+`kfaah-functions` implementation is separate from the original
+`supabase/functions` source and requires its own review.
 
-## Build configuration
+## Build
 
-The previous tracked `.env` containing hosted project values has been removed
-from the deployment branch. Set the following environment variables for
-**every** Hetzner build; Vite embeds them in browser assets:
+The tracked `.env` with the former hosted project was removed. The manual
+workflow sets `VITE_SUPABASE_URL=https://kfaah.sa` and reads the *public*
+anonymous/publishable key from the `VITE_SUPABASE_ANON_KEY` GitHub Actions
+secret. Do not use a service-role key in a `VITE_` variable. Vite embeds
+these public values in browser assets. `deploy/build-frontend.sh` performs
+`npm ci`, builds the frontend, checks the expected gateway in the generated
+HTML, and rejects old `.supabase.co` or `lovable.app` references in `dist/`.
 
-- `VITE_SUPABASE_URL`: the public HTTPS URL of the Hetzner Supabase gateway.
-- `VITE_SUPABASE_PUBLISHABLE_KEY`: the public anon/publishable key for that
-  gateway. Never use the service-role key in a `VITE_` variable.
-- `KFAAH_DEPLOY_TARGET=production`: rejects an old `*.supabase.co` endpoint.
-- `KFAAH_EXPECTED_API_URL`: optional exact URL check against a deployment's
-  configured gateway URL.
+## Staging action
 
-The manual `.github/workflows/deploy-kfaah.yml` action sets the gateway URL to
-`https://kfaah.sa`, runs `bash deploy/build-frontend.sh`, then transfers
-`dist/` to `/var/www/kfaah/` with `rsync`. It does not use Docker or
-docker-compose. It does not run on push or merge. The workflow needs five
-GitHub production environment secrets: `KFAAH_SUPABASE_ANON_KEY`,
-`KFAAH_SSH_HOST`, `KFAAH_SSH_USER`, `KFAAH_SSH_PRIVATE_KEY`, and
-`KFAAH_SSH_KNOWN_HOSTS`. The SSH identity must have write access to the
-existing static site directory. The pinned known-hosts entry is checked
-strictly; do not replace it with unverified key scanning in the workflow.
+`.github/workflows/deploy-kfaah.yml` runs **only** through GitHub's manual
+Run workflow control. It builds from the source and uploads `dist/` with
+`rsync` to `/var/www/kfaah-staging/`. It does not use Docker, run on push,
+delete remote files, invoke promotion, or write to `/var/www/kfaah/`.
 
-The build checks the embedded API URL and rejects any `.supabase.co` string
-in `dist/`. The upload does not use `--delete`, so it will not erase other
-files that may be present in `/var/www/kfaah/`. No server files are changed
-until someone manually starts the workflow with valid secrets.
+GitHub Actions secrets:
 
-## Cutover gate
+| Name | Value source |
+| --- | --- |
+| `VITE_SUPABASE_ANON_KEY` | Public anon key for the Hetzner gateway |
+| `HETZNER_HOST` | Hetzner deployment host |
+| `HETZNER_USER` | Limited `deploy` user |
+| `HETZNER_SSH_KEY` | SSH private key for that user; keep it in GitHub Secrets |
+| `HETZNER_KNOWN_HOSTS` | Independently verified, pinned SSH host key entry |
 
-1. Configure a separate preview site and test backend. Do not run preview
-   writes against production donor data.
-2. Test login, organization branding, dashboards, storage uploads, and the
-   migrated `/functions/v1/` endpoints using the built source in preview.
-3. Confirm the generated assets use the Hetzner gateway and contain no old
-   hosted Supabase endpoint. Keep a copy of the live `/var/www/kfaah` build.
-4. Back up the current `/var/www/kfaah` build and verify a rollback path.
-   The workflow connects outward from GitHub Actions over SSH, so the server
-   does not need a GitHub clone or a GitHub PAT.
-5. Manually run the deployment action, then check authentication and a
-   representative page immediately. Consider unattended deployment only
-   after preview and rollback work.
+**Compatibility gate:** The server-side report describes a restricted
+`kfaah-receive-frontend` command, but the exact receiver interface and
+filesystem permissions have not been inspected. The workflow currently
+uses ordinary `rsync` into staging. Compare it with the existing server
+workflow at `/opt/kfaah/deploy/deploy-hetzner.yml` before running the upload.
+If `deploy` must use the restricted receiver, adjust the `rsync` invocation
+to match its documented interface. Do not guess the command arguments or
+loosen server permissions. Keep the first GitHub run manual and staging only.
 
-Database dumps and donor files belong in an encrypted backup destination,
-not in Git. The repository's `secure-backup.yml` workflow is manual and does
-not prove that the live server's local backups are stored off-server.
+The host key needs a trusted fingerprint verified outside the SSH connection;
+do not generate it with an unauthenticated `ssh-keyscan` in the workflow.
+Do not paste the SSH private key into chat or commit it to Git.
+
+## Promotion gate
+
+1. Confirm the build check passes and the staging receiver accepts the
+   upload. Preview the staged frontend without production data writes.
+2. Check login, branding, dashboards, storage and required `/functions/v1/`
+   endpoints against the running Hetzner gateway. Confirm the live build
+   has a recoverable backup and rollback path.
+3. Only after explicit approval, use the server's reviewed promotion path
+   to replace `/var/www/kfaah`. This workflow does not promote automatically.
+
+Keep Lovable available until the source build works correctly after cutover.
+Database dumps and donor files should have encrypted off-server backups,
+not Git commits. The repository's `secure-backup.yml` workflow does not
+establish that the live server's backups are stored off-server.
