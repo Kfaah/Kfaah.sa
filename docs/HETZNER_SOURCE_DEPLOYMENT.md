@@ -8,9 +8,9 @@ implementation and must not be replaced by this repository's original
 
 ## Build configuration
 
-The tracked `.env` contains the previous hosted project values. Set the
-following environment variables explicitly for **every** Hetzner build; Vite
-embeds them in browser assets:
+The previous tracked `.env` containing hosted project values has been removed
+from the deployment branch. Set the following environment variables for
+**every** Hetzner build; Vite embeds them in browser assets:
 
 - `VITE_SUPABASE_URL`: the public HTTPS URL of the Hetzner Supabase gateway.
 - `VITE_SUPABASE_PUBLISHABLE_KEY`: the public anon/publishable key for that
@@ -19,10 +19,20 @@ embeds them in browser assets:
 - `KFAAH_EXPECTED_API_URL`: optional exact URL check against a deployment's
   configured gateway URL.
 
-Run `bash deploy/build-frontend.sh` in a clean checkout with those variables
-set through the server's protected environment. It runs `npm ci`, builds the
-site, and checks the URL embedded in `dist/index.html`. The script does not
-change the live site.
+The manual `.github/workflows/deploy-kfaah.yml` action sets the gateway URL to
+`https://kfaah.sa`, runs `bash deploy/build-frontend.sh`, then transfers
+`dist/` to `/var/www/kfaah/` with `rsync`. It does not use Docker or
+docker-compose. It does not run on push or merge. The workflow needs five
+GitHub production environment secrets: `KFAAH_SUPABASE_ANON_KEY`,
+`KFAAH_SSH_HOST`, `KFAAH_SSH_USER`, `KFAAH_SSH_PRIVATE_KEY`, and
+`KFAAH_SSH_KNOWN_HOSTS`. The SSH identity must have write access to the
+existing static site directory. The pinned known-hosts entry is checked
+strictly; do not replace it with unverified key scanning in the workflow.
+
+The build checks the embedded API URL and rejects any `.supabase.co` string
+in `dist/`. The upload does not use `--delete`, so it will not erase other
+files that may be present in `/var/www/kfaah/`. No server files are changed
+until someone manually starts the workflow with valid secrets.
 
 ## Cutover gate
 
@@ -32,11 +42,12 @@ change the live site.
    migrated `/functions/v1/` endpoints using the built source in preview.
 3. Confirm the generated assets use the Hetzner gateway and contain no old
    hosted Supabase endpoint. Keep a copy of the live `/var/www/kfaah` build.
-4. Configure read-only GitHub access on the server, then use an atomic release
-   directory and a documented rollback to switch the live frontend. Check
-   authentication and a representative page immediately after the switch.
-5. Enable unattended deployment only after preview and rollback work. A merge
-   to `main` alone must not alter production until that link has been tested.
+4. Back up the current `/var/www/kfaah` build and verify a rollback path.
+   The workflow connects outward from GitHub Actions over SSH, so the server
+   does not need a GitHub clone or a GitHub PAT.
+5. Manually run the deployment action, then check authentication and a
+   representative page immediately. Consider unattended deployment only
+   after preview and rollback work.
 
 Database dumps and donor files belong in an encrypted backup destination,
 not in Git. The repository's `secure-backup.yml` workflow is manual and does
