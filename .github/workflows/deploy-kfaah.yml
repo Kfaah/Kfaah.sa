@@ -70,6 +70,29 @@ jobs:
           cache: npm
       - name: Build frontend for kfaah.sa
         run: bash deploy/build-frontend.sh
+      - name: Capture login screen preview
+        if: ${{ steps.request.outputs.mode == 'preview' }}
+        run: |
+          set -euo pipefail
+          npx --yes playwright@1.55.1 install --with-deps chromium
+          npm run preview -- --host 127.0.0.1 > /tmp/kfaah-vite-preview.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ -o /dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:4173/ -o /dev/null
+          npx --yes playwright@1.55.1 screenshot \
+            --viewport-size='1440,900' \
+            --wait-for-timeout=5000 \
+            http://127.0.0.1:4173/ preview-login.png
+          test -s preview-login.png
+      - name: Save login screen preview
+        if: ${{ steps.request.outputs.mode == 'preview' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: kfaah-login-preview-${{ github.run_id }}
+          path: preview-login.png
+          retention-days: 7
       - name: Upload dist to staging
         env:
           HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
