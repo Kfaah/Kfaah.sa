@@ -23,7 +23,7 @@ jobs:
           cache: npm
       - name: Build frontend for kfaah.sa
         run: bash deploy/build-frontend.sh
-      - name: Upload dist to staging only
+      - name: Upload dist to incoming and invoke staging receiver
         env:
           HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
           HETZNER_USER: ${{ secrets.HETZNER_USER }}
@@ -35,11 +35,15 @@ jobs:
           : "${HETZNER_USER:?Set HETZNER_USER}"
           : "${HETZNER_SSH_KEY:?Set HETZNER_SSH_KEY}"
           : "${HETZNER_KNOWN_HOSTS:?Set HETZNER_KNOWN_HOSTS}"
+          test "$HETZNER_USER" = deploy
           install -m 700 -d "$HOME/.ssh"
           printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_deploy"
           chmod 600 "$HOME/.ssh/id_kfaah_deploy"
           printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-          rsync -rtz --delay-updates \
+          rsync -az --delete --delay-updates \
             -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" \
-            dist/ "$HETZNER_USER@$HETZNER_HOST:/var/www/kfaah-staging/"
+            dist/ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/incoming/"
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$HETZNER_USER@$HETZNER_HOST" \
+            'sudo /usr/local/bin/kfaah-receive-frontend /home/deploy/incoming'
