@@ -55,8 +55,10 @@ jobs:
           git commit -m "Queue Kfaah Manager request"
           git push origin "$branch"
 
+          base_sha="$(git rev-parse HEAD)"
           printf 'branch=%s\n' "$branch" >> "$GITHUB_OUTPUT"
           printf 'file=%s\n' "$file" >> "$GITHUB_OUTPUT"
+          printf 'base_sha=%s\n' "$base_sha" >> "$GITHUB_OUTPUT"
 
       - name: Open draft pull request
         id: pr
@@ -72,7 +74,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gh pr comment "${{ steps.pr.outputs.number }}" --body "@codex نفّذ الطلب الموجود في \`${{ steps.req.outputs.file }}\` فقط. التزم بـ AGENTS.md. عدّل الكود في فرع هذا الـPR، شغّل الاختبارات المناسبة، ولا تنشر إلى الموقع الحي."
+          gh pr comment "${{ steps.pr.outputs.number }}" --body "@codex نفّذ الطلب الموجود في \`${{ steps.req.outputs.file }}\` فقط. التزم بـ AGENTS.md. عدّل الملفات المطلوبة محليًا وشغّل الاختبارات المناسبة، لكن لا تعمل git push ولا تنشر. في نهاية ردك يجب أن تضع patch كاملًا ناتجًا عن \`git diff --binary ${{ steps.req.outputs.base_sha }}\` بين السطرين KFAAH_PATCH_BEGIN و KFAAH_PATCH_END داخل كتلة \`\`\`diff. لا تختصر الـpatch ولا تستبدله بملخص."
 
       - name: Summary
         run: |
