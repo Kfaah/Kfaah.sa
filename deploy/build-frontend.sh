@@ -33,4 +33,9 @@ if grep -Fq '%VITE_SUPABASE_URL%' dist/index.html; then
   exit 1
 fi
 
+if grep -R -Fq '.supabase.co' dist; then
+  echo "The built frontend still contains a former hosted Supabase endpoint." >&2
+  exit 1
+fi
+
 echo "Frontend build complete. Review dist/ and deploy it only after preview checks."
