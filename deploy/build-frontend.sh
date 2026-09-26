@@ -39,19 +39,19 @@ if grep -R -Fq '.supabase.co' dist; then
   exit 1
 fi
 
-if grep -R -Fq 'lovable.app' dist; then
-  echo "The built frontend still contains a Lovable preview reference." >&2
+if grep -R -Eq 'lovable[.](app|dev)' dist; then
+  echo "The built frontend still contains a Lovable reference." >&2
   python3 - <<'PY' >&2
 from pathlib import Path
 for path in Path('dist').rglob('*'):
     if not path.is_file():
         continue
     data = path.read_bytes()
-    needle = b'lovable.app'
-    start = 0
-    while (index := data.find(needle, start)) >= 0:
-        print(f'{path}: {data[max(0, index-110):min(len(data), index+110)].decode("utf-8", "replace")}')
-        start = index + len(needle)
+    for needle in (b'lovable.app', b'lovable.dev'):
+        start = 0
+        while (index := data.find(needle, start)) >= 0:
+            print(f'{path}: {data[max(0, index-110):min(len(data), index+110)].decode("utf-8", "replace")}')
+            start = index + len(needle)
 PY
   exit 1
 fi
