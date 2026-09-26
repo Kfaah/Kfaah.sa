@@ -15,8 +15,8 @@ Deno.serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY");
+    if (!KFAAH_AI_API_KEY) throw new Error("KFAAH_AI_API_KEY not configured");
 
     const supa = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data: c } = await supa.from("marketing_campaigns").select("*").eq("id", campaign_id).maybeSingle();
@@ -44,9 +44,9 @@ Deno.serve(async (req) => {
       related_project: c.related_project, season: c.season_key,
     }, null, 2)}\n\nالقناة المطلوبة: ${channel}\nالدليل: ${channelGuide[channel] ?? "محتوى قصير ومؤثر"}\nالنبرة: ${tone ?? "ملهمة ومحترفة"}\nملاحظات إضافية: ${extra_instructions ?? "—"}`;
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResp = await fetch((Deno.env.get("KFAAH_AI_CHAT_URL") || "http://127.0.0.1:11434/v1/chat/completions"), {
       method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${KFAAH_AI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
