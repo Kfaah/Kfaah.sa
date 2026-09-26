@@ -21,8 +21,8 @@
       //      The UI is revealed ONLY after real org branding is applied.
       //      This avoids published-site flicker on empty cache / slow networks.
       (function () {
-        var SUPABASE_URL = "https://jopvcsrmccoulujeyjvw.supabase.co";
-        var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHZjc3JtY2NvdWx1amV5anZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MjU1MjAsImV4cCI6MjA5MjIwMTUyMH0.s3R2dRBKi_S7iS4y5CjAe-hr6hYJwivOSNNeekqC2wE";
+        var SUPABASE_URL = "%VITE_SUPABASE_URL%";
+        var SUPABASE_KEY = "%VITE_SUPABASE_PUBLISHABLE_KEY%";
 
         function hexToHsl(hex) {
           var m = /^#?([0-9a-f]{6})$/i.exec((hex || "").trim());
@@ -153,7 +153,6 @@
           fetch(url, {
             headers: {
               apikey: SUPABASE_KEY,
-              Authorization: "Bearer " + SUPABASE_KEY,
             },
           })
             .then(function (r) { return r.ok ? r.json() : null; })
