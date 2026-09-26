@@ -13,11 +13,11 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY missing" }), {
+    if (!KFAAH_AI_API_KEY) {
+      return new Response(JSON.stringify({ error: "KFAAH_AI_API_KEY missing" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -122,11 +122,11 @@ serve(async (req) => {
 أعطِ تقييماً موضوعياً للجودة. **اخفِض درجة الجودة بشكل ملموس إذا تجاوز الوقت الفعلي ضعف المتوقع، أو إذا بدا الموظف يتباطأ بلا مبرر.** اذكر صراحةً ملاحظة عن استثمار الوقت.`;
 
     const aiRes = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
+      (Deno.env.get("KFAAH_AI_CHAT_URL") || "http://127.0.0.1:11434/v1/chat/completions"),
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          Authorization: `Bearer ${KFAAH_AI_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
