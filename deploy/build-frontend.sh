@@ -35,6 +35,7 @@ fi
 
 if grep -R -Fq '.supabase.co' dist; then
   echo "The built frontend still contains a former hosted Supabase endpoint." >&2
+  grep -R -o -E '[A-Za-z0-9.-]+[.]supabase[.]co' dist | sort -u >&2 || true
   exit 1
 fi
 
