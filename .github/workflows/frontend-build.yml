@@ -25,6 +25,13 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+      - name: Refresh stale npm lockfile for review
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Save refreshed lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: refreshed-package-lock
+          path: package-lock.json
       - name: Build with non-production test configuration
         env:
           VITE_SUPABASE_URL: https://preview.example.invalid
