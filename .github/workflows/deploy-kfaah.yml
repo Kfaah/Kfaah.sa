@@ -8,20 +8,62 @@ on:
         required: true
         default: false
         type: boolean
+  issue_comment:
+    types: [created]
 
 permissions:
   contents: read
+  issues: write
+
+concurrency:
+  group: kfaah-frontend-deploy
+  cancel-in-progress: false
 
 jobs:
   deploy:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.number == 5 &&
+       github.event.comment.user.login == 'gaberalhrese-cloud' &&
+       (startsWith(github.event.comment.body, 'KFAAH_PREVIEW ') ||
+        startsWith(github.event.comment.body, 'KFAAH_PUBLISH ')))
     runs-on: ubuntu-latest
     env:
       VITE_SUPABASE_URL: https://kfaah.sa
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       KFAAH_DEPLOY_TARGET: production
       KFAAH_EXPECTED_API_URL: https://kfaah.sa
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Resolve reviewed source for chat request
+        id: request
+        if: ${{ github.event_name == 'issue_comment' }}
+        env:
+          REQUEST_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          if [[ "$REQUEST_BODY" =~ ^KFAAH_(PREVIEW|PUBLISH)[[:space:]]([0-9a-f]{40})$ ]]; then
+            mode="${BASH_REMATCH[1],,}"
+            source_sha="${BASH_REMATCH[2]}"
+          else
+            echo "Invalid deployment request" >&2
+            exit 1
+          fi
+          git fetch origin main
+          git cat-file -e "${source_sha}^{commit}"
+          git merge-base --is-ancestor "$source_sha" origin/main
+          if [[ "$mode" == publish ]]; then
+            gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/5/comments" \
+              --jq '.[] | select(.user.login == "github-actions[bot]") | .body' \
+              | grep -Fx "KFAAH_PREVIEW_OK $source_sha"
+          fi
+          git switch --detach "$source_sha"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -48,8 +90,13 @@ jobs:
           chmod 600 "$HOME/.ssh/known_hosts"
           rsync -az --delete --delay-updates -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" dist/ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/incoming/"
           ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'sudo /usr/local/bin/kfaah-receive-frontend /home/deploy/incoming'
+      - name: Record successful preview
+        if: ${{ steps.request.outputs.mode == 'preview' }}
+        env:
+          SOURCE_SHA: ${{ steps.request.outputs.source_sha }}
+        run: gh issue comment 5 --body "KFAAH_PREVIEW_OK $SOURCE_SHA"
       - name: Promote reviewed staging to live
-        if: ${{ inputs.promote_live }}
+        if: ${{ inputs.promote_live || steps.request.outputs.mode == 'publish' }}
         env:
           HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
           HETZNER_USER: ${{ secrets.HETZNER_USER }}
@@ -59,3 +106,8 @@ jobs:
           curl -fsS --retry 6 --retry-delay 5 https://kfaah.sa/ -o /tmp/kfaah-home.html
           test -s /tmp/kfaah-home.html
           echo "LIVE_OK https://kfaah.sa"
+      - name: Record successful publish
+        if: ${{ steps.request.outputs.mode == 'publish' }}
+        env:
+          SOURCE_SHA: ${{ steps.request.outputs.source_sha }}
+        run: gh issue comment 5 --body "KFAAH_PUBLISH_OK $SOURCE_SHA"
