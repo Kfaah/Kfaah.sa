@@ -47,8 +47,8 @@ async function make(file, title, subtitle, body, bullets, table){
   ppt.layout = 'LAYOUT_WIDE';
   ppt.rtlMode = true;
   ppt.title = title;
-  ppt.author = 'Lovable';
-  ppt.company = 'Lovable Cloud';
+  ppt.author = 'منصة كفاءة';
+  ppt.company = 'منصة كفاءة';
   cover(ppt, title, subtitle);
   textSlide(ppt, title, 'المحتوى الجاهز', body, bullets);
   if (table) tableSlide(ppt, title, table.subtitle || 'الجدول التنفيذي', table.headers, table.rows, table.note || '');
