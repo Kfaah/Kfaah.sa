@@ -11,7 +11,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const AI_URL = (Deno.env.get("KFAAH_AI_CHAT_URL") || "http://127.0.0.1:11434/v1/chat/completions");
 const DEFAULT_MODEL = "google/gemini-2.5-flash";
 
 interface RunRequest {
@@ -43,8 +43,8 @@ function sameMonthDay(a: Date, b: Date) {
 
 // ===== استدعاء الذكاء مع structured tool calling =====
 async function callAI(systemPrompt: string, userPrompt: string, tool: any, model = DEFAULT_MODEL) {
-  const apiKey = Deno.env.get("LOVABLE_API_KEY");
-  if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
+  const apiKey = Deno.env.get("KFAAH_AI_API_KEY");
+  if (!apiKey) throw new Error("KFAAH_AI_API_KEY missing");
 
   const resp = await fetch(AI_URL, {
     method: "POST",
