@@ -284,8 +284,8 @@ Deno.serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) return json({ error: "LOVABLE_API_KEY غير مهيّأ" }, 500);
+    const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY");
+    if (!KFAAH_AI_API_KEY) return json({ error: "KFAAH_AI_API_KEY غير مهيّأ" }, 500);
 
     const body = await req.json().catch(() => ({}));
     const orgId: string | undefined = body.organizationId || body.organization_id;
@@ -314,9 +314,9 @@ ${JSON.stringify(snapshot.signals, null, 2)}
 اربط بين الإشارات بذكاء (مثلاً: متبرع له ذكرى اليوم وأيضًا في حملة قاب قوسين → مهمة واحدة مركّبة).
 اقترح مهامًا واقعية وقابلة للتنفيذ خلال 1-3 أيام.`;
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResp = await fetch((Deno.env.get("KFAAH_AI_CHAT_URL") || "http://127.0.0.1:11434/v1/chat/completions"), {
       method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${KFAAH_AI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-2.5-pro",
         messages: [
