@@ -1,0 +1,79 @@
+name: Kfaah Manager → Codex
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: "Kfaah Manager change request"
+        required: true
+        type: string
+  repository_dispatch:
+    types: [kfaah_manager_request]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  handoff:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REQUEST_PROMPT: ${{ github.event.client_payload.prompt || inputs.prompt }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create isolated request branch
+        id: req
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$REQUEST_PROMPT"
+          branch="kfaah-manager/request-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          file=".kfaah/requests/request-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.md"
+
+          git config user.name "kfaah-manager"
+          git config user.email "actions@users.noreply.github.com"
+          git switch -c "$branch"
+
+          mkdir -p .kfaah/requests
+          {
+            printf '# طلب تعديل من مدير منصة كفاءة\n\n'
+            printf '## الطلب\n\n'
+            printf '%s\n\n' "$REQUEST_PROMPT"
+            printf '## قواعد التنفيذ\n\n'
+            printf '%s\n' '- نفّذ هذا الطلب فقط.'
+            printf '%s\n' '- لا تنشر إلى الموقع الحي.'
+            printf '%s\n' '- لا تغيّر الأسرار أو DNS أو بيانات الإنتاج.'
+            printf '%s\n' '- شغّل الاختبارات المناسبة واترك النشر لمسار staging المعتمد.'
+          } > "$file"
+
+          git add "$file"
+          git commit -m "Queue Kfaah Manager request"
+          git push origin "$branch"
+
+          printf 'branch=%s\n' "$branch" >> "$GITHUB_OUTPUT"
+          printf 'file=%s\n' "$file" >> "$GITHUB_OUTPUT"
+
+      - name: Open draft pull request
+        id: pr
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="$(gh pr create             --base main             --head "${{ steps.req.outputs.branch }}"             --draft             --title "Kfaah Manager request #${GITHUB_RUN_ID}"             --body "طلب آلي من مدير منصة كفاءة. التنفيذ عبر Codex، والمراجعة والنشر منفصلان.")"
+          printf 'url=%s\n' "$url" >> "$GITHUB_OUTPUT"
+          number="${url##*/}"
+          printf 'number=%s\n' "$number" >> "$GITHUB_OUTPUT"
+
+      - name: Hand request to Codex
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh pr comment "${{ steps.pr.outputs.number }}" --body "@codex نفّذ الطلب الموجود في \`${{ steps.req.outputs.file }}\` فقط. التزم بـ AGENTS.md. عدّل الكود في فرع هذا الـPR، شغّل الاختبارات المناسبة، ولا تنشر إلى الموقع الحي."
+
+      - name: Summary
+        run: |
+          echo "PR: ${{ steps.pr.outputs.url }}"
