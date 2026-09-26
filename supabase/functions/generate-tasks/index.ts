@@ -14,7 +14,7 @@ const MONTHS_AR = [
 ];
 
 const DEFAULT_WORK_MINUTES = 8 * 60;
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const AI_URL = (Deno.env.get("KFAAH_AI_CHAT_URL") || "http://127.0.0.1:11434/v1/chat/completions");
 
 type GenerationRequest = {
   month?: number | string;
@@ -161,7 +161,7 @@ async function updateJob(supabase: any, jobId: string, patch: Record<string, unk
 }
 
 async function callAIForBucket(params: {
-  LOVABLE_API_KEY: string;
+  KFAAH_AI_API_KEY: string;
   bucket: EmpBucket;
   filesByUser: Map<string, any[]>;
   operationalPlans: any[];
@@ -171,7 +171,7 @@ async function callAIForBucket(params: {
   totalDays: number;
   orgId: string | null;
 }) {
-  const { LOVABLE_API_KEY, bucket, filesByUser, operationalPlans, orgInfo, targetYear, targetMonth, totalDays, orgId } = params;
+  const { KFAAH_AI_API_KEY, bucket, filesByUser, operationalPlans, orgInfo, targetYear, targetMonth, totalDays, orgId } = params;
   const monthName = MONTHS_AR[targetMonth - 1];
   const emp = bucket.employee || {};
   const workMinutes = minutesBetween(emp.work_start_time, emp.work_end_time);
@@ -256,7 +256,7 @@ ${planIdsByDay}
       method: "POST",
       signal: aiController.signal,
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${KFAAH_AI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -356,14 +356,14 @@ ${planIdsByDay}
 async function processGenerationJob(params: {
   jobId: string;
   supabase: any;
-  LOVABLE_API_KEY: string;
+  KFAAH_AI_API_KEY: string;
   orgId: string | null;
   targetMonth: number;
   targetYear: number;
   targetEmployeeId: string | null;
   operationalPlanIds?: string[] | null;
 }) {
-  const { jobId, supabase, LOVABLE_API_KEY, orgId, targetMonth, targetYear, targetEmployeeId, operationalPlanIds } = params;
+  const { jobId, supabase, KFAAH_AI_API_KEY, orgId, targetMonth, targetYear, targetEmployeeId, operationalPlanIds } = params;
   const monthName = MONTHS_AR[targetMonth - 1];
   const totalDays = daysInMonth(targetYear, targetMonth);
 
@@ -506,7 +506,7 @@ async function processGenerationJob(params: {
     const settled = await Promise.allSettled(
       bucketList.map(async (bucket) => {
         const tasks = await callAIForBucket({
-          LOVABLE_API_KEY, bucket, filesByUser,
+          KFAAH_AI_API_KEY, bucket, filesByUser,
           operationalPlans: operationalPlans || [],
           orgInfo, targetYear, targetMonth, totalDays, orgId,
         });
@@ -619,8 +619,8 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY");
+    if (!KFAAH_AI_API_KEY) throw new Error("KFAAH_AI_API_KEY is not configured");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -697,7 +697,7 @@ serve(async (req) => {
     const processingPromise = processGenerationJob({
       jobId: job.id,
       supabase,
-      LOVABLE_API_KEY,
+      KFAAH_AI_API_KEY,
       orgId,
       targetMonth,
       targetYear,
