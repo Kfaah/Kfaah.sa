@@ -21,8 +21,8 @@
       //      The UI is revealed ONLY after real org branding is applied.
       //      This avoids published-site flicker on empty cache / slow networks.
       (function () {
-        var SUPABASE_URL = "https://jopvcsrmccoulujeyjvw.supabase.co";
-        var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHZjc3JtY2NvdWx1amV5anZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MjU1MjAsImV4cCI6MjA5MjIwMTUyMH0.s3R2dRBKi_S7iS4y5CjAe-hr6hYJwivOSNNeekqC2wE";
+        var SUPABASE_URL = "%VITE_SUPABASE_URL%";
+        var SUPABASE_KEY = "%VITE_SUPABASE_PUBLISHABLE_KEY%";
 
         function hexToHsl(hex) {
           var m = /^#?([0-9a-f]{6})$/i.exec((hex || "").trim());
@@ -153,7 +153,6 @@
           fetch(url, {
             headers: {
               apikey: SUPABASE_KEY,
-              Authorization: "Bearer " + SUPABASE_KEY,
             },
           })
             .then(function (r) { return r.ok ? r.json() : null; })
@@ -200,11 +199,8 @@
     
     
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f21db08e-b7d0-4bbf-9e01-2c37cf2cb856/id-preview-711d4e36--d89a68c4-17de-485f-8e93-7eabdfb68015.lovable.app-1776664801534.png">
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lovable" />
-    <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f21db08e-b7d0-4bbf-9e01-2c37cf2cb856/id-preview-711d4e36--d89a68c4-17de-485f-8e93-7eabdfb68015.lovable.app-1776664801534.png">
+    <meta name="twitter:card" content="summary" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

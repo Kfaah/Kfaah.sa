@@ -92,7 +92,7 @@ export default function AdminActionPlans() {
       // Use direct fetch so we can read the JSON body even on non-2xx responses
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(
-        `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/generate-action-plan`,
+        `${import.meta.env.VITE_SUPABASE_URL.replace(/\/$/, "")}/functions/v1/generate-action-plan`,
         {
           method: "POST",
           headers: {

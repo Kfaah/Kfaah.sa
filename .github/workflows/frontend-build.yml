@@ -1,0 +1,34 @@
+name: Verify frontend build
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/frontend-build.yml'
+      - 'deploy/build-frontend.sh'
+      - 'index.html'
+      - 'src/**'
+      - 'public/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Build with non-production test configuration
+        env:
+          VITE_SUPABASE_URL: https://kfaah.sa
+          VITE_SUPABASE_PUBLISHABLE_KEY: ci-public-placeholder
+          KFAAH_DEPLOY_TARGET: production
+          KFAAH_EXPECTED_API_URL: https://kfaah.sa
+        run: bash deploy/build-frontend.sh
