@@ -13,7 +13,7 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY")!;
 const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
 
 const AI_MODEL = "openai/gpt-6-astra";
@@ -215,11 +215,11 @@ async function storeSourceScreenshot(
 }
 
 async function callAI(systemPrompt: string, userPayload: unknown) {
-  const r = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
+  const r = await fetch((Deno.env.get("KFAAH_AI_RESPONSES_URL") || "http://127.0.0.1:11434/v1/responses"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Lovable-API-Key": LOVABLE_API_KEY,
+      "Lovable-API-Key": KFAAH_AI_API_KEY,
       "X-Lovable-AIG-SDK": "fetch",
     },
     body: JSON.stringify({
