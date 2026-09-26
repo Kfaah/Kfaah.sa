@@ -1,0 +1,17 @@
+node_modules
+dist
+.git
+.github
+.env
+.env.*
+!.env.example
+*.sql
+*.sql.gz
+*.dump
+*.backup
+*.enc
+*.gpg
+*.pem
+*.key
+backups
+backup

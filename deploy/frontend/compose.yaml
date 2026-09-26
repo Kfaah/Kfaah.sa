@@ -1,0 +1,28 @@
+name: kfaah-frontend
+
+services:
+  production:
+    build:
+      context: ../..
+      dockerfile: deploy/frontend/Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${KFAAH_PROD_SUPABASE_URL:?Set production Supabase URL}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${KFAAH_PROD_PUBLISHABLE_KEY:?Set production publishable key}
+        VITE_SUPABASE_PROJECT_ID: ${KFAAH_PROD_PROJECT_ID:-}
+    image: kfaah/frontend-production:${KFAAH_RELEASE:-local}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3100:8080"
+
+  preview:
+    build:
+      context: ../..
+      dockerfile: deploy/frontend/Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${KFAAH_PREVIEW_SUPABASE_URL:?Set preview Supabase URL}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${KFAAH_PREVIEW_PUBLISHABLE_KEY:?Set preview publishable key}
+        VITE_SUPABASE_PROJECT_ID: ${KFAAH_PREVIEW_PROJECT_ID:-}
+    image: kfaah/frontend-preview:${KFAAH_RELEASE:-local}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3101:8080"
