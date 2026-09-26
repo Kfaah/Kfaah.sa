@@ -41,7 +41,18 @@ fi
 
 if grep -R -Fq 'lovable.app' dist; then
   echo "The built frontend still contains a Lovable preview reference." >&2
-  grep -R -l -F 'lovable.app' dist >&2 || true
+  python3 - <<'PY' >&2
+from pathlib import Path
+for path in Path('dist').rglob('*'):
+    if not path.is_file():
+        continue
+    data = path.read_bytes()
+    needle = b'lovable.app'
+    start = 0
+    while (index := data.find(needle, start)) >= 0:
+        print(f'{path}: {data[max(0, index-110):min(len(data), index+110)].decode("utf-8", "replace")}')
+        start = index + len(needle)
+PY
   exit 1
 fi
 
