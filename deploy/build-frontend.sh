@@ -41,6 +41,7 @@ fi
 
 if grep -R -Fq 'lovable.app' dist; then
   echo "The built frontend still contains a Lovable preview reference." >&2
+  grep -R -l -F 'lovable.app' dist >&2 || true
   exit 1
 fi
 
