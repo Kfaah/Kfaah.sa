@@ -39,4 +39,9 @@ if grep -R -Fq '.supabase.co' dist; then
   exit 1
 fi
 
+if grep -R -Fq 'lovable.app' dist; then
+  echo "The built frontend still contains a Lovable preview reference." >&2
+  exit 1
+fi
+
 echo "Frontend build complete. Review dist/ and deploy it only after preview checks."
