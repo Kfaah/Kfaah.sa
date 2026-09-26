@@ -1,0 +1,146 @@
+name: Apply Codex patch for Kfaah Manager
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  apply_patch:
+    if: >
+      github.event.issue.pull_request &&
+      github.event.comment.user.login == 'chatgpt-codex-connector[bot]' &&
+      contains(github.event.comment.body, 'KFAAH_PATCH_BEGIN') &&
+      contains(github.event.comment.body, 'KFAAH_PATCH_END')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ github.event.issue.number }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract patch safely
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -r '.comment.body' "$GITHUB_EVENT_PATH" > /tmp/comment.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          body = Path("/tmp/comment.txt").read_text()
+          start = body.find("KFAAH_PATCH_BEGIN")
+          end = body.find("KFAAH_PATCH_END", start + 1)
+          if start < 0 or end < 0:
+              raise SystemExit("patch markers missing")
+          part = body[start + len("KFAAH_PATCH_BEGIN"):end].strip()
+          if part.startswith("'''"):
+              raise SystemExit("invalid patch fence")
+          if part.startswith("```diff"):
+              part = part[len("```diff"):].lstrip("\r\n")
+          elif part.startswith("```"):
+              part = part[3:].lstrip("\r\n")
+          if part.rstrip().endswith("```"):
+              part = part.rstrip()[:-3].rstrip() + "\n"
+          if not part.startswith("diff --git "):
+              raise SystemExit("no unified git patch found")
+          if len(part.encode()) > 700_000:
+              raise SystemExit("patch too large")
+          Path("/tmp/codex.patch").write_text(part)
+          PY
+
+      - name: Validate target files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path("/tmp/codex.patch").read_text(errors="replace")
+          paths = []
+          for line in p.splitlines():
+              m = re.match(r"^diff --git a/(.+) b/(.+)$", line)
+              if m:
+                  paths.extend([m.group(1), m.group(2)])
+          uniq = sorted(set(paths))
+          if not uniq:
+              raise SystemExit("no changed paths")
+          if len(uniq) > 60:
+              raise SystemExit("too many changed files")
+          denied_prefixes = (
+              ".github/", ".git/", "deploy/", "supabase/migrations/",
+              ".kfaah/requests/"
+          )
+          denied_exact = {"AGENTS.md", ".env", ".env.production", ".env.local"}
+          for path in uniq:
+              if path.startswith("/") or ".." in Path(path).parts:
+                  raise SystemExit(f"unsafe path: {path}")
+              if path in denied_exact or path.startswith(denied_prefixes):
+                  raise SystemExit(f"protected path: {path}")
+          print("\n".join(uniq))
+          PY
+
+      - name: Checkout PR branch
+        id: branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cross="$(gh pr view "$PR_NUMBER" --json isCrossRepository --jq '.isCrossRepository')"
+          test "$cross" = "false"
+          branch="$(gh pr view "$PR_NUMBER" --json headRefName --jq '.headRefName')"
+          git fetch origin "$branch"
+          git switch -C "$branch" "origin/$branch"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Apply patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply --check /tmp/codex.patch
+          git apply /tmp/codex.patch
+          git diff --check
+          test -n "$(git status --porcelain)"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Verify build and independence
+        shell: bash
+        env:
+          VITE_SUPABASE_URL: https://kfaah.sa
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          KFAAH_DEPLOY_TARGET: production
+          KFAAH_EXPECTED_API_URL: https://kfaah.sa
+        run: |
+          set -euo pipefail
+          npm ci
+          bash deploy/build-frontend.sh
+          if grep -REni 'lovable\.app|lovable\.dev|ai\.gateway\.lovable|\.supabase\.co' dist; then
+            echo "legacy cloud dependency detected" >&2
+            exit 1
+          fi
+
+      - name: Commit and push Codex changes
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "kfaah-manager"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "Apply Codex changes for Kfaah Manager request"
+          sha="$(git rev-parse HEAD)"
+          git push origin "${{ steps.branch.outputs.branch }}"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Confirm on pull request
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh pr comment "$PR_NUMBER" --body "KFAAH_APPLIED_OK — تم تطبيق تعديل Codex على فرع الطلب بعد نجاح فحص البناء والاستقلالية. Commit: \`${{ steps.commit.outputs.sha }}\`"
