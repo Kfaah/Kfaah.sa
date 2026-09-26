@@ -11,8 +11,8 @@ Deno.serve(async (req) => {
   try {
     const { campaign_id, save_to_playbook } = await req.json();
     if (!campaign_id) return new Response(JSON.stringify({ error: "campaign_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY");
+    if (!KFAAH_AI_API_KEY) throw new Error("KFAAH_AI_API_KEY not configured");
 
     const supa = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const [cRes, mRes, chRes, prevRes] = await Promise.all([
@@ -45,9 +45,9 @@ Deno.serve(async (req) => {
     const systemPrompt = `أنت محلل تسويقي خبير في الجمعيات الخيرية السعودية. حلّل أداء الحملة وقدّم تقييمًا مهنيًا، نقاط قوة، نقاط ضعف، وتوصيات تنفيذية واضحة. استخرج دروسًا قابلة لإعادة الاستخدام (Playbook). أعد النتيجة فقط عبر الدالة evaluate_campaign.`;
     const userPrompt = `بيانات الحملة والأداء:\n${JSON.stringify(ctx, null, 2)}`;
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResp = await fetch((Deno.env.get("KFAAH_AI_CHAT_URL") || "http://127.0.0.1:11434/v1/chat/completions"), {
       method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${KFAAH_AI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
