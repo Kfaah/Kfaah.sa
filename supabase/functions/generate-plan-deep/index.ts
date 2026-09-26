@@ -11,7 +11,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const KFAAH_AI_URL = (Deno.env.get("KFAAH_AI_CHAT_URL") || "http://127.0.0.1:11434/v1/chat/completions");
 
 function parseArabicNumber(value: unknown): number {
   const normalized = String(value ?? "")
@@ -90,7 +90,7 @@ async function classifyFileRelevance(
     userParts.push({ type: "image_url", image_url: { url: imageDataUrl } });
   }
 
-  const resp = await fetch(LOVABLE_AI_URL, {
+  const resp = await fetch(KFAAH_AI_URL, {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -199,8 +199,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY غير مهيأ");
+    const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY");
+    if (!KFAAH_AI_API_KEY) throw new Error("KFAAH_AI_API_KEY غير مهيأ");
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -282,7 +282,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        const verdict = await classifyFileRelevance(LOVABLE_API_KEY, path, textPreview, imageDataUrl);
+        const verdict = await classifyFileRelevance(KFAAH_AI_API_KEY, path, textPreview, imageDataUrl);
 
         if (!verdict.is_relevant) {
           rejectedFiles.push({ path, category: verdict.category, reason: verdict.reason });
@@ -348,10 +348,10 @@ ${fileSummaries.length ? fileSummaries.join("\n\n---\n\n") : "(لم يتم رف�
 قم الآن بدراسة كل ما سبق دراسة عميقة ودقيقة، ثم أنتج خطة تشغيلية متكاملة عبر استدعاء أداة generate_plan.`;
 
     // Call Lovable AI Gateway
-    const aiResp = await fetch(LOVABLE_AI_URL, {
+    const aiResp = await fetch(KFAAH_AI_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${KFAAH_AI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
