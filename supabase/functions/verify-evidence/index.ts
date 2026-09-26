@@ -27,10 +27,10 @@ Deno.serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY");
     const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
 
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    if (!KFAAH_AI_API_KEY) throw new Error("KFAAH_AI_API_KEY not configured");
     if (!FIRECRAWL_API_KEY) throw new Error("FIRECRAWL_API_KEY not configured");
 
     const authHeader = req.headers.get("Authorization") ?? "";
@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
 
     // 4) Ask Gemini for a strict judgment via tool calling (structured output)
     const judgement = await callJudgeAI({
-      apiKey: LOVABLE_API_KEY,
+      apiKey: KFAAH_AI_API_KEY,
       question: q,
       evidenceUrl: body.evidence_url,
       evidenceNotes: body.evidence_notes ?? "",
@@ -347,7 +347,7 @@ ${params.scrapedMarkdown || "(لا محتوى — قد يكون الرابط ل�
     },
   };
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const res = await fetch((Deno.env.get("KFAAH_AI_CHAT_URL") || "http://127.0.0.1:11434/v1/chat/completions"), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
