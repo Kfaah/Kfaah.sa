@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -270,11 +270,11 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
     let usedFallback = false;
     let warning: string | null = null;
 
-    if (LOVABLE_API_KEY) {
-      const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    if (KFAAH_AI_API_KEY) {
+      const aiResp = await fetch((Deno.env.get("KFAAH_AI_CHAT_URL") || "http://127.0.0.1:11434/v1/chat/completions"), {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          Authorization: `Bearer ${KFAAH_AI_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
