@@ -378,17 +378,6 @@ export async function exportGrantProposal() {
           }),
 
           emptyLine(),
-          emptyLine(),
-          new Paragraph({
-            children: [
-              new TextRun({ text: "ملاحظة: ", bold: true, size: 22, font: "Cairo", color: PRIMARY_COLOR }),
-              new TextRun({ text: "يمكن للمانح الاطلاع على النسخة التجريبية العاملة عبر الرابط: ", size: 22, font: "Cairo" }),
-              new TextRun({ text: "https://attf.lovable.app", size: 22, font: "Arial", color: "0066CC", underline: {} }),
-            ],
-            alignment: AlignmentType.RIGHT,
-            bidirectional: true,
-            spacing: { before: 200 },
-          }),
         ],
       },
     ],
