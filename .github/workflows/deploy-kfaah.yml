@@ -1,4 +1,4 @@
-name: Deploy Kfaah frontend to Hetzner
+name: Upload Kfaah frontend to Hetzner staging
 
 # Manual only. Creating or merging this workflow does not change the server.
 on:
@@ -8,12 +8,11 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
+  upload_staging:
     runs-on: ubuntu-latest
-    environment: production
     env:
       VITE_SUPABASE_URL: https://kfaah.sa
-      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.KFAAH_SUPABASE_ANON_KEY }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       KFAAH_DEPLOY_TARGET: production
       KFAAH_EXPECTED_API_URL: https://kfaah.sa
     steps:
@@ -24,23 +23,23 @@ jobs:
           cache: npm
       - name: Build frontend for kfaah.sa
         run: bash deploy/build-frontend.sh
-      - name: Upload dist to the existing static site
+      - name: Upload dist to staging only
         env:
-          KFAAH_SSH_HOST: ${{ secrets.KFAAH_SSH_HOST }}
-          KFAAH_SSH_USER: ${{ secrets.KFAAH_SSH_USER }}
-          KFAAH_SSH_KEY: ${{ secrets.KFAAH_SSH_PRIVATE_KEY }}
-          KFAAH_SSH_KNOWN_HOSTS: ${{ secrets.KFAAH_SSH_KNOWN_HOSTS }}
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
-          : "${KFAAH_SSH_HOST:?Set KFAAH_SSH_HOST}"
-          : "${KFAAH_SSH_USER:?Set KFAAH_SSH_USER}"
-          : "${KFAAH_SSH_KEY:?Set KFAAH_SSH_PRIVATE_KEY}"
-          : "${KFAAH_SSH_KNOWN_HOSTS:?Set KFAAH_SSH_KNOWN_HOSTS}"
+          : "${HETZNER_HOST:?Set HETZNER_HOST}"
+          : "${HETZNER_USER:?Set HETZNER_USER}"
+          : "${HETZNER_SSH_KEY:?Set HETZNER_SSH_KEY}"
+          : "${HETZNER_KNOWN_HOSTS:?Set HETZNER_KNOWN_HOSTS}"
           install -m 700 -d "$HOME/.ssh"
-          printf '%s\n' "$KFAAH_SSH_KEY" > "$HOME/.ssh/id_kfaah_deploy"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_deploy"
           chmod 600 "$HOME/.ssh/id_kfaah_deploy"
-          printf '%s\n' "$KFAAH_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
           rsync -rtz --delay-updates \
             -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" \
-            dist/ "$KFAAH_SSH_USER@$KFAAH_SSH_HOST:/var/www/kfaah/"
+            dist/ "$HETZNER_USER@$HETZNER_HOST:/var/www/kfaah-staging/"
