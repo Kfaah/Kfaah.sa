@@ -9,7 +9,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const KFAAH_AI_URL = (Deno.env.get("KFAAH_AI_CHAT_URL") || "http://127.0.0.1:11434/v1/chat/completions");
 
 interface RequestBody {
   excel_plan_id?: string;
@@ -97,8 +97,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY");
+    if (!KFAAH_AI_API_KEY) {
       return json({ error: "AI service not configured" }, 500);
     }
 
@@ -132,10 +132,10 @@ ${sampleRows.length ? JSON.stringify(sampleRows, null, 2) : "(لا توجد صف
 5) كل خلية بقيمة حقيقية محددة. ممنوع العبارات النظرية.
 6) استدعِ الأداة build_operational_plan فقط.`;
 
-    const aiResp = await fetch(LOVABLE_AI_URL, {
+    const aiResp = await fetch(KFAAH_AI_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${KFAAH_AI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
