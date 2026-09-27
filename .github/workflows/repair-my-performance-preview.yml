@@ -76,7 +76,7 @@ jobs:
           ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" '
             set -euo pipefail
             grep -q "usePreviewMode" /home/deploy/kfaah-fast/workspace/src/pages/MyPerformance.tsx
-            grep -q "الأداء الواقعي" /home/deploy/kfaah-fast/workspace/src/pages/MyPerformance.tsx
+            grep -q "بطاقتك الشخصية" /home/deploy/kfaah-fast/workspace/src/pages/MyPerformance.tsx
             echo FAST_SOURCE_OK
           '
 
