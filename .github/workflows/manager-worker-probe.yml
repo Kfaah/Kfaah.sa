@@ -1,0 +1,50 @@
+name: Probe Kfaah manager worker host
+
+on:
+  push:
+    branches:
+      - kfaah-manager-worker-setup
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe Hetzner capabilities
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_deploy"
+          chmod 600 "$HOME/.ssh/id_kfaah_deploy"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" '
+            set -eu
+            echo "=== identity ==="
+            id
+            echo "=== home ==="
+            pwd
+            echo "=== node ==="
+            command -v node || true
+            node --version || true
+            echo "=== npm ==="
+            command -v npm || true
+            npm --version || true
+            echo "=== sudo ==="
+            sudo -n -l 2>&1 || true
+            echo "=== linger ==="
+            loginctl show-user "$USER" -p Linger 2>&1 || true
+            echo "=== user systemd ==="
+            systemctl --user is-system-running 2>&1 || true
+            echo "=== listening ==="
+            ss -ltn | head -50 || true
+            echo "=== dirs ==="
+            ls -ld /var/www/kfaah /var/www/kfaah-staging /home/deploy 2>&1 || true
+          '
