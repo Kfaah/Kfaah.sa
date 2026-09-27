@@ -37,12 +37,30 @@ jobs:
               cat > /home/deploy/kfaah-fast/workspace/.env.local
               cp /home/deploy/kfaah-fast/workspace/.env.local /home/deploy/kfaah-fast/baseline/.env.local
               chmod 600 /home/deploy/kfaah-fast/workspace/.env.local /home/deploy/kfaah-fast/baseline/.env.local
-              pkill -u "$(id -u)" -f "node.*vite" || true
-              rm -f /home/deploy/kfaah-fast/vite-allowed-host.txt
-              echo FAST_PREVIEW_ENV_OK
+              echo FAST_PREVIEW_ENV_WRITTEN
             '
 
-      - name: Verify environment file exists
+      - name: Restart only Vite
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" '
+            set -euo pipefail
+            vite_pid="$(ps -u "$(id -u)" -o pid=,comm=,args= | awk '''$2=="node" && $0 ~ /node_modules\/\.bin\/vite/ {print $1; exit}''')"
+            if [ -n "$vite_pid" ]; then
+              kill "$vite_pid"
+              for i in 1 2 3 4 5; do
+                kill -0 "$vite_pid" 2>/dev/null || break
+                sleep 1
+              done
+            fi
+            rm -f /home/deploy/kfaah-fast/vite-allowed-host.txt
+            echo FAST_PREVIEW_VITE_STOPPED
+          '
+
+      - name: Verify environment
         env:
           HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
           HETZNER_USER: ${{ secrets.HETZNER_USER }}
