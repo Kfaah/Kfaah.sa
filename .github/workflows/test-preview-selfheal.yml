@@ -1,0 +1,54 @@
+name: Test Preview Self Heal
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare SSH
+        env:
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_deploy"
+          chmod 600 "$HOME/.ssh/id_kfaah_deploy"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Kill tunnel and verify worker recovery
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" '
+            set -euo pipefail
+            old_url="$(grep -oE "https://[A-Za-z0-9-]+\.trycloudflare\.com" /home/deploy/kfaah-fast/cloudflared.log | tail -n 1 || true)"
+            echo "OLD_PREVIEW_URL=$old_url"
+
+            pkill -u "$(id -u)" -x cloudflared || true
+
+            new_url=""
+            for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24; do
+              new_url="$(grep -oE "https://[A-Za-z0-9-]+\.trycloudflare\.com" /home/deploy/kfaah-fast/cloudflared.log | tail -n 1 || true)"
+              if [ -n "$new_url" ] && [ "$new_url" != "$old_url" ] && pgrep -u "$(id -u)" -x cloudflared >/dev/null; then
+                if curl -fsS "$new_url/" -o /dev/null; then
+                  break
+                fi
+              fi
+              sleep 1
+            done
+
+            test -n "$new_url"
+            test "$new_url" != "$old_url"
+            curl -fsS "$new_url/" -o /dev/null
+            echo "NEW_PREVIEW_URL=$new_url"
+            echo SELF_HEAL_OK
+          '
