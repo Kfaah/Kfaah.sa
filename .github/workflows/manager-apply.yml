@@ -13,14 +13,18 @@ on:
         description: "Temporary review branch"
         required: true
         type: string
-      patch_base64:
-        description: "Base64 encoded unified diff"
+      changes_base64:
+        description: "Base64 encoded deterministic edit operations"
         required: true
         type: string
       preview_path:
         description: "Route to capture for internal review"
         required: true
         default: "/"
+        type: string
+      preview_callback_token:
+        description: "One-way callback token for preview storage"
+        required: true
         type: string
 
 permissions:
@@ -43,23 +47,57 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Create review branch and apply AI patch
+      - name: Create review branch and apply deterministic edits
         env:
           REVIEW_BRANCH: ${{ inputs.branch }}
-          PATCH_BASE64: ${{ inputs.patch_base64 }}
+          CHANGES_BASE64: ${{ inputs.changes_base64 }}
         run: |
           set -euo pipefail
           git fetch origin main
           git switch -C "$REVIEW_BRANCH" origin/main
-          printf '%s' "$PATCH_BASE64" | base64 --decode > /tmp/kfaah-manager.patch
-          test -s /tmp/kfaah-manager.patch
-          if grep -E '^(---|\+\+\+) (a/|b/)?(\.github/|deploy/|supabase/|\.env|package(-lock)?\.json)' /tmp/kfaah-manager.patch; then
-            echo "Patch touches a protected path" >&2
-            exit 1
-          fi
-          git apply --recount --check /tmp/kfaah-manager.patch
-          git apply --recount /tmp/kfaah-manager.patch
+          python3 - <<'PY'
+          import base64, json, os
+          from pathlib import Path
+
+          payload = json.loads(base64.b64decode(os.environ["CHANGES_BASE64"]).decode("utf-8"))
+          edits = payload.get("edits") or []
+          if not edits:
+              raise SystemExit("No edits supplied")
+
+          protected = (".github/", "deploy/", "supabase/", ".env", "package.json", "package-lock.json")
+          allowed_prefixes = ("src/", "public/")
+
+          for edit in edits:
+              path = str(edit.get("path") or "")
+              old = edit.get("old")
+              new = edit.get("new")
+              if not path or new is None:
+                  raise SystemExit("Invalid edit")
+              if path in ("index.html", "vite.config.ts"):
+                  pass
+              elif not path.startswith(allowed_prefixes):
+                  raise SystemExit(f"Path not allowed: {path}")
+              if path.startswith(protected) or path in protected:
+                  raise SystemExit(f"Protected path: {path}")
+
+              target = Path(path)
+              if old is None:
+                  if target.exists():
+                      raise SystemExit(f"Create target already exists: {path}")
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_text(str(new), encoding="utf-8")
+                  continue
+
+              if not target.exists():
+                  raise SystemExit(f"Target missing: {path}")
+              text = target.read_text(encoding="utf-8")
+              old = str(old)
+              if not old or text.count(old) != 1:
+                  raise SystemExit(f"Expected exact old text once in {path}, found {text.count(old)}")
+              target.write_text(text.replace(old, str(new), 1), encoding="utf-8")
+          PY
           git diff --check
+          test -n "$(git status --porcelain)"
 
       - uses: actions/setup-node@v4
         with:
@@ -82,12 +120,31 @@ jobs:
             sleep 1
           done
           curl -fsS http://127.0.0.1:4173/ -o /dev/null
-          npx --yes playwright@1.55.1 screenshot --viewport-size='1440,900' --wait-for-timeout=3500 "http://127.0.0.1:4173$PREVIEW_PATH" internal-preview-desktop.png
-          npx --yes playwright@1.55.1 screenshot --viewport-size='390,844' --wait-for-timeout=3500 "http://127.0.0.1:4173$PREVIEW_PATH" internal-preview-mobile.png
+          npx --yes playwright@1.55.1 screenshot --full-page --viewport-size='1440,900' --wait-for-timeout=3500 "http://127.0.0.1:4173$PREVIEW_PATH" internal-preview-desktop.png
+          npx --yes playwright@1.55.1 screenshot --full-page --viewport-size='390,844' --wait-for-timeout=3500 "http://127.0.0.1:4173$PREVIEW_PATH" internal-preview-mobile.png
           test -s internal-preview-desktop.png
           test -s internal-preview-mobile.png
 
-      - name: Save internal preview
+      - name: Upload internal preview into Kfaah Manager
+        env:
+          COMMAND_ID: ${{ inputs.command_id }}
+          PREVIEW_PATH: ${{ inputs.preview_path }}
+          PREVIEW_CALLBACK_TOKEN: ${{ inputs.preview_callback_token }}
+        run: |
+          set -euo pipefail
+          echo "::add-mask::$PREVIEW_CALLBACK_TOKEN"
+          desktop_size="$(stat -c%s internal-preview-desktop.png)"
+          mobile_size="$(stat -c%s internal-preview-mobile.png)"
+          target_payload="$(jq -n             --arg commandId "$COMMAND_ID"             --arg token "$PREVIEW_CALLBACK_TOKEN"             --arg previewPath "$PREVIEW_PATH"             --argjson desktopSize "$desktop_size"             --argjson mobileSize "$mobile_size"             '{commandId:$commandId,token:$token,previewPath:$previewPath,desktopSize:$desktopSize,mobileSize:$mobileSize}')"
+          target_response="$(curl --fail-with-body -sS             -H 'Content-Type: application/json'             -d "$target_payload"             https://kfaah-manager.floot.app/_api/preview-upload-target)"
+          desktop_url="$(printf '%s' "$target_response" | jq -r '.desktopPresignedUrl')"
+          mobile_url="$(printf '%s' "$target_response" | jq -r '.mobilePresignedUrl')"
+          test -n "$desktop_url"
+          test -n "$mobile_url"
+          curl -fsS -X PUT -H 'Content-Type: image/png' --data-binary @internal-preview-desktop.png "$desktop_url"
+          curl -fsS -X PUT -H 'Content-Type: image/png' --data-binary @internal-preview-mobile.png "$mobile_url"
+
+      - name: Save internal preview backup
         uses: actions/upload-artifact@v4
         with:
           name: kfaah-internal-preview-${{ github.run_id }}
@@ -105,7 +162,7 @@ jobs:
           git config user.name "Kfaah Manager"
           git config user.email "manager@kfaah.local"
           git add -A
-          git diff --cached --quiet && { echo "Patch produced no source changes" >&2; exit 1; }
+          git diff --cached --quiet && { echo "Edits produced no source changes" >&2; exit 1; }
           git commit -m "Kfaah manager command #$COMMAND_ID"
           git push --force-with-lease origin "HEAD:refs/heads/$REVIEW_BRANCH"
           echo "REVIEW_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
@@ -132,3 +189,13 @@ jobs:
           rsync -az --delete --delay-updates -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" dist/ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/incoming/"
           ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'sudo /usr/local/bin/kfaah-receive-frontend /home/deploy/incoming'
           echo "STAGING_OK branch=$REVIEW_BRANCH sha=$REVIEW_SHA"
+
+      - name: Mark internal preview ready
+        env:
+          COMMAND_ID: ${{ inputs.command_id }}
+          PREVIEW_CALLBACK_TOKEN: ${{ inputs.preview_callback_token }}
+        run: |
+          set -euo pipefail
+          echo "::add-mask::$PREVIEW_CALLBACK_TOKEN"
+          payload="$(jq -n --arg commandId "$COMMAND_ID" --arg token "$PREVIEW_CALLBACK_TOKEN" '{commandId:$commandId,token:$token}')"
+          curl --fail-with-body -sS             -H 'Content-Type: application/json'             -d "$payload"             https://kfaah-manager.floot.app/_api/preview-upload-complete
