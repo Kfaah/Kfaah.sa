@@ -44,6 +44,10 @@ jobs:
             systemctl --user list-units --type=service --all 2>/dev/null | grep -Ei "kfaah|vite|cloudflared|preview|worker" || true
             echo "=== user service files ==="
             find "$HOME/.config/systemd/user" -maxdepth 1 -type f -print -exec sh -c "echo --- {}; sed -n 1,220p {}" \; 2>/dev/null || true
+            echo "=== worker.py ==="
+            sed -n "1,320p" /home/deploy/kfaah-fast/worker.py || true
+            echo "=== vite log tail ==="
+            tail -n 120 /home/deploy/kfaah-fast/vite.log || true
             echo "=== env files ==="
             for f in /home/deploy/kfaah-fast/workspace/.env /home/deploy/kfaah-fast/workspace/.env.local /home/deploy/kfaah-fast/baseline/.env /home/deploy/kfaah-fast/baseline/.env.local; do
               if [ -f "$f" ]; then echo "FOUND $f"; sed -E "s/(=.*)/=<redacted>/" "$f"; else echo "MISSING $f"; fi
