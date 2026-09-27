@@ -42,8 +42,12 @@ jobs:
             done
             echo "=== worker.py ==="
             sed -n "1,340p" /home/deploy/kfaah-fast/worker.py || true
-            echo "=== worker service ==="
-            systemctl --user status kfaah-fast-worker.service --no-pager 2>/dev/null || true
+            echo "=== worker processes ==="
+            ps -u "$(id -u)" -o pid=,ppid=,comm=,args= | grep -E "worker.py|cloudflared|vite|node" | grep -v grep || true
+            echo "=== crontab ==="
+            crontab -l 2>/dev/null || true
+            echo "=== user services ==="
+            systemctl --user list-unit-files --type=service 2>/dev/null | grep -Ei "kfaah|worker|preview|vite|cloud" || true
             echo "=== listeners ==="
             ss -lnt | sed -n "1,120p"
           '
