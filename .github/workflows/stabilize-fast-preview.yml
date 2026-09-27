@@ -69,6 +69,24 @@ jobs:
               sleep 1
             fi
 
+            cat > /home/deploy/kfaah-fast/workspace/vite.fast.config.ts <<'"'"'EOF'"'"'
+            import { defineConfig, mergeConfig } from "vite";
+            import baseConfig from "./vite.config";
+
+            export default defineConfig((env) => {
+              const base = typeof baseConfig === "function" ? baseConfig(env) : baseConfig;
+              return mergeConfig(base, {
+                server: {
+                  allowedHosts: true,
+                  host: "127.0.0.1",
+                  port: 4173,
+                  strictPort: true,
+                  hmr: false,
+                },
+              });
+            });
+            EOF
+
             cd /home/deploy/kfaah-fast/workspace
             : > /home/deploy/kfaah-fast/vite.log
             nohup /home/deploy/kfaah-fast/node/bin/node \
