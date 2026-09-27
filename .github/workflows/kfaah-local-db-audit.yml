@@ -1,0 +1,79 @@
+name: Kfaah Local DB Access Audit
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    if: >-
+      github.event.issue.number == 5 &&
+      github.event.comment.user.login == 'gaberalhrese-cloud' &&
+      github.event.comment.body == 'KFAAH_LOCAL_DB_AUDIT'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect local DB access read-only
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_audit"
+          chmod 600 "$HOME/.ssh/id_kfaah_audit"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          ssh -i "$HOME/.ssh/id_kfaah_audit" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'bash -s' > /tmp/local-db.txt 2>&1 <<'REMOTE'
+          set +e
+          echo "=== ID ==="
+          id
+          echo "=== OPT PERMS ==="
+          ls -ld /opt/kfaah /opt/kfaah/functions /opt/kfaah/functions/app.py
+          echo "=== SERVICE UNIT ==="
+          sed -n '1,180p' /etc/systemd/system/kfaah-functions.service 2>&1
+          echo "=== SUPABASE UNIT ==="
+          sed -n '1,220p' /etc/systemd/system/kfaah-supabase.service 2>&1
+          echo "=== DOCKER ==="
+          command -v docker
+          docker ps --format 'NAME={{.Names}} IMAGE={{.Image}} PORTS={{.Ports}}' 2>&1 | head -80
+          echo "=== SOCKETS ==="
+          ss -ltn 2>&1 | grep -E ':(5432|8000|9001|3000|9999|6543)[[:space:]]' | head -80
+          echo "=== PYTHON DB ==="
+          python3 - <<'PY2'
+import importlib.util
+for x in ("psycopg","psycopg2","asyncpg"):
+    print(x, bool(importlib.util.find_spec(x)))
+PY2
+          echo "=== APP READ ==="
+          if [ -r /opt/kfaah/functions/app.py ]; then
+            grep -nE 'DATABASE|POSTGRES|function|FUNCTION|route|known|handler' /opt/kfaah/functions/app.py | head -160
+          else
+            echo APP_NOT_READABLE
+          fi
+          REMOTE
+
+      - name: Sanitize and post
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/local-db.txt')
+          s=p.read_text(errors='replace') if p.exists() else 'NO_OUTPUT'
+          safe=[]
+          for line in s.splitlines():
+              u=line.upper()
+              if any(x in u for x in ('PASSWORD=', 'SECRET=', 'TOKEN=', 'PRIVATE KEY', 'SERVICE_ROLE', 'ANON_KEY=')):
+                  continue
+              safe.append(line[:500])
+          Path('/tmp/safe.txt').write_text('\n'.join(safe)[:30000])
+          PY
+          { echo 'KFAAH_LOCAL_DB_AUDIT_REPORT'; echo; cat /tmp/safe.txt; } > /tmp/comment.txt
+          gh issue comment 5 --repo "$GITHUB_REPOSITORY" --body-file /tmp/comment.txt
