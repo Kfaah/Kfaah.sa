@@ -144,6 +144,30 @@ jobs:
           preview_url="$(ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'cat /home/deploy/kfaah-fast/tunnel-url.txt')"
           echo "PREVIEW_URL=$preview_url" >> "$GITHUB_ENV"
 
+      - name: Restore current reviewed edit for stability check
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
+          cat > restore-current-preview.py <<'PY'
+          from pathlib import Path
+          p = Path("/home/deploy/kfaah-fast/workspace/src/pages/MyPerformance.tsx")
+          s = p.read_text(encoding="utf-8")
+          old = "هذه الصفحة هي بطاقتك الشخصية للأداء. تجمع نسب إنجاز مهامك، نتائج المساءلات، ومتوسط درجة إثباتاتك من فحص النظام التلقائي، لتمنحك صورة شاملة عن وضعك الوظيفي وفرص تطورك."
+          new = "هذه الصفحة هي بطاقتك الشخصية للأداء الواقعي. تجمع نسب إنجاز مهامك، نتائج المساءلات، ومتوسط درجة إثباتاتك من فحص النظام التلقائي، لتمنحك صورة شاملة عن وضعك الوظيفي وفرص تطورك."
+          if new not in s:
+              if old not in s:
+                  raise SystemExit("Current preview text target not found")
+              s = s.replace(old, new, 1)
+              p.write_text(s, encoding="utf-8")
+          PY
+          scp -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            restore-current-preview.py \
+            "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/tmp/restore-current-preview.py"
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" \
+            'python3 /home/deploy/kfaah-fast/tmp/restore-current-preview.py && rm -f /home/deploy/kfaah-fast/tmp/restore-current-preview.py'
+
       - name: Browser stability check
         run: |
           set -euo pipefail
