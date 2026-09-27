@@ -62,19 +62,34 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         .select("*")
         .order("created_at", { ascending: true });
 
-      // Super admin can browse all organizations. Regular/viewer accounts must
-      // stay locked to their own organization even if the URL or localStorage
-      // still contains another organization's slug/id from a previous session.
+      // Super admins can browse every organization. Regular users may belong to
+      // more than one approved organization, so load every approved membership
+      // and let the current route choose the exact organization. Falling back to
+      // get_user_organization_id keeps older accounts working.
       let orgsResult;
       if (superAdmin) {
         orgsResult = await orgQuery;
       } else {
-        const { data: userOrgId } = await supabase.rpc("get_user_organization_id", {
-          _user_id: authUser.id,
-        });
-        orgsResult = userOrgId
-          ? await orgQuery.eq("id", userOrgId as string)
-          : { data: [], error: null };
+        const { data: memberships, error: membershipsError } = await supabase
+          .from("user_organizations")
+          .select("organization_id")
+          .eq("user_id", authUser.id)
+          .eq("approval_status", "approved");
+
+        if (membershipsError) {
+          orgsResult = { data: [], error: membershipsError };
+        } else {
+          const ids = [...new Set((memberships ?? []).map((item) => item.organization_id).filter(Boolean))] as string[];
+          if (ids.length === 0) {
+            const { data: userOrgId } = await supabase.rpc("get_user_organization_id", {
+              _user_id: authUser.id,
+            });
+            if (userOrgId) ids.push(userOrgId as string);
+          }
+          orgsResult = ids.length
+            ? await orgQuery.in("id", ids)
+            : { data: [], error: null };
+        }
       }
 
       const { data: orgs, error } = orgsResult;
@@ -99,7 +114,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       } else if (segments[0] && segments[0] !== "admin") {
         routeSlug = segments[0];
       }
-      const slugMatch = routeSlug ? list.find((o) => o.slug === routeSlug) : null;
+      const slugMatch = routeSlug ? list.find((o) => o.slug === routeSlug || o.id === routeSlug) : null;
       // For non-super-admin users, ignore unknown routeSlug values — many
       // app routes (e.g. /app, /profile, /tasks, /settings) start with a
       // non-slug segment. Falling back to their own org keeps branding
@@ -143,7 +158,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     }
     if (!routeSlug) return;
 
-    const slugMatch = availableOrgs.find((org) => org.slug === routeSlug);
+    const slugMatch = availableOrgs.find((org) => org.slug === routeSlug || org.id === routeSlug);
     // Same fallback as in load(): unknown route segments must NOT clear the
     // active org for regular users — they should always remain branded with
     // their own organization's identity.
