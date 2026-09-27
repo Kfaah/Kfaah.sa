@@ -41,10 +41,13 @@ jobs:
           set -euo pipefail
           git fetch origin main
           git fetch origin "refs/heads/$REVIEW_BRANCH:refs/remotes/origin/$REVIEW_BRANCH"
-          git merge-base --is-ancestor origin/main "origin/$REVIEW_BRANCH" || {
-            echo "main changed after this preview; run the manager command again before publishing" >&2
+          merge_base="$(git merge-base origin/main "origin/$REVIEW_BRANCH")"
+          changed_main="$(git diff --name-only "$merge_base"..origin/main || true)"
+          if printf '%s\n' "$changed_main" | grep -Ev '^(\.github/|deploy/|docs/|$)' >/dev/null; then
+            echo "Application source changed on main after this preview; run the manager command again before publishing" >&2
+            printf '%s\n' "$changed_main" >&2
             exit 1
-          }
+          fi
           git switch --detach "origin/$REVIEW_BRANCH"
           echo "REVIEW_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
@@ -73,11 +76,16 @@ jobs:
           rsync -az --delete --delay-updates -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" dist/ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/incoming/"
           ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'sudo /usr/local/bin/kfaah-receive-frontend /home/deploy/incoming'
 
-      - name: Fast-forward main to reviewed source
+      - name: Merge reviewed source into current main
         env:
           REVIEW_BRANCH: ${{ inputs.branch }}
         run: |
           set -euo pipefail
+          git config user.name "Kfaah Manager"
+          git config user.email "manager@kfaah.local"
+          git switch -C manager-publish-main origin/main
+          git merge --no-ff --no-edit "origin/$REVIEW_BRANCH"
+          git diff --check
           git push origin "HEAD:refs/heads/main"
 
       - name: Promote staging to live and verify
