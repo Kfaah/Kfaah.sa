@@ -1,0 +1,97 @@
+name: Kfaah Manager Publish
+
+run-name: Kfaah manager publish ${{ inputs.command_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      command_id:
+        description: "Manager command id"
+        required: true
+        type: string
+      branch:
+        description: "Reviewed manager branch"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kfaah-frontend-deploy
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: https://kfaah.sa
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      KFAAH_DEPLOY_TARGET: production
+      KFAAH_EXPECTED_API_URL: https://kfaah.sa
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate reviewed branch
+        env:
+          REVIEW_BRANCH: ${{ inputs.branch }}
+        run: |
+          set -euo pipefail
+          git fetch origin main "$REVIEW_BRANCH"
+          git merge-base --is-ancestor origin/main "origin/$REVIEW_BRANCH" || {
+            echo "main changed after this preview; run the manager command again before publishing" >&2
+            exit 1
+          }
+          git switch --detach "origin/$REVIEW_BRANCH"
+          echo "REVIEW_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Rebuild reviewed frontend
+        run: bash deploy/build-frontend.sh
+
+      - name: Upload exact reviewed build to staging
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test "$HETZNER_USER" = deploy
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_deploy"
+          chmod 600 "$HOME/.ssh/id_kfaah_deploy"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          rsync -az --delete --delay-updates -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" dist/ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/incoming/"
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'sudo /usr/local/bin/kfaah-receive-frontend /home/deploy/incoming'
+
+      - name: Fast-forward main to reviewed source
+        env:
+          REVIEW_BRANCH: ${{ inputs.branch }}
+        run: |
+          set -euo pipefail
+          git push origin "origin/$REVIEW_BRANCH:refs/heads/main"
+
+      - name: Promote staging to live and verify
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'sudo /usr/local/bin/kfaah-promote-frontend --live'
+          curl -fsS --retry 6 --retry-delay 5 https://kfaah.sa/ -o /tmp/kfaah-home.html
+          test -s /tmp/kfaah-home.html
+          echo "LIVE_OK https://kfaah.sa sha=$REVIEW_SHA"
+
+      - name: Remove temporary review branch
+        if: ${{ success() }}
+        env:
+          REVIEW_BRANCH: ${{ inputs.branch }}
+        run: git push origin --delete "$REVIEW_BRANCH" || true
