@@ -76,7 +76,34 @@ jobs:
           fi
           echo
           echo "=== DEPLOY USER PERMISSIONS ==="
+          id
+          groups
           sudo -n -l 2>/dev/null | sed -n '1,120p'
+          echo
+          echo "=== OPT KFAAH PERMISSIONS ==="
+          ls -ld /opt /opt/kfaah /opt/kfaah/functions /opt/kfaah/functions/app.py 2>&1
+          stat -c '%A %U:%G %n' /opt/kfaah /opt/kfaah/functions /opt/kfaah/functions/app.py 2>&1
+          echo
+          echo "=== SYSTEMD UNITS ==="
+          for f in /etc/systemd/system/kfaah-functions.service /etc/systemd/system/kfaah-supabase.service; do
+            echo "--- $f ---"
+            if [ -r "$f" ]; then sed -n '1,220p' "$f"; else echo "NOT_READABLE"; fi
+          done
+          echo
+          echo "=== DOCKER ACCESS ==="
+          command -v docker || true
+          docker ps --format '{{.Names}}|{{.Image}}|{{.Ports}}' 2>&1 | head -100
+          docker compose ls 2>&1 | head -100
+          echo
+          echo "=== LISTENING PORTS ==="
+          ss -ltn 2>/dev/null | head -120
+          echo
+          echo "=== PYTHON DB MODULES ==="
+          python3 - <<'PY2'
+import importlib.util
+for m in ['psycopg','psycopg2','asyncpg']:
+    print(m, bool(importlib.util.find_spec(m)))
+PY2
           echo
           echo "=== POSTGRES TOOLS ==="
           command -v psql || true
