@@ -111,5 +111,33 @@ jobs:
             fi
             grep -q "hmr: false" /home/deploy/kfaah-fast/worker.py
             grep -q "hmr: false" /home/deploy/kfaah-fast/workspace/vite.fast.config.ts
+
+            pkill -u "$(id -u)" -f "/home/deploy/kfaah-fast/cloudflared tunnel" || true
+            sleep 1
+            : > /home/deploy/kfaah-fast/cloudflared.log
+            nohup /home/deploy/kfaah-fast/cloudflared tunnel --no-autoupdate --url http://127.0.0.1:4173 \
+              >> /home/deploy/kfaah-fast/cloudflared.log 2>&1 </dev/null &
+
+            tunnel_url=""
+            for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+              tunnel_url="$(grep -oE 'https://[A-Za-z0-9-]+\.trycloudflare\.com' /home/deploy/kfaah-fast/cloudflared.log | tail -n 1 || true)"
+              if [ -n "$tunnel_url" ]; then
+                break
+              fi
+              sleep 1
+            done
+            test -n "$tunnel_url"
+
+            tunnel_ok=0
+            for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+              if curl -fsS "$tunnel_url/" -o /dev/null; then
+                tunnel_ok=1
+                break
+              fi
+              sleep 1
+            done
+            test "$tunnel_ok" = "1"
+            printf '%s\n' "$tunnel_url" > /home/deploy/kfaah-fast/tunnel-url.txt
+            echo "FAST_PREVIEW_URL=$tunnel_url"
             echo FAST_PREVIEW_STABLE
           '
