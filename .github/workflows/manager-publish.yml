@@ -88,6 +88,14 @@ jobs:
           git diff --check
           git push origin "HEAD:refs/heads/main"
 
+      - name: Refresh fast preview baseline
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
+          rsync -az --delete             --exclude '.git/'             --exclude 'node_modules/'             --exclude 'vite.fast.config.ts'             -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"             ./ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/baseline/"
+
       - name: Promote staging to live and verify
         env:
           HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
