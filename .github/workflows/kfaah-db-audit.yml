@@ -1,0 +1,127 @@
+name: Kfaah DB Audit
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    if: >-
+      github.event.issue.number == 5 &&
+      github.event.comment.user.login == 'gaberalhrese-cloud' &&
+      github.event.comment.body == 'KFAAH_DB_AUDIT'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client >/dev/null
+
+      - name: Audit database read-only
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          : "${DATABASE_URL:?DATABASE_URL secret is not configured}"
+          {
+            echo "=== CONNECTION ==="
+            psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atc "select 'connected', current_database(), current_user, version();"
+            echo
+            echo "=== PUBLIC TABLES ==="
+            psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -P pager=off -AtF '|' -c "
+              select table_name
+              from information_schema.tables
+              where table_schema='public' and table_type='BASE TABLE'
+              order by table_name;"
+            echo
+            echo "=== IMPORTANT COLUMNS ==="
+            psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -P pager=off -AtF '|' -c "
+              select table_name, string_agg(column_name, ',' order by ordinal_position)
+              from information_schema.columns
+              where table_schema='public'
+                and table_name in (
+                  'data_uploads_log','deep_analyses','analysis_runs',
+                  'organization_profiles','organization_branding','organizations',
+                  'operational_plans','executive_plans','tasks','employees',
+                  'donor_insights','smart_tasks','marketing_ideas'
+                )
+              group by table_name order by table_name;"
+            echo
+            echo "=== MIGRATIONS IN DB ==="
+            psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -P pager=off -Atc "
+              select coalesce(string_agg(version::text, E'\n' order by version::text),'NO_MIGRATION_HISTORY')
+              from supabase_migrations.schema_migrations;" 2>/dev/null || echo "NO_MIGRATION_TABLE"
+            echo
+            echo "=== MIGRATIONS IN REPO ==="
+            find supabase/migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' 2>/dev/null | sort
+            echo
+            echo "=== ORGANIZATION AGGREGATES ==="
+            psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -P pager=off -F '|' -Atc "
+              select
+                o.id,
+                regexp_replace(o.name, E'[\n\r|]+', ' ', 'g') as name,
+                coalesce(o.slug,''),
+                (select count(*) from public.employees e where e.organization_id=o.id),
+                (select count(*) from public.tasks t where t.organization_id=o.id),
+                (select count(*) from public.operational_plans p where p.organization_id=o.id),
+                (select count(*) from public.executive_plans ep where ep.organization_id=o.id),
+                case when to_regclass('public.data_uploads_log') is null then -1
+                     else (select count(*) from public.data_uploads_log u where u.organization_id=o.id) end,
+                case when to_regclass('public.deep_analyses') is null then -1
+                     else (select count(*) from public.deep_analyses d where d.organization_id=o.id) end,
+                case when to_regclass('public.donor_insights') is null then -1
+                     else (select count(*) from public.donor_insights di where di.organization_id=o.id) end,
+                case when to_regclass('public.smart_tasks') is null then -1
+                     else (select count(*) from public.smart_tasks st where st.organization_id=o.id) end,
+                case when to_regclass('public.marketing_ideas') is null then -1
+                     else (select count(*) from public.marketing_ideas mi where mi.organization_id=o.id) end
+              from public.organizations o
+              order by o.name;"
+            echo
+            echo "=== STORAGE BUCKET COUNTS ==="
+            psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -P pager=off -F '|' -Atc "
+              select bucket_id, count(*)
+              from storage.objects
+              group by bucket_id
+              order by bucket_id;" 2>/dev/null || echo "STORAGE_QUERY_UNAVAILABLE"
+            echo
+            echo "=== TADABBUR STORAGE PREFIX COUNTS ==="
+            psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -P pager=off -F '|' -Atc "
+              with t as (
+                select id::text as id from public.organizations
+                where slug in ('tadabbur','tdabar') or name ilike '%تدبر%'
+                limit 1
+              )
+              select o.bucket_id, count(*)
+              from storage.objects o, t
+              where o.name like t.id || '/%'
+                 or o.name ilike '%tdabar%'
+                 or o.name ilike '%tadabbur%'
+              group by o.bucket_id
+              order by o.bucket_id;" 2>/dev/null || echo "TADABBUR_STORAGE_QUERY_UNAVAILABLE"
+            echo
+            echo "=== BACKUP TABLES ==="
+            psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -P pager=off -AtF '|' -c "
+              select table_name
+              from information_schema.tables
+              where table_schema='public'
+                and (table_name ilike '%backup%' or table_name ilike '%upload%' or table_name ilike '%analysis%')
+              order by table_name;"
+          } > /tmp/db-audit.txt
+
+      - name: Post database audit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo 'KFAAH_DB_AUDIT_REPORT'
+            echo
+            cat /tmp/db-audit.txt
+          } > /tmp/comment.txt
+          gh issue comment 5 --repo "$GITHUB_REPOSITORY" --body-file /tmp/comment.txt
