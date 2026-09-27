@@ -1,0 +1,96 @@
+name: Install Kfaah fast manager worker
+
+on:
+  push:
+    branches:
+      - kfaah-manager-worker-setup
+    paths:
+      - "deploy/manager-worker/**"
+      - ".github/workflows/manager-worker-install.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare SSH
+        env:
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_deploy"
+          chmod 600 "$HOME/.ssh/id_kfaah_deploy"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Upload worker and source
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'mkdir -p /home/deploy/kfaah-fast/workspace'
+          rsync -az --delete             --exclude node_modules             --exclude '.github/workflows/manager-worker-probe.yml'             -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"             ./ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/workspace/"
+          rsync -az             -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"             deploy/manager-worker/worker.py "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/worker.py"
+
+      - name: Install runtime and start worker
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" '
+            set -euo pipefail
+            ROOT=/home/deploy/kfaah-fast
+            NODE_DIR="$ROOT/node"
+            if [ ! -x "$NODE_DIR/bin/node" ]; then
+              mkdir -p "$ROOT/tmp"
+              cd "$ROOT/tmp"
+              base="https://nodejs.org/dist/latest-v22.x"
+              name="$(curl -fsSL "$base/SHASUMS256.txt" | awk '"'"'/linux-x64.tar.xz$/ {print $2; exit}'"'"')"
+              test -n "$name"
+              curl -fsSLO "$base/$name"
+              rm -rf "$NODE_DIR"
+              mkdir -p "$NODE_DIR"
+              tar -xJf "$name" --strip-components=1 -C "$NODE_DIR"
+            fi
+            export PATH="$NODE_DIR/bin:$PATH"
+            cd "$ROOT/workspace"
+            npm ci
+            npm install --no-save playwright@1.55.1
+            npx playwright install chromium
+
+            cd "$ROOT"
+            if [ ! -f private.pem ]; then
+              openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out private.pem >/dev/null 2>&1
+              chmod 600 private.pem
+              openssl pkey -in private.pem -pubout -out public.pem
+            fi
+
+            if [ -f worker.pid ] && kill -0 "$(cat worker.pid)" 2>/dev/null; then
+              kill "$(cat worker.pid)" || true
+              sleep 1
+            fi
+            chmod 700 worker.py
+            nohup env PATH="$NODE_DIR/bin:$PATH" KFAAH_FAST_ROOT="$ROOT"               python3 "$ROOT/worker.py" >>"$ROOT/worker.log" 2>&1 </dev/null &
+            echo $! > "$ROOT/worker.pid"
+
+            start_line="@reboot env PATH=$NODE_DIR/bin:/usr/bin:/bin KFAAH_FAST_ROOT=$ROOT nohup python3 $ROOT/worker.py >>$ROOT/worker.log 2>&1"
+            (crontab -l 2>/dev/null | grep -v "kfaah-fast/worker.py" || true; echo "$start_line") | crontab -
+
+            echo "=== KFAAH_WORKER_PUBLIC_KEY_BEGIN ==="
+            cat public.pem
+            echo "=== KFAAH_WORKER_PUBLIC_KEY_END ==="
+            sleep 2
+            echo "=== worker process ==="
+            cat worker.pid
+            ps -p "$(cat worker.pid)" -o pid=,cmd= || true
+            echo "=== worker log ==="
+            tail -40 worker.log || true
+          '
