@@ -13,6 +13,7 @@ from pathlib import Path
 
 ROOT = Path(os.environ.get("KFAAH_FAST_ROOT", "/home/deploy/kfaah-fast"))
 WORKSPACE = ROOT / "workspace"
+BASELINE = ROOT / "baseline"
 PRIVATE_KEY = ROOT / "private.pem"
 MANAGER_URL = os.environ.get("KFAAH_MANAGER_URL", "https://kfaah-manager.floot.app").rstrip("/")
 WORKER_ID = os.environ.get("KFAAH_WORKER_ID", "kfaah-fast-1")
@@ -178,16 +179,20 @@ def ensure_tunnel():
     raise RuntimeError("Cloudflare preview tunnel did not start")
 
 def reset_workspace():
+    if not BASELINE.exists():
+        raise RuntimeError("Fast preview baseline is missing")
     subprocess.run(
-        ["git", "reset", "--hard", "HEAD"],
-        cwd=WORKSPACE,
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    subprocess.run(
-        ["git", "clean", "-fd", "-e", "node_modules/", "-e", "vite.fast.config.ts"],
-        cwd=WORKSPACE,
+        [
+            "rsync",
+            "-a",
+            "--delete",
+            "--exclude",
+            "node_modules/",
+            "--exclude",
+            "vite.fast.config.ts",
+            str(BASELINE) + "/",
+            str(WORKSPACE) + "/",
+        ],
         check=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
