@@ -18,6 +18,10 @@ on:
         required: true
         default: "/"
         type: string
+      preview_callback_token:
+        description: "Preview callback token"
+        required: true
+        type: string
 
 permissions:
   contents: read
