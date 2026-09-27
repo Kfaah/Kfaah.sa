@@ -70,6 +70,8 @@ jobs:
             export PATH="$NODE_DIR/bin:$PATH"
             cd "$ROOT/workspace"
             npm ci
+            mkdir -p "$ROOT/baseline"
+            rsync -a --delete --exclude node_modules/ --exclude .git/ "$ROOT/workspace/" "$ROOT/baseline/"
 
             cd "$ROOT"
             if [ ! -x cloudflared ]; then
