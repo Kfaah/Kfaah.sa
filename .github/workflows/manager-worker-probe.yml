@@ -51,6 +51,16 @@ jobs:
             done
             echo "=== nginx readable config ==="
             grep -R "proxy_pass\|server_name\|location" /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -120 || true
+            echo "=== browser ==="
+            command -v chromium || true
+            command -v chromium-browser || true
+            command -v google-chrome || true
+            command -v google-chrome-stable || true
+            echo "=== curl/wget/openssl/cron ==="
+            command -v curl || true
+            command -v wget || true
+            command -v openssl || true
+            command -v crontab || true
             echo "=== kfaah functions ==="
             ls -la /opt/kfaah/functions 2>&1 || true
             find /opt/kfaah/functions -maxdepth 2 -type f -printf "%M %u:%g %p\n" 2>/dev/null | head -120 || true
