@@ -32,12 +32,16 @@ jobs:
           set -euo pipefail
           test "$HETZNER_USER" = deploy
 
-          rsync -az -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"             src/pages/MyPerformance.tsx             "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/baseline/src/pages/MyPerformance.tsx"
+          rsync -az -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" \
+            src/pages/MyPerformance.tsx \
+            "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/baseline/src/pages/MyPerformance.tsx"
 
-          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'python3 - <<'"'"'PY'"'"'
+          cat > patch-my-performance.py <<'PY'
           from pathlib import Path
+
           p = Path("/home/deploy/kfaah-fast/workspace/src/pages/MyPerformance.tsx")
           s = p.read_text(encoding="utf-8")
+
           if 'usePreviewMode' not in s:
               s = s.replace(
                   'import { useAuth } from "@/hooks/useAuth";',
@@ -52,8 +56,29 @@ jobs:
                   '  useEffect(() => {\n    if (isPreviewMode) {\n      setEmployee({ full_name: "معاينة", job_role: "وضع المعاينة" });\n      setLoading(false);\n      return;\n    }\n    if (!user) return;\n    (async () => {'
               )
               s = s.replace('  }, [user]);', '  }, [user, isPreviewMode]);')
+
           p.write_text(s, encoding="utf-8")
-          PY'
+          PY
+
+          scp -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            patch-my-performance.py \
+            "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/tmp/patch-my-performance.py"
+
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" \
+            'python3 /home/deploy/kfaah-fast/tmp/patch-my-performance.py && rm -f /home/deploy/kfaah-fast/tmp/patch-my-performance.py'
+
+      - name: Verify source on fast workspace
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" '
+            set -euo pipefail
+            grep -q "usePreviewMode" /home/deploy/kfaah-fast/workspace/src/pages/MyPerformance.tsx
+            grep -q "الأداء الواقعي" /home/deploy/kfaah-fast/workspace/src/pages/MyPerformance.tsx
+            echo FAST_SOURCE_OK
+          '
 
       - name: Browser-check current fast preview
         run: |
@@ -61,6 +86,7 @@ jobs:
           npm init -y >/dev/null 2>&1
           npm install --no-save playwright@1.55.1 >/dev/null
           npx playwright install --with-deps chromium >/dev/null
+
           cat > check.mjs <<'NODE'
           import { chromium } from "playwright";
           const browser = await chromium.launch({ headless: true });
@@ -75,10 +101,10 @@ jobs:
           console.log("BODY", JSON.stringify(body.slice(0, 2200)));
           if (!body.includes("أدائي")) throw new Error("MyPerformance did not render");
           if (!body.includes("الأداء الواقعي")) throw new Error("Requested text change is not visible");
-          if (body.includes("جارٍ")) console.log("NOTE: body contains Arabic loading text elsewhere");
           await page.screenshot({ path: "my-performance-preview.png", fullPage: true });
           await browser.close();
           NODE
+
           node check.mjs
 
       - uses: actions/upload-artifact@v4
