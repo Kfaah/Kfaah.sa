@@ -70,19 +70,27 @@ jobs:
             fi
 
             cd /home/deploy/kfaah-fast/workspace
-            nohup env PATH="/home/deploy/kfaah-fast/node/bin:$PATH" \
-              /home/deploy/kfaah-fast/node/bin/npm run dev -- \
+            : > /home/deploy/kfaah-fast/vite.log
+            nohup /home/deploy/kfaah-fast/node/bin/node \
+              /home/deploy/kfaah-fast/workspace/node_modules/vite/bin/vite.js \
               --config /home/deploy/kfaah-fast/workspace/vite.fast.config.ts \
               --host 127.0.0.1 --port 4173 \
               >> /home/deploy/kfaah-fast/vite.log 2>&1 </dev/null &
+            echo $! > /home/deploy/kfaah-fast/vite.manual.pid
 
-            for i in 1 2 3 4 5 6 7 8 9 10; do
+            ok=0
+            for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
               if curl -fsS http://127.0.0.1:4173/ -o /dev/null; then
+                ok=1
                 break
               fi
               sleep 1
             done
-            curl -fsS http://127.0.0.1:4173/ -o /dev/null
+            if [ "$ok" != "1" ]; then
+              echo "=== VITE LOG ==="
+              tail -n 120 /home/deploy/kfaah-fast/vite.log || true
+              exit 1
+            fi
             grep -q "hmr: false" /home/deploy/kfaah-fast/worker.py
             grep -q "hmr: false" /home/deploy/kfaah-fast/workspace/vite.fast.config.ts
             echo FAST_PREVIEW_STABLE
