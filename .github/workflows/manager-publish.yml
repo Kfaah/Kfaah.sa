@@ -39,7 +39,8 @@ jobs:
           REVIEW_BRANCH: ${{ inputs.branch }}
         run: |
           set -euo pipefail
-          git fetch origin main "$REVIEW_BRANCH"
+          git fetch origin main
+          git fetch origin "refs/heads/$REVIEW_BRANCH:refs/remotes/origin/$REVIEW_BRANCH"
           git merge-base --is-ancestor origin/main "origin/$REVIEW_BRANCH" || {
             echo "main changed after this preview; run the manager command again before publishing" >&2
             exit 1
@@ -77,7 +78,7 @@ jobs:
           REVIEW_BRANCH: ${{ inputs.branch }}
         run: |
           set -euo pipefail
-          git push origin "origin/$REVIEW_BRANCH:refs/heads/main"
+          git push origin "HEAD:refs/heads/main"
 
       - name: Promote staging to live and verify
         env:
