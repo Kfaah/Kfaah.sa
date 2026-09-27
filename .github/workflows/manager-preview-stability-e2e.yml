@@ -1,0 +1,121 @@
+name: Manager Preview Stability E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      session_cookie:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  stability:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mask session
+        run: echo "::add-mask::${{ inputs.session_cookie }}"
+
+      - name: Check manager preview stability
+        env:
+          SESSION_COOKIE: ${{ inputs.session_cookie }}
+        run: |
+          set -euo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.1 >/dev/null
+          npx playwright install --with-deps chromium >/dev/null
+
+          cat > stability.mjs <<'NODE'
+          import { chromium } from "playwright";
+
+          const browser = await chromium.launch({ headless: true });
+          const context = await browser.newContext();
+          await context.addCookies([{
+            name: "floot_built_app_session",
+            value: process.env.SESSION_COOKIE,
+            domain: "kfaah-manager.floot.app",
+            path: "/",
+            secure: true,
+            httpOnly: true,
+            sameSite: "Lax",
+          }]);
+
+          const page = await context.newPage();
+          const errors = [];
+          page.on("pageerror", e => errors.push("manager-pageerror: " + e.message));
+          page.on("requestfailed", r => errors.push("manager-requestfailed: " + r.url() + " " + (r.failure()?.errorText || "")));
+
+          await page.goto("https://kfaah-manager.floot.app/", {
+            waitUntil: "domcontentloaded",
+            timeout: 45000,
+          });
+
+          await page.getByRole("heading", { name: "منصة كفاءة" }).waitFor({ timeout: 30000 });
+          await page.locator('iframe[title*="المعاينة"]').waitFor({ timeout: 30000 });
+
+          const iframeEl = page.locator('iframe[title*="المعاينة"]').first();
+          const src0 = await iframeEl.getAttribute("src");
+          const handle = await iframeEl.elementHandle();
+          const frame = await handle?.contentFrame();
+          if (!frame) throw new Error("preview iframe not accessible");
+
+          let previewNavigations = 0;
+          page.on("framenavigated", f => {
+            if (f === frame) previewNavigations++;
+          });
+
+          await frame.waitForLoadState("domcontentloaded", { timeout: 30000 }).catch(() => {});
+          await frame.waitForTimeout(5000);
+
+          const initialBody = await frame.locator("body").innerText().catch(() => "");
+          console.log("INITIAL_BODY", JSON.stringify(initialBody.slice(0, 1800)));
+          if (!initialBody.includes("أدائي")) throw new Error("MyPerformance preview did not render");
+          if (!initialBody.includes("الأداء الواقعي")) throw new Error("Requested preview text is missing");
+
+          const samples = [];
+          for (let i = 0; i < 10; i++) {
+            await page.waitForTimeout(2000);
+            samples.push({
+              i,
+              spinner: await page.getByText("جارٍ تجهيز المعاينة...").count(),
+              src: await iframeEl.getAttribute("src"),
+              bodyHead: (await frame.locator("body").innerText().catch(() => "")).slice(0, 100),
+            });
+          }
+
+          const srcChanged = samples.some(s => s.src !== src0);
+          const spinnerAppeared = samples.some(s => s.spinner > 0);
+          const finalBody = await frame.locator("body").innerText().catch(() => "");
+
+          console.log("STABILITY", JSON.stringify({
+            src0,
+            srcChanged,
+            spinnerAppeared,
+            previewNavigations,
+            samples,
+            errors,
+            finalHasPage: finalBody.includes("أدائي"),
+            finalHasText: finalBody.includes("الأداء الواقعي"),
+          }));
+
+          if (srcChanged) throw new Error("Preview iframe src changed without user refresh");
+          if (spinnerAppeared) throw new Error("Preview loading screen reappeared during background updates");
+          if (previewNavigations > 0) throw new Error("Preview iframe navigated/reloaded during stability window");
+          if (!finalBody.includes("أدائي") || !finalBody.includes("الأداء الواقعي")) {
+            throw new Error("Preview content disappeared during stability window");
+          }
+
+          await page.screenshot({ path: "manager-preview-stability.png", fullPage: true });
+          await browser.close();
+          NODE
+
+          node stability.mjs
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: manager-preview-stability
+          path: manager-preview-stability.png
+          if-no-files-found: ignore
+          retention-days: 2
