@@ -35,8 +35,15 @@ jobs:
           HETZNER_USER: ${{ secrets.HETZNER_USER }}
         run: |
           set -euo pipefail
-          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'mkdir -p /home/deploy/kfaah-fast/workspace'
-          rsync -az --delete             --exclude node_modules             --exclude '.github/workflows/manager-worker-probe.yml'             -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"             ./ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/workspace/"
+          git fetch origin main --depth=1
+          rm -rf /tmp/kfaah-main
+          mkdir -p /tmp/kfaah-main
+          git archive origin/main | tar -x -C /tmp/kfaah-main
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'mkdir -p /home/deploy/kfaah-fast/workspace /home/deploy/kfaah-fast/baseline'
+          rsync -az --delete             -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"             /tmp/kfaah-main/ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/baseline/"
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" '
+            rsync -a --delete --exclude node_modules/ --exclude vite.fast.config.ts /home/deploy/kfaah-fast/baseline/ /home/deploy/kfaah-fast/workspace/
+          '
           rsync -az             -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"             deploy/manager-worker/worker.py "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/worker.py"
 
       - name: Install runtime and start worker
