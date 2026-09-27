@@ -24,11 +24,16 @@ jobs:
           sudo apt-get install -y postgresql-client >/dev/null
 
       - name: Audit database read-only
+        continue-on-error: true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          set -euo pipefail
-          : "${DATABASE_URL:?DATABASE_URL secret is not configured}"
+          set +e
+          : > /tmp/db-audit.txt
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "DATABASE_URL_SECRET_MISSING" > /tmp/db-audit.txt
+            exit 0
+          fi
           {
             echo "=== CONNECTION ==="
             psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atc "select 'connected', current_database(), current_user, version();"
@@ -113,9 +118,11 @@ jobs:
               where table_schema='public'
                 and (table_name ilike '%backup%' or table_name ilike '%upload%' or table_name ilike '%analysis%')
               order by table_name;"
-          } > /tmp/db-audit.txt
+          } >> /tmp/db-audit.txt 2>&1
+          echo "AUDIT_EXIT_CODE=$?" >> /tmp/db-audit.txt
 
       - name: Post database audit
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
