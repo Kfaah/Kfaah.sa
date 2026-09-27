@@ -31,6 +31,7 @@ import { LogIn } from "lucide-react";
 const OperationalPlans = lazy(() => import("@/pages/OperationalPlans"));
 const ExecutivePlans = lazy(() => import("@/pages/ExecutivePlans"));
 const TasksPage = lazy(() => import("@/pages/Tasks"));
+const UploadsPage = lazy(() => import("@/pages/Uploads"));
 const PerformanceEvaluation = lazy(() => import("@/pages/PerformanceEvaluation"));
 const AdminReports = lazy(() => import("@/pages/admin/AdminReports"));
 const OperationalReportsHub = lazy(() => import("@/components/admin/reports/OperationalReportsHub"));
@@ -297,6 +298,8 @@ export default function OrgInternalDashboard({
   const [org, setOrg] = useState<OrgInfo | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [analysis, setAnalysis] = useState<DeepAnalysis | null>(null);
+  const [analysisLoading, setAnalysisLoading] = useState(true);
+  const [analysisError, setAnalysisError] = useState(false);
   const [questions, setQuestions] = useState<AccountabilityQuestion[]>([]);
   const [aTasks, setATasks] = useState<AccountabilityTask[]>([]);
   const [employees, setEmployees] = useState<Array<{ id: string; full_name: string; job_role: string | null; email: string | null; phone: string | null; avatar_url: string | null; title: string | null; user_id: string | null }>>([]);
@@ -458,6 +461,8 @@ export default function OrgInternalDashboard({
 
     // Wave 3 — heavier rows used by specific tabs only. Streamed in.
     setEmployeesLoading(true);
+    setAnalysisLoading(true);
+    setAnalysisError(false);
     const wave3 = (async () => {
       const [analysisRes, qRes, tRes, empRes] = await Promise.all([
         supabase.from("deep_analyses").select("*").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(10),
@@ -469,7 +474,9 @@ export default function OrgInternalDashboard({
       // Prefer the newest analysis that actually finished: a run still in
       // progress has empty insights and would look like "no data".
       const bestAnalysis = analysisRows.find((row) => row.status === "completed") ?? analysisRows[0] ?? null;
+      setAnalysisError(!!analysisRes.error);
       setAnalysis(bestAnalysis);
+      setAnalysisLoading(false);
       setQuestions((qRes.data as unknown as AccountabilityQuestion[]) ?? []);
       setATasks((tRes.data as unknown as AccountabilityTask[]) ?? []);
       setEmployees(empRes.data ?? []);
@@ -707,7 +714,13 @@ export default function OrgInternalDashboard({
                   <Sparkles className="h-5 w-5 text-muted-foreground" />
                 </CardTitle>
                 <CardDescription className="text-right">
-                  {analysis?.completed_at ? `آخر تحليل: ${new Date(analysis.completed_at).toLocaleString("ar-SA")}` : "لم يتم تشغيل التحليل بعد"}
+                  {analysis?.completed_at
+                    ? `آخر تحليل: ${new Date(analysis.completed_at).toLocaleString("ar-SA")}`
+                    : analysisLoading
+                      ? "جارٍ تحميل التحليل المحفوظ…"
+                      : analysisError
+                        ? "تعذّر قراءة التحليل المحفوظ"
+                        : "لم يتم تشغيل التحليل بعد"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-right">
@@ -823,10 +836,18 @@ export default function OrgInternalDashboard({
                 للحصول على نسخة كاملة من النظام مع تحليل ذكي حقيقي لبيانات جمعيتك، تواصل مع فريق المنصة.
               </CardContent>
             </Card>
-          ) : !analysis ? (
+          ) : analysisLoading || analysisError || !analysis ? (
             <Card>
               <CardContent className="py-12">
-                <EmptyState text="لا يوجد تحليل ذكي بعد. ارفع الملفات أولاً ثم اضغط زر التشغيل أعلاه." />
+                <EmptyState
+                  text={
+                    analysisLoading
+                      ? "جارٍ تحميل التحليل المحفوظ…"
+                      : analysisError
+                        ? "تعذّر قراءة التحليل المحفوظ؛ لم تُحذف النتائج. حاول تحديث الصفحة."
+                        : "لا يوجد تحليل ذكي بعد. راجع سجل الملفات المرفوعة أولاً ثم شغّل التحليل."
+                  }
+                />
               </CardContent>
             </Card>
           ) : (
@@ -917,7 +938,11 @@ export default function OrgInternalDashboard({
           </Suspense>
         </TabsContent>
         <TabsContent value="uploads" className={standaloneTab ? "mt-0" : "mt-6"} dir="rtl">
-          <OrgUploadsTab orgId={orgId!} orgName={org?.name ?? ""} onRunAnalysis={runDeepAnalysis} analyzing={analyzing} />
+          {orgId && (
+            <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ تحميل سجل ملفات الجمعية…</div>}>
+              <UploadsPage orgIdProp={orgId} embedded />
+            </Suspense>
+          )}
         </TabsContent>
         <TabsContent
           value="operational-plans"
