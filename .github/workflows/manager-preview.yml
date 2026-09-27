@@ -43,7 +43,23 @@ jobs:
           PREVIEW_PATH: ${{ inputs.preview_path }}
         run: |
           set -euo pipefail
-          printf '%s' "$PREVIEW_URL" | grep -Eq '^https://([A-Za-z0-9.-]+\.trycloudflare\.com|staging\.kfaah\.sa)/?
+
+          case "$PREVIEW_URL" in
+            https://*.trycloudflare.com|https://*.trycloudflare.com/|https://staging.kfaah.sa|https://staging.kfaah.sa/)
+              ;;
+            *)
+              echo "Invalid preview URL" >&2
+              exit 1
+              ;;
+          esac
+
+          case "$PREVIEW_PATH" in
+            /*) ;;
+            *)
+              echo "Invalid preview path" >&2
+              exit 1
+              ;;
+          esac
 
           npx --yes playwright@1.55.1 install --with-deps chromium
 
@@ -55,7 +71,9 @@ jobs:
           fi
 
           for i in {1..20}; do
-            if curl -fsS "${PREVIEW_URL%/}/" -o /dev/null; then break; fi
+            if curl -fsS "${PREVIEW_URL%/}/" -o /dev/null; then
+              break
+            fi
             sleep 1
           done
           curl -fsS "${PREVIEW_URL%/}/" -o /dev/null
@@ -78,128 +96,34 @@ jobs:
           desktop_size="$(stat -c%s internal-preview-desktop.png)"
           mobile_size="$(stat -c%s internal-preview-mobile.png)"
 
-          payload="$(jq -n --arg commandId "$COMMAND_ID" --arg token "$PREVIEW_CALLBACK_TOKEN" --arg previewPath "$PREVIEW_PATH" --argjson desktopSize "$desktop_size" --argjson mobileSize "$mobile_size" '{commandId:$commandId,token:$token,previewPath:$previewPath,desktopSize:$desktopSize,mobileSize:$mobileSize}')"
+          payload="$(jq -n \
+            --arg commandId "$COMMAND_ID" \
+            --arg token "$PREVIEW_CALLBACK_TOKEN" \
+            --arg previewPath "$PREVIEW_PATH" \
+            --argjson desktopSize "$desktop_size" \
+            --argjson mobileSize "$mobile_size" \
+            '{commandId:$commandId,token:$token,previewPath:$previewPath,desktopSize:$desktopSize,mobileSize:$mobileSize}')"
 
-          target="$(curl --fail-with-body -sS -H 'Content-Type: application/json' -d "$payload" https://kfaah-manager.floot.app/_api/preview-upload-target)"
+          target="$(curl --fail-with-body -sS \
+            -H 'Content-Type: application/json' \
+            -d "$payload" \
+            https://kfaah-manager.floot.app/_api/preview-upload-target)"
+
           desktop_url="$(printf '%s' "$target" | jq -r '.desktopPresignedUrl')"
           mobile_url="$(printf '%s' "$target" | jq -r '.mobilePresignedUrl')"
 
           curl -fsS -X PUT -H 'Content-Type: image/png' --data-binary @internal-preview-desktop.png "$desktop_url"
           curl -fsS -X PUT -H 'Content-Type: image/png' --data-binary @internal-preview-mobile.png "$mobile_url"
 
-          complete="$(jq -n --arg commandId "$COMMAND_ID" --arg token "$PREVIEW_CALLBACK_TOKEN" '{commandId:$commandId,token:$token}')"
-          curl --fail-with-body -sS -H 'Content-Type: application/json' -d "$complete" https://kfaah-manager.floot.app/_api/preview-upload-complete
+          complete="$(jq -n \
+            --arg commandId "$COMMAND_ID" \
+            --arg token "$PREVIEW_CALLBACK_TOKEN" \
+            '{commandId:$commandId,token:$token}')"
 
-      - name: Save preview artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: kfaah-internal-preview-${{ github.run_id }}
-          path: |
-            internal-preview-desktop.png
-            internal-preview-mobile.png
-          retention-days: 7
- || { echo "Invalid preview URL" >&2; exit 1; }
-          printf '%s' "$PREVIEW_PATH" | grep -Eq '^/[A-Za-z0-9_./?=&%+:-]*
-
-          npx --yes playwright@1.55.1 install --with-deps chromium
-
-          target="${PREVIEW_URL%/}$PREVIEW_PATH"
-          if [[ "$target" == *"?"* ]]; then
-            target="$target&preview=true"
-          else
-            target="$target?preview=true"
-          fi
-
-          for i in {1..20}; do
-            if curl -fsS "${PREVIEW_URL%/}/" -o /dev/null; then break; fi
-            sleep 1
-          done
-          curl -fsS "${PREVIEW_URL%/}/" -o /dev/null
-
-          npx --yes playwright@1.55.1 screenshot --full-page --viewport-size='1440,900' --wait-for-timeout=2500 "$target" internal-preview-desktop.png
-          npx --yes playwright@1.55.1 screenshot --full-page --viewport-size='390,844' --wait-for-timeout=2500 "$target" internal-preview-mobile.png
-
-          test -s internal-preview-desktop.png
-          test -s internal-preview-mobile.png
-
-      - name: Store preview in Kfaah Manager
-        env:
-          COMMAND_ID: ${{ inputs.command_id }}
-          PREVIEW_PATH: ${{ inputs.preview_path }}
-          PREVIEW_CALLBACK_TOKEN: ${{ inputs.preview_callback_token }}
-        run: |
-          set -euo pipefail
-          echo "::add-mask::$PREVIEW_CALLBACK_TOKEN"
-
-          desktop_size="$(stat -c%s internal-preview-desktop.png)"
-          mobile_size="$(stat -c%s internal-preview-mobile.png)"
-
-          payload="$(jq -n --arg commandId "$COMMAND_ID" --arg token "$PREVIEW_CALLBACK_TOKEN" --arg previewPath "$PREVIEW_PATH" --argjson desktopSize "$desktop_size" --argjson mobileSize "$mobile_size" '{commandId:$commandId,token:$token,previewPath:$previewPath,desktopSize:$desktopSize,mobileSize:$mobileSize}')"
-
-          target="$(curl --fail-with-body -sS -H 'Content-Type: application/json' -d "$payload" https://kfaah-manager.floot.app/_api/preview-upload-target)"
-          desktop_url="$(printf '%s' "$target" | jq -r '.desktopPresignedUrl')"
-          mobile_url="$(printf '%s' "$target" | jq -r '.mobilePresignedUrl')"
-
-          curl -fsS -X PUT -H 'Content-Type: image/png' --data-binary @internal-preview-desktop.png "$desktop_url"
-          curl -fsS -X PUT -H 'Content-Type: image/png' --data-binary @internal-preview-mobile.png "$mobile_url"
-
-          complete="$(jq -n --arg commandId "$COMMAND_ID" --arg token "$PREVIEW_CALLBACK_TOKEN" '{commandId:$commandId,token:$token}')"
-          curl --fail-with-body -sS -H 'Content-Type: application/json' -d "$complete" https://kfaah-manager.floot.app/_api/preview-upload-complete
-
-      - name: Save preview artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: kfaah-internal-preview-${{ github.run_id }}
-          path: |
-            internal-preview-desktop.png
-            internal-preview-mobile.png
-          retention-days: 7
- || { echo "Invalid preview path" >&2; exit 1; }
-
-          npx --yes playwright@1.55.1 install --with-deps chromium
-
-          target="${PREVIEW_URL%/}$PREVIEW_PATH"
-          if [[ "$target" == *"?"* ]]; then
-            target="$target&preview=true"
-          else
-            target="$target?preview=true"
-          fi
-
-          for i in {1..20}; do
-            if curl -fsS "${PREVIEW_URL%/}/" -o /dev/null; then break; fi
-            sleep 1
-          done
-          curl -fsS "${PREVIEW_URL%/}/" -o /dev/null
-
-          npx --yes playwright@1.55.1 screenshot --full-page --viewport-size='1440,900' --wait-for-timeout=2500 "$target" internal-preview-desktop.png
-          npx --yes playwright@1.55.1 screenshot --full-page --viewport-size='390,844' --wait-for-timeout=2500 "$target" internal-preview-mobile.png
-
-          test -s internal-preview-desktop.png
-          test -s internal-preview-mobile.png
-
-      - name: Store preview in Kfaah Manager
-        env:
-          COMMAND_ID: ${{ inputs.command_id }}
-          PREVIEW_PATH: ${{ inputs.preview_path }}
-          PREVIEW_CALLBACK_TOKEN: ${{ inputs.preview_callback_token }}
-        run: |
-          set -euo pipefail
-          echo "::add-mask::$PREVIEW_CALLBACK_TOKEN"
-
-          desktop_size="$(stat -c%s internal-preview-desktop.png)"
-          mobile_size="$(stat -c%s internal-preview-mobile.png)"
-
-          payload="$(jq -n --arg commandId "$COMMAND_ID" --arg token "$PREVIEW_CALLBACK_TOKEN" --arg previewPath "$PREVIEW_PATH" --argjson desktopSize "$desktop_size" --argjson mobileSize "$mobile_size" '{commandId:$commandId,token:$token,previewPath:$previewPath,desktopSize:$desktopSize,mobileSize:$mobileSize}')"
-
-          target="$(curl --fail-with-body -sS -H 'Content-Type: application/json' -d "$payload" https://kfaah-manager.floot.app/_api/preview-upload-target)"
-          desktop_url="$(printf '%s' "$target" | jq -r '.desktopPresignedUrl')"
-          mobile_url="$(printf '%s' "$target" | jq -r '.mobilePresignedUrl')"
-
-          curl -fsS -X PUT -H 'Content-Type: image/png' --data-binary @internal-preview-desktop.png "$desktop_url"
-          curl -fsS -X PUT -H 'Content-Type: image/png' --data-binary @internal-preview-mobile.png "$mobile_url"
-
-          complete="$(jq -n --arg commandId "$COMMAND_ID" --arg token "$PREVIEW_CALLBACK_TOKEN" '{commandId:$commandId,token:$token}')"
-          curl --fail-with-body -sS -H 'Content-Type: application/json' -d "$complete" https://kfaah-manager.floot.app/_api/preview-upload-complete
+          curl --fail-with-body -sS \
+            -H 'Content-Type: application/json' \
+            -d "$complete" \
+            https://kfaah-manager.floot.app/_api/preview-upload-complete
 
       - name: Save preview artifact
         uses: actions/upload-artifact@v4
