@@ -171,7 +171,7 @@ const CATEGORY_OPTIONS: {
   { value: "other", label: "ملفات أخرى", desc: "أي ملف آخر للأرشفة والتحليل", icon: FolderOpen, color: BRAND_GRADIENT },
 ];
 
-export default function Uploads() {
+export default function Uploads({ orgIdProp, embedded = false }: { orgIdProp?: string; embedded?: boolean } = {}) {
   const { user } = useAuth();
   const { currentOrg, loading: orgLoading } = useOrganization();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -193,9 +193,9 @@ export default function Uploads() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (orgLoading) return;
-      if (currentOrg?.id) {
-        setOrgId(currentOrg.id);
+      if (orgLoading && !orgIdProp) return;
+      if (orgIdProp || currentOrg?.id) {
+        setOrgId(orgIdProp ?? currentOrg!.id);
         return;
       }
       if (!user) {
@@ -208,7 +208,7 @@ export default function Uploads() {
     return () => {
       cancelled = true;
     };
-  }, [user, currentOrg?.id, orgLoading]);
+  }, [user, currentOrg?.id, orgLoading, orgIdProp]);
 
 
   const loadHistory = useCallback(async () => {
@@ -834,7 +834,7 @@ export default function Uploads() {
 
   if (!user) {
     return (
-      <DashboardLayout>
+      <DashboardLayout embedded={embedded}>
         <div className="flex items-center justify-center h-96">
           <p className="text-muted-foreground">يجب تسجيل الدخول</p>
         </div>
@@ -850,7 +850,7 @@ export default function Uploads() {
     category === "staff_duties";
 
   return (
-    <DashboardLayout>
+    <DashboardLayout embedded={embedded}>
       <div className="space-y-6">
         <PageHeader
           icon={<Upload className="w-6 h-6" />}
