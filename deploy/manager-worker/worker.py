@@ -8,6 +8,7 @@ import subprocess
 import time
 import urllib.error
 import urllib.request
+from urllib.parse import urlparse
 from pathlib import Path
 
 ROOT = Path(os.environ.get("KFAAH_FAST_ROOT", "/home/deploy/kfaah-fast"))
@@ -76,12 +77,24 @@ def wait_http(url, attempts=80, delay=0.25):
             time.sleep(delay)
     return False
 
-def ensure_vite():
-    if wait_http("http://127.0.0.1:4173/", attempts=1, delay=0):
+def ensure_vite(tunnel_url):
+    host = urlparse(tunnel_url).hostname or ""
+    host_file = ROOT / "vite-allowed-host.txt"
+    current_host = host_file.read_text().strip() if host_file.exists() else ""
+    if current_host == host and wait_http("http://127.0.0.1:4173/", attempts=1, delay=0):
         return
+
+    subprocess.run(
+        ["pkill", "-u", str(os.getuid()), "-f", "node.*vite.*4173"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    time.sleep(0.5)
+
     env = os.environ.copy()
     env["PATH"] = str(NODE_BIN) + os.pathsep + env.get("PATH", "")
-    env["__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS"] = ".trycloudflare.com"
+    env["__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS"] = host
     log_handle = open(VITE_LOG, "ab", buffering=0)
     subprocess.Popen(
         [str(NODE_BIN / "npm"), "run", "dev", "--", "--host", "127.0.0.1", "--port", "4173"],
@@ -93,6 +106,7 @@ def ensure_vite():
     )
     if not wait_http("http://127.0.0.1:4173/"):
         raise RuntimeError("Vite preview did not start")
+    host_file.write_text(host, encoding="utf-8")
 
 def read_tunnel_url():
     if not TUNNEL_LOG.exists():
@@ -103,13 +117,13 @@ def read_tunnel_url():
 
 def ensure_tunnel():
     current = read_tunnel_url()
-    if current:
-        try:
-            with urllib.request.urlopen(current + "/", timeout=5) as response:
-                if response.status < 500:
-                    return current
-        except Exception:
-            pass
+    if current and subprocess.run(
+        ["pgrep", "-u", str(os.getuid()), "-f", "cloudflared tunnel"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    ).returncode == 0:
+        return current
 
     try:
         TUNNEL_LOG.unlink()
@@ -127,12 +141,7 @@ def ensure_tunnel():
     for _ in range(80):
         url = read_tunnel_url()
         if url:
-            try:
-                with urllib.request.urlopen(url + "/", timeout=5) as response:
-                    if response.status < 500:
-                        return url
-            except Exception:
-                pass
+            return url
         time.sleep(0.5)
     raise RuntimeError("Cloudflare preview tunnel did not start")
 
@@ -183,8 +192,8 @@ def apply_edits(edits):
         target.write_text(text.replace(old, str(new), 1), encoding="utf-8")
 
 def announce_preview(job):
-    ensure_vite()
     tunnel_url = ensure_tunnel()
+    ensure_vite(tunnel_url)
     preview_path = job.get("previewPath") or "/"
     target = tunnel_url + preview_path
     if not wait_http(target, attempts=20, delay=0.25):
@@ -225,9 +234,9 @@ def main():
     ROOT.mkdir(parents=True, exist_ok=True)
     if not PRIVATE_KEY.exists():
         raise RuntimeError("worker private key missing")
-    ensure_vite()
-    ensure_tunnel()
-    log("worker started")
+    tunnel_url = ensure_tunnel()
+    ensure_vite(tunnel_url)
+    log("worker started at " + tunnel_url)
     while True:
         try:
             with signed_request("GET", "/_api/worker-next-job", timeout=15) as response:
