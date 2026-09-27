@@ -173,7 +173,7 @@ const CATEGORY_OPTIONS: {
 
 export default function Uploads() {
   const { user } = useAuth();
-  const { currentOrg } = useOrganization();
+  const { currentOrg, loading: orgLoading } = useOrganization();
   const inputRef = useRef<HTMLInputElement>(null);
   const [forDate, setForDate] = useState<string>(() => {
     const d = new Date();
@@ -186,12 +186,14 @@ export default function Uploads() {
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [orgId, setOrgId] = useState<string | null>(null);
+  const historyRequest = useRef(0);
 
   // The active organization comes from the route/selector (currentOrg) so a
   // super admin browsing another organization never sees their own org files.
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      if (orgLoading) return;
       if (currentOrg?.id) {
         setOrgId(currentOrg.id);
         return;
@@ -206,10 +208,11 @@ export default function Uploads() {
     return () => {
       cancelled = true;
     };
-  }, [user, currentOrg?.id]);
+  }, [user, currentOrg?.id, orgLoading]);
 
 
   const loadHistory = useCallback(async () => {
+    const requestId = ++historyRequest.current;
     if (!orgId) {
       setHistory([]);
       setLoadingHistory(false);
@@ -222,13 +225,25 @@ export default function Uploads() {
       .eq("organization_id", orgId)
       .order("created_at", { ascending: false })
       .limit(50);
+    if (requestId !== historyRequest.current) return;
     if (!error && data) setHistory(data as HistoryRow[]);
     setLoadingHistory(false);
   }, [orgId]);
 
   useEffect(() => {
-    loadHistory();
-  }, [loadHistory]);
+    // Clear stale rows immediately when switching associations. Only load
+    // history after OrganizationContext has resolved the same organization.
+    setHistory([]);
+    historyRequest.current++;
+    if (!orgLoading && orgId && orgId === currentOrg?.id) {
+      void loadHistory();
+    } else {
+      setLoadingHistory(orgLoading || Boolean(currentOrg?.id));
+    }
+    return () => {
+      historyRequest.current++;
+    };
+  }, [orgId, currentOrg?.id, orgLoading, loadHistory]);
 
 
   // ===== معاينة الملفات المرفقة =====
