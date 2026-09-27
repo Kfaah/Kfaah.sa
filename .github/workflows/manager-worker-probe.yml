@@ -74,6 +74,13 @@ jobs:
             tail -80 /home/deploy/kfaah-fast/worker.log 2>/dev/null || true
             echo "--- tunnel log ---"
             tail -80 /home/deploy/kfaah-fast/cloudflared.log 2>/dev/null || true
+            tunnel="$(grep -Eo "https://[a-z0-9-]+\\.trycloudflare\\.com" /home/deploy/kfaah-fast/cloudflared.log 2>/dev/null | tail -1 || true)"
+            echo "TUNNEL=$tunnel"
+            if [ -n "$tunnel" ]; then
+              echo "--- tunnel curl ---"
+              curl -sS -D - "$tunnel/" -o /tmp/tunnel-body.txt || true
+              head -30 /tmp/tunnel-body.txt || true
+            fi
             echo "=== sudo ==="
             sudo -n -l 2>&1 || true
             echo "=== linger ==="
