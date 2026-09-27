@@ -65,7 +65,7 @@ jobs:
             target="$target?preview=true"
           fi
 
-          cat > /tmp/capture-preview.mjs <<'NODE'
+          cat > capture-preview.mjs <<'NODE'
           import { chromium } from "playwright";
 
           const target = process.env.TARGET_URL;
@@ -120,7 +120,7 @@ jobs:
           }
           NODE
 
-          TARGET_URL="$target" node /tmp/capture-preview.mjs
+          TARGET_URL="$target" node capture-preview.mjs
 
           test -s internal-preview-desktop.png
           test -s internal-preview-mobile.png
