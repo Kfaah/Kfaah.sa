@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsDemo } from "@/hooks/useIsDemo";
+import { usePreviewMode } from "@/contexts/PreviewModeContext";
 
 interface PageGuideProps {
   /** عنوان مختصر للشرح */
@@ -26,7 +27,8 @@ export function PageGuide({
   // النبذة التعريفية تظهر فقط في نسخة العرض التجريبي (Demo)،
   // أما حسابات مدير النظام والجمعيات فلا تُعرض لهم لتقليل التشتيت.
   const { isDemo } = useIsDemo();
-  if (!isDemo) return null;
+  const { isPreviewMode } = usePreviewMode();
+  if (!isDemo && !isPreviewMode) return null;
   return (
     <div
       dir="rtl"
