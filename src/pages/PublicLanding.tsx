@@ -214,7 +214,7 @@ export default function PublicLanding() {
         </div>
       </main>
 
-      <footer className="relative z-10 text-center text-white py-5">
+      <footer data-kfaah-e2e="manager-e2e-17" className="relative z-10 text-center text-white py-5">
         <div className="max-w-3xl mx-auto px-4 space-y-2">
           <p className="text-sm sm:text-base text-white leading-relaxed">
             <span className="text-cyan-300 font-bold">منصة كفاءة لإدارة التسويق الإلكتروني وتنمية الموارد المالية للجمعيات بالذكاء الاصطناعي</span> — منصة موحدة تتيح للجمعيات إدارة حملاتها التسويقية، متابعة المتبرعين، وقياس الأداء بكفاءة عالية جدًا.
