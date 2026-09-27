@@ -3,6 +3,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 import subprocess
 import time
 import urllib.error
@@ -15,9 +16,9 @@ PRIVATE_KEY = ROOT / "private.pem"
 MANAGER_URL = os.environ.get("KFAAH_MANAGER_URL", "https://kfaah-manager.floot.app").rstrip("/")
 WORKER_ID = os.environ.get("KFAAH_WORKER_ID", "kfaah-fast-1")
 NODE_BIN = ROOT / "node" / "bin"
-PLAYWRIGHT = WORKSPACE / "node_modules" / ".bin" / "playwright"
+CLOUDFLARED = ROOT / "cloudflared"
 VITE_LOG = ROOT / "vite.log"
-WORKER_LOG = ROOT / "worker.log"
+TUNNEL_LOG = ROOT / "cloudflared.log"
 
 def log(message):
     print(time.strftime("%Y-%m-%d %H:%M:%S"), message, flush=True)
@@ -46,7 +47,12 @@ def signed_request(method, path, payload=None, timeout=30):
     headers["X-Kfaah-Worker"] = WORKER_ID
     headers["X-Kfaah-Timestamp"] = ts
     headers["X-Kfaah-Signature"] = sign(method, path, ts, body)
-    req = urllib.request.Request(MANAGER_URL + path, data=(body if method != "GET" else None), headers=headers, method=method)
+    req = urllib.request.Request(
+        MANAGER_URL + path,
+        data=(body if method != "GET" else None),
+        headers=headers,
+        method=method,
+    )
     return urllib.request.urlopen(req, timeout=timeout)
 
 def json_post(path, payload, timeout=30):
@@ -60,15 +66,22 @@ def json_post(path, payload, timeout=30):
     with urllib.request.urlopen(req, timeout=timeout) as response:
         return json.loads(response.read().decode())
 
+def wait_http(url, attempts=80, delay=0.25):
+    for _ in range(attempts):
+        try:
+            with urllib.request.urlopen(url, timeout=2) as response:
+                if response.status < 500:
+                    return True
+        except Exception:
+            time.sleep(delay)
+    return False
+
 def ensure_vite():
-    try:
-        with urllib.request.urlopen("http://127.0.0.1:4173/", timeout=1) as response:
-            if response.status < 500:
-                return
-    except Exception:
-        pass
+    if wait_http("http://127.0.0.1:4173/", attempts=1, delay=0):
+        return
     env = os.environ.copy()
     env["PATH"] = str(NODE_BIN) + os.pathsep + env.get("PATH", "")
+    env["__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS"] = ".trycloudflare.com"
     log_handle = open(VITE_LOG, "ab", buffering=0)
     subprocess.Popen(
         [str(NODE_BIN / "npm"), "run", "dev", "--", "--host", "127.0.0.1", "--port", "4173"],
@@ -78,18 +91,66 @@ def ensure_vite():
         stderr=subprocess.STDOUT,
         start_new_session=True,
     )
-    for _ in range(60):
+    if not wait_http("http://127.0.0.1:4173/"):
+        raise RuntimeError("Vite preview did not start")
+
+def read_tunnel_url():
+    if not TUNNEL_LOG.exists():
+        return None
+    text = TUNNEL_LOG.read_text(encoding="utf-8", errors="ignore")
+    matches = re.findall(r"https://[a-z0-9-]+\.trycloudflare\.com", text)
+    return matches[-1] if matches else None
+
+def ensure_tunnel():
+    current = read_tunnel_url()
+    if current:
         try:
-            with urllib.request.urlopen("http://127.0.0.1:4173/", timeout=1) as response:
+            with urllib.request.urlopen(current + "/", timeout=5) as response:
                 if response.status < 500:
-                    return
+                    return current
         except Exception:
-            time.sleep(0.25)
-    raise RuntimeError("Vite preview did not start")
+            pass
+
+    try:
+        TUNNEL_LOG.unlink()
+    except FileNotFoundError:
+        pass
+
+    log_handle = open(TUNNEL_LOG, "ab", buffering=0)
+    subprocess.Popen(
+        [str(CLOUDFLARED), "tunnel", "--no-autoupdate", "--url", "http://127.0.0.1:4173"],
+        cwd=ROOT,
+        stdout=log_handle,
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
+    )
+    for _ in range(80):
+        url = read_tunnel_url()
+        if url:
+            try:
+                with urllib.request.urlopen(url + "/", timeout=5) as response:
+                    if response.status < 500:
+                        return url
+            except Exception:
+                pass
+        time.sleep(0.5)
+    raise RuntimeError("Cloudflare preview tunnel did not start")
 
 def reset_workspace():
-    subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=WORKSPACE, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    subprocess.run(["git", "clean", "-fd", "-e", "node_modules/"], cwd=WORKSPACE, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    subprocess.run(
+        ["git", "reset", "--hard", "HEAD"],
+        cwd=WORKSPACE,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    subprocess.run(
+        ["git", "clean", "-fd", "-e", "node_modules/"],
+        cwd=WORKSPACE,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
 
 def apply_edits(edits):
     reset_workspace()
@@ -99,7 +160,9 @@ def apply_edits(edits):
         new = edit.get("new")
         if not path or new is None:
             raise RuntimeError("Invalid edit payload")
-        if path not in ("index.html", "vite.config.ts") and not (path.startswith("src/") or path.startswith("public/")):
+        if path not in ("index.html", "vite.config.ts") and not (
+            path.startswith("src/") or path.startswith("public/")
+        ):
             raise RuntimeError("Path not allowed: " + path)
         target = (WORKSPACE / path).resolve()
         if not str(target).startswith(str(WORKSPACE.resolve()) + os.sep):
@@ -119,32 +182,19 @@ def apply_edits(edits):
             raise RuntimeError(f"Expected exact old text once in {path}, found {count}")
         target.write_text(text.replace(old, str(new), 1), encoding="utf-8")
 
-def capture(preview_path, command_id):
+def announce_preview(job):
     ensure_vite()
-    time.sleep(0.8)
-    desktop = ROOT / f"preview-{command_id}-desktop.png"
-    mobile = ROOT / f"preview-{command_id}-mobile.png"
-    url = "http://127.0.0.1:4173" + preview_path
-    env = os.environ.copy()
-    env["PATH"] = str(NODE_BIN) + os.pathsep + env.get("PATH", "")
-    common = [str(PLAYWRIGHT), "screenshot", "--full-page", "--wait-for-timeout=800"]
-    subprocess.run(common + ["--viewport-size=1440,900", url, str(desktop)], cwd=WORKSPACE, env=env, check=True, timeout=30)
-    subprocess.run(common + ["--viewport-size=390,844", url, str(mobile)], cwd=WORKSPACE, env=env, check=True, timeout=30)
-    return desktop, mobile
-
-def upload_preview(job, desktop, mobile):
-    token = job["callbackToken"]
-    command_id = str(job["commandId"])
-    target = json_post("/_api/preview-upload-target", {
-        "commandId": command_id,
-        "token": token,
-        "desktopSize": desktop.stat().st_size,
-        "mobileSize": mobile.stat().st_size,
-        "previewPath": job.get("previewPath") or "/",
+    tunnel_url = ensure_tunnel()
+    preview_path = job.get("previewPath") or "/"
+    target = tunnel_url + preview_path
+    if not wait_http(target, attempts=20, delay=0.25):
+        raise RuntimeError("Preview route did not become reachable")
+    json_post("/_api/preview-live-ready", {
+        "commandId": str(job["commandId"]),
+        "token": job["callbackToken"],
+        "previewUrl": tunnel_url,
+        "previewPath": preview_path,
     })
-    subprocess.run(["curl", "-fsS", "-X", "PUT", "-H", "Content-Type: image/png", "--data-binary", "@" + str(desktop), target["desktopPresignedUrl"]], check=True, timeout=60)
-    subprocess.run(["curl", "-fsS", "-X", "PUT", "-H", "Content-Type: image/png", "--data-binary", "@" + str(mobile), target["mobilePresignedUrl"]], check=True, timeout=60)
-    json_post("/_api/preview-upload-complete", {"commandId": command_id, "token": token})
 
 def finish_job(job, ok, error=None):
     payload = {
@@ -164,8 +214,7 @@ def process_job(job):
     try:
         log("processing job " + str(job.get("jobId")))
         apply_edits(job.get("edits") or [])
-        desktop, mobile = capture(job.get("previewPath") or "/", str(job["commandId"]))
-        upload_preview(job, desktop, mobile)
+        announce_preview(job)
         finish_job(job, True)
         log("completed job " + str(job.get("jobId")))
     except Exception as exc:
@@ -177,6 +226,7 @@ def main():
     if not PRIVATE_KEY.exists():
         raise RuntimeError("worker private key missing")
     ensure_vite()
+    ensure_tunnel()
     log("worker started")
     while True:
         try:
