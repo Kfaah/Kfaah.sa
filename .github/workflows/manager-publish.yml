@@ -9,8 +9,8 @@ on:
         description: "Manager command id"
         required: true
         type: string
-      branch:
-        description: "Reviewed manager branch"
+      payload_token:
+        description: "Signed reviewed payload token"
         required: true
         type: string
 
@@ -29,27 +29,55 @@ jobs:
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       KFAAH_DEPLOY_TARGET: production
       KFAAH_EXPECTED_API_URL: https://kfaah.sa
+      MANAGER_URL: https://kfaah-manager.floot.app
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Validate reviewed branch
+      - name: Remember reviewed base
+        run: echo "BASE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Download exact reviewed edits
         env:
-          REVIEW_BRANCH: ${{ inputs.branch }}
+          COMMAND_ID: ${{ inputs.command_id }}
+          PAYLOAD_TOKEN: ${{ inputs.payload_token }}
         run: |
           set -euo pipefail
-          git fetch origin main
-          git fetch origin "refs/heads/$REVIEW_BRANCH:refs/remotes/origin/$REVIEW_BRANCH"
-          merge_base="$(git merge-base origin/main "origin/$REVIEW_BRANCH")"
-          changed_main="$(git diff --name-only "$merge_base"..origin/main || true)"
-          if printf '%s\n' "$changed_main" | grep -Ev '^(\.github/|deploy/|docs/|$)' >/dev/null; then
-            echo "Application source changed on main after this preview; run the manager command again before publishing" >&2
-            printf '%s\n' "$changed_main" >&2
-            exit 1
-          fi
-          git switch --detach "origin/$REVIEW_BRANCH"
-          echo "REVIEW_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          curl -fsS --get \
+            --data-urlencode "commandId=$COMMAND_ID" \
+            --data-urlencode "token=$PAYLOAD_TOKEN" \
+            "$MANAGER_URL/_api/publish-payload" -o /tmp/kfaah-reviewed.json
+          test -s /tmp/kfaah-reviewed.json
+
+      - name: Apply reviewed edits
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const path = require("path");
+          const payload = JSON.parse(fs.readFileSync("/tmp/kfaah-reviewed.json", "utf8"));
+          if (!Array.isArray(payload.edits) || payload.edits.length === 0) throw new Error("No reviewed edits");
+          const allowed = (p) => p === "index.html" || p === "vite.config.ts" || p.startsWith("src/") || p.startsWith("public/");
+          for (const edit of payload.edits) {
+            if (!edit || typeof edit.path !== "string" || !allowed(edit.path)) throw new Error("Protected path: " + String(edit?.path));
+            const target = path.resolve(process.cwd(), edit.path);
+            if (!target.startsWith(process.cwd() + path.sep)) throw new Error("Unsafe path");
+            if (edit.old === null) {
+              if (fs.existsSync(target)) throw new Error("New file already exists: " + edit.path);
+              fs.mkdirSync(path.dirname(target), { recursive: true });
+              fs.writeFileSync(target, String(edit.new), "utf8");
+              continue;
+            }
+            const current = fs.readFileSync(target, "utf8");
+            const oldText = String(edit.old);
+            const first = current.indexOf(oldText);
+            const last = current.lastIndexOf(oldText);
+            if (first < 0 || first !== last) throw new Error("Reviewed text is not unique in " + edit.path);
+            const next = current.slice(0, first) + String(edit.new) + current.slice(first + oldText.length);
+            fs.writeFileSync(target, next, "utf8");
+          }
+          NODE
+          git diff --check
 
       - uses: actions/setup-node@v4
         with:
@@ -76,17 +104,18 @@ jobs:
           rsync -az --delete --delay-updates -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" dist/ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/incoming/"
           ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'sudo /usr/local/bin/kfaah-receive-frontend /home/deploy/incoming'
 
-      - name: Merge reviewed source into current main
-        env:
-          REVIEW_BRANCH: ${{ inputs.branch }}
+      - name: Commit reviewed source to main
         run: |
           set -euo pipefail
+          git fetch origin main
+          test "$(git rev-parse origin/main)" = "$BASE_SHA" || { echo "main changed after preview; run the manager command again" >&2; exit 1; }
           git config user.name "Kfaah Manager"
           git config user.email "manager@kfaah.local"
-          git switch -C manager-publish-main origin/main
-          git merge --no-ff --no-edit "origin/$REVIEW_BRANCH"
-          git diff --check
-          git push origin "HEAD:refs/heads/main"
+          git add -- index.html vite.config.ts src public 2>/dev/null || true
+          git diff --cached --quiet && { echo "No source changes to publish" >&2; exit 1; }
+          git commit -m "Kfaah manager command #${{ inputs.command_id }}"
+          git push origin HEAD:main
+          echo "REVIEW_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
       - name: Refresh fast preview baseline
         env:
@@ -94,7 +123,7 @@ jobs:
           HETZNER_USER: ${{ secrets.HETZNER_USER }}
         run: |
           set -euo pipefail
-          rsync -az --delete             --exclude '.git/'             --exclude 'node_modules/'             --exclude 'vite.fast.config.ts'             -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"             ./ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/baseline/"
+          rsync -az --delete --exclude '.git/' --exclude 'node_modules/' --exclude 'vite.fast.config.ts' -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" ./ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/baseline/"
 
       - name: Promote staging to live and verify
         env:
@@ -107,18 +136,11 @@ jobs:
           test -s /tmp/kfaah-home.html
           echo "LIVE_OK https://kfaah.sa sha=$REVIEW_SHA"
 
-      - name: Sync fast preview baseline
+      - name: Sync fast preview workspace
         if: ${{ success() }}
         env:
           HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
           HETZNER_USER: ${{ secrets.HETZNER_USER }}
         run: |
           set -euo pipefail
-          rsync -az --delete             --exclude node_modules             --exclude .git             -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"             ./ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/baseline/"
-          rsync -az --delete             --exclude node_modules             --exclude .git             -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"             ./ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/workspace/"
-
-      - name: Remove temporary review branch
-        if: ${{ success() }}
-        env:
-          REVIEW_BRANCH: ${{ inputs.branch }}
-        run: git push origin --delete "$REVIEW_BRANCH" || true
+          rsync -az --delete --exclude node_modules --exclude .git -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" ./ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/workspace/"
