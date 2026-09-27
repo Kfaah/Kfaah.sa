@@ -1,0 +1,83 @@
+name: Kfaah Manager Internal Preview
+
+run-name: Kfaah internal preview ${{ inputs.command_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      command_id:
+        description: "Manager command id"
+        required: true
+        type: string
+      branch:
+        description: "Reviewed manager branch"
+        required: true
+        type: string
+      preview_path:
+        description: "Route to capture"
+        required: true
+        default: "/"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kfaah-manager-preview-${{ inputs.command_id }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: https://kfaah.sa
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      KFAAH_DEPLOY_TARGET: production
+      KFAAH_EXPECTED_API_URL: https://kfaah.sa
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout reviewed branch
+        env:
+          REVIEW_BRANCH: ${{ inputs.branch }}
+        run: |
+          set -euo pipefail
+          git fetch origin "refs/heads/$REVIEW_BRANCH:refs/remotes/origin/$REVIEW_BRANCH"
+          git switch --detach "origin/$REVIEW_BRANCH"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Build reviewed frontend
+        run: bash deploy/build-frontend.sh
+
+      - name: Capture internal preview
+        env:
+          PREVIEW_PATH: ${{ inputs.preview_path }}
+        run: |
+          set -euo pipefail
+          [[ "$PREVIEW_PATH" =~ ^/[A-Za-z0-9_./?=&%+-]*$ ]] || { echo "Invalid preview path" >&2; exit 1; }
+          npx --yes playwright@1.55.1 install --with-deps chromium
+          npm run preview -- --host 127.0.0.1 > /tmp/kfaah-vite-preview.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ -o /dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:4173/ -o /dev/null
+          npx --yes playwright@1.55.1 screenshot --viewport-size='1440,900' --wait-for-timeout=3500 "http://127.0.0.1:4173$PREVIEW_PATH" internal-preview-desktop.png
+          npx --yes playwright@1.55.1 screenshot --viewport-size='390,844' --wait-for-timeout=3500 "http://127.0.0.1:4173$PREVIEW_PATH" internal-preview-mobile.png
+          test -s internal-preview-desktop.png
+          test -s internal-preview-mobile.png
+
+      - name: Save internal preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: kfaah-internal-preview-${{ github.run_id }}
+          path: |
+            internal-preview-desktop.png
+            internal-preview-mobile.png
+          retention-days: 7
