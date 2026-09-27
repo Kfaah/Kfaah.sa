@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Brain, Sparkles, TrendingUp, AlertTriangle, Target, Lightbulb, Users, Megaphone, RefreshCcw, CheckCircle2, MessageCircle, Phone, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface Insight {
   id: string;
@@ -62,6 +63,13 @@ interface Run {
   completed_at: string | null;
 }
 
+interface FileAnalysis {
+  id: string;
+  file_name: string;
+  ai_analysis: Record<string, unknown>;
+  ai_analyzed_at: string | null;
+}
+
 const severityColor = (s: string) =>
   s === "critical" ? "bg-destructive text-destructive-foreground" :
   s === "high" ? "bg-orange-500 text-white" :
@@ -76,38 +84,65 @@ const channelIcon = (c: string | null) =>
   <MessageCircle className="w-4 h-4" />;
 
 const Intelligence = () => {
+  const { currentOrg, loading: orgLoading } = useOrganization();
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [insights, setInsights] = useState<Insight[]>([]);
   const [tasks, setTasks] = useState<SmartTask[]>([]);
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [lastRun, setLastRun] = useState<Run | null>(null);
+  const [fileAnalyses, setFileAnalyses] = useState<FileAnalysis[]>([]);
 
-  const loadAll = async () => {
+  const loadAll = async (organizationId: string) => {
     setLoading(true);
-    const [iR, tR, dR, rR] = await Promise.all([
-      supabase.from("donor_insights").select("*").eq("is_active", true).order("generated_at", { ascending: false }).limit(50),
-      supabase.from("smart_tasks").select("*").eq("status", "pending").order("priority", { ascending: false }).order("created_at", { ascending: false }).limit(100),
-      supabase.from("marketing_ideas").select("*").in("status", ["new", "approved"]).order("created_at", { ascending: false }).limit(30),
-      supabase.from("analysis_runs").select("*").order("started_at", { ascending: false }).limit(1).maybeSingle(),
+    const [iR, tR, dR, rR, fR] = await Promise.all([
+      supabase.from("donor_insights").select("*").eq("organization_id", organizationId).eq("is_active", true).order("generated_at", { ascending: false }).limit(50),
+      supabase.from("smart_tasks").select("*").eq("organization_id", organizationId).eq("status", "pending").order("priority", { ascending: false }).order("created_at", { ascending: false }).limit(100),
+      supabase.from("marketing_ideas").select("*").eq("organization_id", organizationId).in("status", ["new", "approved"]).order("created_at", { ascending: false }).limit(30),
+      supabase.from("analysis_runs").select("*").eq("organization_id", organizationId).order("started_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("data_uploads_log")
+        .select("id,file_name,ai_analysis,ai_analyzed_at")
+        .eq("organization_id", organizationId)
+        .not("ai_analysis", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(50),
     ]);
     setInsights((iR.data ?? []) as any);
     setTasks((tR.data ?? []) as any);
     setIdeas((dR.data ?? []) as any);
     setLastRun((rR.data as any) ?? null);
+    setFileAnalyses((fR.data ?? []) as FileAnalysis[]);
     setLoading(false);
   };
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => {
+    if (orgLoading) return;
+    if (!currentOrg?.id) {
+      setInsights([]);
+      setTasks([]);
+      setIdeas([]);
+      setLastRun(null);
+      setFileAnalyses([]);
+      setLoading(false);
+      return;
+    }
+    void loadAll(currentOrg.id);
+  }, [currentOrg?.id, orgLoading]);
 
   const runAnalysis = async () => {
+    if (!currentOrg?.id) {
+      toast.error("تعذر تحديد الجمعية الحالية.");
+      return;
+    }
     setRunning(true);
     toast.info("جاري التحليل الذكي للبيانات...");
     try {
-      const { data, error } = await supabase.functions.invoke("run-intelligence", { body: { triggerSource: "manual" } });
+      const { data, error } = await supabase.functions.invoke("run-intelligence", {
+        body: { triggerSource: "manual", organizationId: currentOrg.id },
+      });
       if (error) throw error;
       toast.success(`تم: ${data.insights} رؤية، ${data.tasks} مهمة، ${data.ideas} فكرة`);
-      await loadAll();
+      await loadAll(currentOrg.id);
     } catch (e: any) {
       toast.error(`فشل التحليل: ${e.message}`);
     } finally {
@@ -145,6 +180,40 @@ const Intelligence = () => {
             "إمكانية إعادة التحليل في أي وقت",
           ]}
         />
+
+        {!loading && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">تحليلات الملفات المحفوظة ({fileAnalyses.length})</CardTitle>
+              <CardDescription>التحليلات المرتبطة بملفات الجمعية المرفوعة سابقًا.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {fileAnalyses.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  لا توجد تحليلات ملفات محفوظة لهذه الجمعية في السجل الحالي.
+                </p>
+              ) : (
+                fileAnalyses.map((file) => (
+                  <div key={file.id} className="rounded-lg border p-3 space-y-2">
+                    <p className="font-semibold">{file.file_name}</p>
+                    {file.ai_analyzed_at && (
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(file.ai_analyzed_at).toLocaleString("ar-SA")}
+                      </p>
+                    )}
+                    {"summary" in file.ai_analysis && file.ai_analysis.summary ? (
+                      <p className="text-sm whitespace-pre-wrap">
+                        {String(file.ai_analysis.summary)}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">تحليل محفوظ ومتاح في سجل الملف.</p>
+                    )}
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* آخر تشغيل */}
         {lastRun && (
