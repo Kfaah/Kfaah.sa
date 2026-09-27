@@ -40,8 +40,8 @@ jobs:
               echo "--- $f"
               sed -n "1,260p" "$f" || true
             done
-            echo "=== worker callback lines ==="
-            grep -nE "preview|cloudflared|trycloudflare|preview-live-ready|PREVIEW" /home/deploy/kfaah-fast/worker.py | sed -n "1,220p" || true
+            echo "=== worker.py ==="
+            sed -n "1,340p" /home/deploy/kfaah-fast/worker.py || true
             echo "=== worker service ==="
             systemctl --user status kfaah-fast-worker.service --no-pager 2>/dev/null || true
             echo "=== listeners ==="
