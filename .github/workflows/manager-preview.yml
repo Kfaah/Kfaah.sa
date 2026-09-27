@@ -77,6 +77,25 @@ jobs:
           test -s internal-preview-desktop.png
           test -s internal-preview-mobile.png
 
+      - name: Store internal preview in Kfaah Manager
+        env:
+          COMMAND_ID: ${{ inputs.command_id }}
+          PREVIEW_PATH: ${{ inputs.preview_path }}
+          PREVIEW_CALLBACK_TOKEN: ${{ inputs.preview_callback_token }}
+        run: |
+          set -euo pipefail
+          echo "::add-mask::$PREVIEW_CALLBACK_TOKEN"
+          desktop_size="$(stat -c%s internal-preview-desktop.png)"
+          mobile_size="$(stat -c%s internal-preview-mobile.png)"
+          payload="$(jq -n --arg commandId "$COMMAND_ID" --arg token "$PREVIEW_CALLBACK_TOKEN" --arg previewPath "$PREVIEW_PATH" --argjson desktopSize "$desktop_size" --argjson mobileSize "$mobile_size" '{commandId:$commandId,token:$token,previewPath:$previewPath,desktopSize:$desktopSize,mobileSize:$mobileSize}')"
+          target="$(curl --fail-with-body -sS -H 'Content-Type: application/json' -d "$payload" https://kfaah-manager.floot.app/_api/preview-upload-target)"
+          desktop_url="$(printf '%s' "$target" | jq -r '.desktopPresignedUrl')"
+          mobile_url="$(printf '%s' "$target" | jq -r '.mobilePresignedUrl')"
+          curl -fsS -X PUT -H 'Content-Type: image/png' --data-binary @internal-preview-desktop.png "$desktop_url"
+          curl -fsS -X PUT -H 'Content-Type: image/png' --data-binary @internal-preview-mobile.png "$mobile_url"
+          complete="$(jq -n --arg commandId "$COMMAND_ID" --arg token "$PREVIEW_CALLBACK_TOKEN" '{commandId:$commandId,token:$token}')"
+          curl --fail-with-body -sS -H 'Content-Type: application/json' -d "$complete" https://kfaah-manager.floot.app/_api/preview-upload-complete
+
       - name: Save internal preview
         uses: actions/upload-artifact@v4
         with:
