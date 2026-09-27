@@ -1,0 +1,101 @@
+name: Kfaah Manager Apply
+
+run-name: Kfaah manager command ${{ inputs.command_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      command_id:
+        description: "Manager command id"
+        required: true
+        type: string
+      branch:
+        description: "Temporary review branch"
+        required: true
+        type: string
+      patch_base64:
+        description: "Base64 encoded unified diff"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kfaah-manager-${{ inputs.command_id }}
+  cancel-in-progress: false
+
+jobs:
+  apply-build-stage:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: https://kfaah.sa
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      KFAAH_DEPLOY_TARGET: production
+      KFAAH_EXPECTED_API_URL: https://kfaah.sa
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create review branch and apply AI patch
+        env:
+          REVIEW_BRANCH: ${{ inputs.branch }}
+          PATCH_BASE64: ${{ inputs.patch_base64 }}
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git switch -C "$REVIEW_BRANCH" origin/main
+          printf '%s' "$PATCH_BASE64" | base64 --decode > /tmp/kfaah-manager.patch
+          test -s /tmp/kfaah-manager.patch
+          if grep -E '^(---|\+\+\+) (a/|b/)?(\.github/|deploy/|supabase/|\.env|package(-lock)?\.json)' /tmp/kfaah-manager.patch; then
+            echo "Patch touches a protected path" >&2
+            exit 1
+          fi
+          git apply --check /tmp/kfaah-manager.patch
+          git apply /tmp/kfaah-manager.patch
+          git diff --check
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Build reviewed frontend
+        run: bash deploy/build-frontend.sh
+
+      - name: Commit reviewed source
+        env:
+          REVIEW_BRANCH: ${{ inputs.branch }}
+          COMMAND_ID: ${{ inputs.command_id }}
+        run: |
+          set -euo pipefail
+          git config user.name "Kfaah Manager"
+          git config user.email "manager@kfaah.local"
+          git add -A
+          git diff --cached --quiet && { echo "Patch produced no source changes" >&2; exit 1; }
+          git commit -m "Kfaah manager command #$COMMAND_ID"
+          git push --force-with-lease origin "HEAD:refs/heads/$REVIEW_BRANCH"
+          echo "REVIEW_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Upload reviewed build to Hetzner staging
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          : "${HETZNER_HOST:?Set HETZNER_HOST}"
+          : "${HETZNER_USER:?Set HETZNER_USER}"
+          : "${HETZNER_SSH_KEY:?Set HETZNER_SSH_KEY}"
+          : "${HETZNER_KNOWN_HOSTS:?Set HETZNER_KNOWN_HOSTS}"
+          test "$HETZNER_USER" = deploy
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_deploy"
+          chmod 600 "$HOME/.ssh/id_kfaah_deploy"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          rsync -az --delete --delay-updates -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" dist/ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/incoming/"
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'sudo /usr/local/bin/kfaah-receive-frontend /home/deploy/incoming'
+          echo "STAGING_OK branch=$REVIEW_BRANCH sha=$REVIEW_SHA"
