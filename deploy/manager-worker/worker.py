@@ -77,6 +77,27 @@ def wait_http(url, attempts=80, delay=0.25):
             time.sleep(delay)
     return False
 
+def ensure_fast_vite_config():
+    config = WORKSPACE / "vite.fast.config.ts"
+    config.write_text(
+        """import { defineConfig, mergeConfig } from "vite";
+import baseConfig from "./vite.config";
+export default defineConfig((env) => {
+  const base = typeof baseConfig === "function" ? baseConfig(env) : baseConfig;
+  return mergeConfig(base, {
+    server: {
+      allowedHosts: true,
+      host: "127.0.0.1",
+      port: 4173,
+      strictPort: true,
+    },
+  });
+});
+""",
+        encoding="utf-8",
+    )
+    return config
+
 def ensure_vite(tunnel_url):
     host = urlparse(tunnel_url).hostname or ""
     host_file = ROOT / "vite-allowed-host.txt"
@@ -85,19 +106,30 @@ def ensure_vite(tunnel_url):
         return
 
     subprocess.run(
-        ["pkill", "-u", str(os.getuid()), "-f", "node.*vite.*4173"],
+        ["pkill", "-u", str(os.getuid()), "-f", "node.*vite"],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         check=False,
     )
     time.sleep(0.5)
 
+    config = ensure_fast_vite_config()
     env = os.environ.copy()
     env["PATH"] = str(NODE_BIN) + os.pathsep + env.get("PATH", "")
-    env["__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS"] = host
     log_handle = open(VITE_LOG, "ab", buffering=0)
     subprocess.Popen(
-        [str(NODE_BIN / "npm"), "run", "dev", "--", "--host", "127.0.0.1", "--port", "4173"],
+        [
+            str(NODE_BIN / "npm"),
+            "run",
+            "dev",
+            "--",
+            "--config",
+            str(config),
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "4173",
+        ],
         cwd=WORKSPACE,
         env=env,
         stdout=log_handle,
@@ -154,7 +186,7 @@ def reset_workspace():
         stderr=subprocess.PIPE,
     )
     subprocess.run(
-        ["git", "clean", "-fd", "-e", "node_modules/"],
+        ["git", "clean", "-fd", "-e", "node_modules/", "-e", "vite.fast.config.ts"],
         cwd=WORKSPACE,
         check=True,
         stdout=subprocess.PIPE,
