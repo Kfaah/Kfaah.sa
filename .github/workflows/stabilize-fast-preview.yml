@@ -140,3 +140,63 @@ jobs:
             echo "FAST_PREVIEW_URL=$tunnel_url"
             echo "FAST_PREVIEW_STABLE"
           '
+
+          preview_url="$(ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'cat /home/deploy/kfaah-fast/tunnel-url.txt')"
+          echo "PREVIEW_URL=$preview_url" >> "$GITHUB_ENV"
+
+      - name: Browser stability check
+        run: |
+          set -euo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.1 >/dev/null
+          npx playwright install --with-deps chromium >/dev/null
+
+          cat > stability.mjs <<'NODE'
+          import { chromium } from "playwright";
+
+          const browser = await chromium.launch({ headless: true });
+          const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+          let navigations = 0;
+          const errors = [];
+
+          page.on("framenavigated", frame => {
+            if (frame === page.mainFrame()) navigations++;
+          });
+          page.on("pageerror", e => errors.push("pageerror: " + e.message));
+          page.on("requestfailed", r => errors.push("requestfailed: " + r.url() + " " + (r.failure()?.errorText || "")));
+
+          const target = process.env.PREVIEW_URL.replace(/\/$/, "") + "/my-performance?preview=true";
+          await page.goto(target, { waitUntil: "domcontentloaded", timeout: 45000 });
+          await page.waitForTimeout(4000);
+
+          const initial = await page.locator("body").innerText().catch(() => "");
+          if (!initial.includes("أدائي")) throw new Error("Preview did not render MyPerformance");
+          if (!initial.includes("الأداء الواقعي")) throw new Error("Requested text missing from preview");
+
+          const navAfterInitial = navigations;
+          const samples = [];
+          for (let i = 0; i < 10; i++) {
+            await page.waitForTimeout(2000);
+            const body = await page.locator("body").innerText().catch(() => "");
+            samples.push({
+              i,
+              url: page.url(),
+              hasPage: body.includes("أدائي"),
+              hasText: body.includes("الأداء الواقعي"),
+            });
+          }
+
+          const extraNavigations = navigations - navAfterInitial;
+          console.log("STABILITY_RESULT", JSON.stringify({
+            target,
+            extraNavigations,
+            errors,
+            samples,
+          }));
+
+          if (extraNavigations !== 0) throw new Error("Preview reloaded during stability window");
+          if (samples.some(s => !s.hasPage || !s.hasText)) throw new Error("Preview content became unstable");
+          await browser.close();
+          NODE
+
+          node stability.mjs
