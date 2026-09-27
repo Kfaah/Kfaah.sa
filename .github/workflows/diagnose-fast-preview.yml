@@ -1,0 +1,51 @@
+name: Diagnose Kfaah Fast Preview
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare SSH
+        env:
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_deploy"
+          chmod 600 "$HOME/.ssh/id_kfaah_deploy"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Inspect fast preview
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" '
+            set -u
+            echo "=== identity ==="
+            id
+            echo "=== fast dir ==="
+            ls -la /home/deploy/kfaah-fast || true
+            echo "=== workspace root ==="
+            ls -la /home/deploy/kfaah-fast/workspace | sed -n "1,120p" || true
+            echo "=== vite fast config ==="
+            sed -n "1,220p" /home/deploy/kfaah-fast/workspace/vite.fast.config.ts 2>/dev/null || sed -n "1,220p" /home/deploy/kfaah-fast/vite.fast.config.ts 2>/dev/null || true
+            echo "=== deploy processes ==="
+            ps -u "$(id -u)" -o pid,ppid,lstart,cmd | grep -E "vite|node|cloudflared|kfaah|worker" | grep -v grep || true
+            echo "=== user services ==="
+            systemctl --user list-units --type=service --all 2>/dev/null | grep -Ei "kfaah|vite|cloudflared|preview|worker" || true
+            echo "=== user service files ==="
+            find "$HOME/.config/systemd/user" -maxdepth 1 -type f -print -exec sh -c "echo --- {}; sed -n 1,220p {}" \; 2>/dev/null || true
+            echo "=== env files ==="
+            for f in /home/deploy/kfaah-fast/workspace/.env /home/deploy/kfaah-fast/workspace/.env.local /home/deploy/kfaah-fast/baseline/.env /home/deploy/kfaah-fast/baseline/.env.local; do
+              if [ -f "$f" ]; then echo "FOUND $f"; sed -E "s/(=.*)/=<redacted>/" "$f"; else echo "MISSING $f"; fi
+            done
+          '
