@@ -82,6 +82,15 @@ jobs:
               curl -sS -D - "$tunnel/" -o /tmp/tunnel-body.txt || true
               head -30 /tmp/tunnel-body.txt || true
             fi
+            echo "=== fast worker state ==="
+            ls -la /home/deploy/kfaah-fast 2>&1 || true
+            cat /home/deploy/kfaah-fast/worker.pid 2>/dev/null || true
+            if [ -f /home/deploy/kfaah-fast/worker.pid ]; then ps -p "$(cat /home/deploy/kfaah-fast/worker.pid)" -o pid=,cmd= 2>&1 || true; fi
+            tail -80 /home/deploy/kfaah-fast/worker.log 2>&1 || true
+            echo "=== tunnel state ==="
+            tail -60 /home/deploy/kfaah-fast/cloudflared.log 2>&1 || true
+            echo "=== baseline ==="
+            ls -ld /home/deploy/kfaah-fast/baseline /home/deploy/kfaah-fast/workspace 2>&1 || true
             echo "=== sudo ==="
             sudo -n -l 2>&1 || true
             echo "=== linger ==="
