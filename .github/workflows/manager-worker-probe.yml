@@ -37,6 +37,20 @@ jobs:
             echo "=== npm ==="
             command -v npm || true
             npm --version || true
+            echo "=== python ==="
+            command -v python3 || true
+            python3 --version || true
+            echo "=== processes ==="
+            ps -eo user,pid,ppid,cmd --sort=pid | grep -E "nginx|uvicorn|gunicorn|python|node|8891|9001|8000" | grep -v grep || true
+            echo "=== proc cwd for listeners ==="
+            for p in $(ss -ltnp 2>/dev/null | grep -E ":8000|:8891|:9001" | sed -n "s/.*pid=\([0-9][0-9]*\).*/\1/p" | sort -u); do
+              echo "PID=$p"
+              readlink -f "/proc/$p/cwd" 2>/dev/null || true
+              tr "\\0" " " < "/proc/$p/cmdline" 2>/dev/null || true
+              echo
+            done
+            echo "=== nginx readable config ==="
+            grep -R "proxy_pass\|server_name\|location" /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -120 || true
             echo "=== sudo ==="
             sudo -n -l 2>&1 || true
             echo "=== linger ==="
