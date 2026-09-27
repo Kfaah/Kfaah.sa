@@ -9,8 +9,8 @@ on:
         description: "Manager command id"
         required: true
         type: string
-      branch:
-        description: "Reviewed manager branch"
+      preview_url:
+        description: "Live fast-preview base URL"
         required: true
         type: string
       preview_path:
@@ -33,51 +33,41 @@ concurrency:
 jobs:
   preview:
     runs-on: ubuntu-latest
-    env:
-      VITE_SUPABASE_URL: https://kfaah.sa
-      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-      KFAAH_DEPLOY_TARGET: production
-      KFAAH_EXPECTED_API_URL: https://kfaah.sa
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - name: Mask callback token
+        run: echo "::add-mask::${{ inputs.preview_callback_token }}"
 
-      - name: Checkout reviewed branch
+      - name: Capture fast preview
         env:
-          REVIEW_BRANCH: ${{ inputs.branch }}
-        run: |
-          set -euo pipefail
-          git fetch origin "refs/heads/$REVIEW_BRANCH:refs/remotes/origin/$REVIEW_BRANCH"
-          git switch --detach "origin/$REVIEW_BRANCH"
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-
-      - name: Build reviewed frontend
-        run: bash deploy/build-frontend.sh
-
-      - name: Capture internal preview
-        env:
+          PREVIEW_URL: ${{ inputs.preview_url }}
           PREVIEW_PATH: ${{ inputs.preview_path }}
         run: |
           set -euo pipefail
+          [[ "$PREVIEW_URL" =~ ^https://([A-Za-z0-9.-]+\.trycloudflare\.com|staging\.kfaah\.sa)/?$ ]] || { echo "Invalid preview URL" >&2; exit 1; }
           [[ "$PREVIEW_PATH" =~ ^/[A-Za-z0-9_./?=&%+-]*$ ]] || { echo "Invalid preview path" >&2; exit 1; }
+
           npx --yes playwright@1.55.1 install --with-deps chromium
-          npm run preview -- --host 127.0.0.1 > /tmp/kfaah-vite-preview.log 2>&1 &
-          for i in {1..30}; do
-            if curl -fsS http://127.0.0.1:4173/ -o /dev/null; then break; fi
+
+          target="${PREVIEW_URL%/}$PREVIEW_PATH"
+          if [[ "$target" == *"?"* ]]; then
+            target="$target&preview=true"
+          else
+            target="$target?preview=true"
+          fi
+
+          for i in {1..20}; do
+            if curl -fsS "${PREVIEW_URL%/}/" -o /dev/null; then break; fi
             sleep 1
           done
-          curl -fsS http://127.0.0.1:4173/ -o /dev/null
-          npx --yes playwright@1.55.1 screenshot --full-page --viewport-size='1440,900' --wait-for-timeout=3500 "http://127.0.0.1:4173$PREVIEW_PATH" internal-preview-desktop.png
-          npx --yes playwright@1.55.1 screenshot --full-page --viewport-size='390,844' --wait-for-timeout=3500 "http://127.0.0.1:4173$PREVIEW_PATH" internal-preview-mobile.png
+          curl -fsS "${PREVIEW_URL%/}/" -o /dev/null
+
+          npx --yes playwright@1.55.1 screenshot --full-page --viewport-size='1440,900' --wait-for-timeout=2500 "$target" internal-preview-desktop.png
+          npx --yes playwright@1.55.1 screenshot --full-page --viewport-size='390,844' --wait-for-timeout=2500 "$target" internal-preview-mobile.png
+
           test -s internal-preview-desktop.png
           test -s internal-preview-mobile.png
 
-      - name: Store internal preview in Kfaah Manager
+      - name: Store preview in Kfaah Manager
         env:
           COMMAND_ID: ${{ inputs.command_id }}
           PREVIEW_PATH: ${{ inputs.preview_path }}
@@ -85,18 +75,23 @@ jobs:
         run: |
           set -euo pipefail
           echo "::add-mask::$PREVIEW_CALLBACK_TOKEN"
+
           desktop_size="$(stat -c%s internal-preview-desktop.png)"
           mobile_size="$(stat -c%s internal-preview-mobile.png)"
+
           payload="$(jq -n --arg commandId "$COMMAND_ID" --arg token "$PREVIEW_CALLBACK_TOKEN" --arg previewPath "$PREVIEW_PATH" --argjson desktopSize "$desktop_size" --argjson mobileSize "$mobile_size" '{commandId:$commandId,token:$token,previewPath:$previewPath,desktopSize:$desktopSize,mobileSize:$mobileSize}')"
+
           target="$(curl --fail-with-body -sS -H 'Content-Type: application/json' -d "$payload" https://kfaah-manager.floot.app/_api/preview-upload-target)"
           desktop_url="$(printf '%s' "$target" | jq -r '.desktopPresignedUrl')"
           mobile_url="$(printf '%s' "$target" | jq -r '.mobilePresignedUrl')"
+
           curl -fsS -X PUT -H 'Content-Type: image/png' --data-binary @internal-preview-desktop.png "$desktop_url"
           curl -fsS -X PUT -H 'Content-Type: image/png' --data-binary @internal-preview-mobile.png "$mobile_url"
+
           complete="$(jq -n --arg commandId "$COMMAND_ID" --arg token "$PREVIEW_CALLBACK_TOKEN" '{commandId:$commandId,token:$token}')"
           curl --fail-with-body -sS -H 'Content-Type: application/json' -d "$complete" https://kfaah-manager.floot.app/_api/preview-upload-complete
 
-      - name: Save internal preview
+      - name: Save preview artifact
         uses: actions/upload-artifact@v4
         with:
           name: kfaah-internal-preview-${{ github.run_id }}
