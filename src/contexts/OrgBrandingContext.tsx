@@ -3,12 +3,6 @@ import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/contexts/OrganizationContext";
 
-const FALLBACK_BRANDING = {
-  primary: "#2f8e8c",
-  secondary: "#eef7f7",
-  accent: "#2563eb",
-};
-
 const BRANDING_CACHE_PREFIX = "org_branding_v1:";
 const BRANDING_SLUG_CACHE_PREFIX = "org_branding_slug_v1:";
 
@@ -219,41 +213,18 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
     if (isAdminRoute) return isEmbedded;
     return true;
   }, [location.pathname, location.search]);
-  const [branding, setBranding] = useState<Branding>(() => {
-    // Synchronously hydrate from slug-keyed cache on first render so the
-    // very first paint already has the correct org colors — no flicker.
-    try {
-      const path = window.location.pathname || "";
-      const search = window.location.search || "";
-      const seg = path.split("/").filter(Boolean);
-      let slug: string | null = null;
-      const qs = new URLSearchParams(search).get("org");
-      if (qs) slug = qs;
-      else if (seg[0] === "admin" && seg.length >= 3 && /^orgs?$|^organizations?$/.test(seg[1])) slug = seg[2];
-      else if (seg[0] && seg[0] !== "admin") slug = seg[0];
-      if (slug) {
-        const c = readSlugCache(slug);
-        if (c) {
-          return {
-            logoUrl: c.logoUrl,
-            orgName: "",
-            primary: c.primary,
-            secondary: c.secondary,
-            accent: c.accent,
-            loading: true,
-          };
-        }
-      }
-    } catch { /* noop */ }
-    return {
-      logoUrl: null,
-      orgName: "",
-      primary: null,
-      secondary: null,
-      accent: null,
-      loading: true,
-    };
+  // Start neutral and bind branding only after the authorized organization is
+  // resolved. Reading a slug from generic routes such as /uploads can reuse
+  // another association's cached identity.
+  const [branding, setBranding] = useState<Branding>({
+    logoUrl: null,
+    orgName: "",
+    primary: null,
+    secondary: null,
+    accent: null,
+    loading: true,
   });
+  const [brandingOrgId, setBrandingOrgId] = useState<string | null>(null);
   const [appliedOrgId, setAppliedOrgId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -263,6 +234,7 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
         return;
       }
       if (!currentOrg) {
+        setBrandingOrgId(null);
         setBranding({ logoUrl: null, orgName: "", primary: null, secondary: null, accent: null, loading: false });
         return;
       }
@@ -271,6 +243,7 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
     //    flicker of the previous org or the default theme.
       const cached = readCache(currentOrg.id);
       if (cached) {
+        setBrandingOrgId(currentOrg.id);
         setBranding({
           logoUrl: cached.logoUrl ?? currentOrg.logo_url ?? null,
           orgName: currentOrg.name,
@@ -280,22 +253,17 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
           loading: false,
         });
       } else {
-        // No cache yet for this org. CRITICAL: never set primary/accent to
-        // null while loading — that would force a re-render where the entire
-        // page repaints with the default theme, then repaints again with the
-        // org colors when the API responds (the visible "shake" / flicker
-        // under the header). Instead, KEEP the currently-applied CSS
-        // variables intact and only update the org name + logo. The colors
-        // will be replaced atomically in a single repaint when the API
-        // returns the real branding below.
-        setBranding((prev) => ({
-          logoUrl: currentOrg.logo_url ?? prev.logoUrl ?? null,
+        // Never carry another association's colors/logo into the new one while
+        // its own identity is being fetched.
+        setBrandingOrgId(currentOrg.id);
+        setBranding({
+          logoUrl: currentOrg.logo_url ?? null,
           orgName: currentOrg.name,
-          primary: prev.primary,
-          secondary: prev.secondary,
-          accent: prev.accent,
+          primary: null,
+          secondary: null,
+          accent: null,
           loading: true,
-        }));
+        });
       }
 
       // 2) Then fetch the latest from the database in the background and
@@ -315,9 +283,9 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
       const next: Branding = {
         logoUrl: data?.logo_url || currentOrg.logo_url || null,
         orgName: currentOrg.name,
-        primary: (data as Record<string, string | null> | null)?.primary_color || FALLBACK_BRANDING.primary,
-        secondary: (data as Record<string, string | null> | null)?.secondary_color || FALLBACK_BRANDING.secondary,
-        accent: (data as Record<string, string | null> | null)?.accent_color || FALLBACK_BRANDING.accent,
+        primary: (data as Record<string, string | null> | null)?.primary_color || null,
+        secondary: (data as Record<string, string | null> | null)?.secondary_color || null,
+        accent: (data as Record<string, string | null> | null)?.accent_color || null,
         loading: false,
       };
       writeCache(currentOrg.id, {
@@ -357,42 +325,37 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
   }, [currentOrg, orgLoading]);
 
   useLayoutEffect(() => {
-    // Admin routes normally use the neutral admin theme. However, when an
-    // admin is browsing inside a specific organization (e.g. /admin/orgs/:slug
-    // or any /admin/.../<slug>/... route), apply that organization's branding
-    // so internal pages (employees, plans, ...) match the org identity.
-    if (routeUsesOrgBranding) {
-      // Apply whatever colors we currently have — these come from either
-      // the synchronous cache (no network) or the freshly fetched data.
-      // We never clear vars here, so the previous org's colors stay on
-      // screen until the new ones overwrite them in a single repaint.
-      if (branding.primary || branding.accent || branding.secondary) {
-        applyBrandingToDocument(branding);
-        setAppliedOrgId(currentOrg?.id ?? null);
-      }
-      // Warm the image cache for the active logo so the header swap is
-      // smooth — even if the URL just changed via the background API
-      // revalidate or an org switch.
+    const identityMatches = !!currentOrg && brandingOrgId === currentOrg.id;
+
+    // If navigation switches organizations, clear the old identity immediately.
+    if (appliedOrgId && appliedOrgId !== currentOrg?.id) {
+      applyBrandingToDocument({ primary: null, secondary: null, accent: null }, { reset: true });
+      setAppliedOrgId(null);
+    }
+
+    if (
+      routeUsesOrgBranding &&
+      identityMatches &&
+      (branding.primary || branding.accent || branding.secondary)
+    ) {
+      applyBrandingToDocument(branding);
+      setAppliedOrgId(currentOrg.id);
       if (branding.logoUrl) preloadLogo(branding.logoUrl);
-    } else {
+    } else if (!routeUsesOrgBranding || !identityMatches) {
       if (appliedOrgId) {
         applyBrandingToDocument({ primary: null, secondary: null, accent: null }, { reset: true });
         setAppliedOrgId(null);
       }
     }
 
-    // Mark <html> with data-org-branded so the global CSS override layer
-    // (in index.css) re-routes hardcoded Tailwind color classes
-    // (blue/cyan/teal/emerald/...) to the org's primary/accent.
     const root = document.documentElement;
-      const hasOrgColors =
-      routeUsesOrgBranding && (!!branding.primary || !!branding.accent);
-    if (hasOrgColors) {
-      root.setAttribute("data-org-branded", "true");
-    } else {
-      root.removeAttribute("data-org-branded");
-    }
-  }, [branding, routeUsesOrgBranding, currentOrg?.id, appliedOrgId]);
+    const hasOrgColors =
+      routeUsesOrgBranding &&
+      identityMatches &&
+      (!!branding.primary || !!branding.accent);
+    if (hasOrgColors) root.setAttribute("data-org-branded", "true");
+    else root.removeAttribute("data-org-branded");
+  }, [branding, brandingOrgId, routeUsesOrgBranding, currentOrg?.id, appliedOrgId]);
 
   // The branding "gate" exists ONLY for the very first paint, to prevent
   // a flash of the default theme before any org colors are applied. As
@@ -404,11 +367,12 @@ export function OrgBrandingProvider({ children }: { children: ReactNode }) {
       document.documentElement.getAttribute("data-org-branded") === "true" ||
       !!branding.primary ||
       !!branding.accent ||
-      !routeUsesOrgBranding;
+      !routeUsesOrgBranding ||
+      (!orgLoading && !branding.loading);
     if (!hasAppliedColors) return;
     const gate = document.getElementById("__branding_gate__");
     if (gate?.parentNode) gate.parentNode.removeChild(gate);
-  }, [branding.primary, branding.accent, routeUsesOrgBranding]);
+  }, [branding.primary, branding.accent, branding.loading, orgLoading, routeUsesOrgBranding]);
 
   const value = useMemo(() => branding, [branding]);
   return (
