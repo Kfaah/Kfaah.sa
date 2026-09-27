@@ -57,8 +57,8 @@ jobs:
             echo "Patch touches a protected path" >&2
             exit 1
           fi
-          git apply --check /tmp/kfaah-manager.patch
-          git apply /tmp/kfaah-manager.patch
+          git apply --recount --check /tmp/kfaah-manager.patch
+          git apply --recount /tmp/kfaah-manager.patch
           git diff --check
 
       - uses: actions/setup-node@v4
