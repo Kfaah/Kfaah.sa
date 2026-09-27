@@ -1,0 +1,89 @@
+name: Stabilize Kfaah Fast Preview
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stabilize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare SSH
+        env:
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_deploy"
+          chmod 600 "$HOME/.ssh/id_kfaah_deploy"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Patch worker and active Vite config
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
+          test "$HETZNER_USER" = deploy
+
+          cat > patch-preview-stability.py <<'PY'
+          from pathlib import Path
+
+          def patch(path: Path):
+              if not path.exists():
+                  return False
+              text = path.read_text(encoding="utf-8")
+              if "hmr: false" in text:
+                  return True
+              needle = "      strictPort: true,\n    },"
+              if needle not in text:
+                  raise SystemExit(f"Could not find Vite server block in {path}")
+              text = text.replace(
+                  needle,
+                  "      strictPort: true,\n      hmr: false,\n    },",
+                  1,
+              )
+              path.write_text(text, encoding="utf-8")
+              return True
+
+          patch(Path("/home/deploy/kfaah-fast/worker.py"))
+          patch(Path("/home/deploy/kfaah-fast/workspace/vite.fast.config.ts"))
+          PY
+
+          scp -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            patch-preview-stability.py \
+            "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/tmp/patch-preview-stability.py"
+
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" '
+            set -euo pipefail
+            python3 /home/deploy/kfaah-fast/tmp/patch-preview-stability.py
+            rm -f /home/deploy/kfaah-fast/tmp/patch-preview-stability.py
+
+            vite_pid="$(ps -C node -o pid=,args= | grep "node_modules/.bin/vite" | head -n 1 | sed -E "s/^ *([0-9]+).*/\1/" || true)"
+            if [ -n "$vite_pid" ]; then
+              kill "$vite_pid" || true
+              sleep 1
+            fi
+
+            cd /home/deploy/kfaah-fast/workspace
+            nohup env PATH="/home/deploy/kfaah-fast/node/bin:$PATH" \
+              /home/deploy/kfaah-fast/node/bin/npm run dev -- \
+              --config /home/deploy/kfaah-fast/workspace/vite.fast.config.ts \
+              --host 127.0.0.1 --port 4173 \
+              >> /home/deploy/kfaah-fast/vite.log 2>&1 </dev/null &
+
+            for i in 1 2 3 4 5 6 7 8 9 10; do
+              if curl -fsS http://127.0.0.1:4173/ -o /dev/null; then
+                break
+              fi
+              sleep 1
+            done
+            curl -fsS http://127.0.0.1:4173/ -o /dev/null
+            grep -q "hmr: false" /home/deploy/kfaah-fast/worker.py
+            grep -q "hmr: false" /home/deploy/kfaah-fast/workspace/vite.fast.config.ts
+            echo FAST_PREVIEW_STABLE
+          '
