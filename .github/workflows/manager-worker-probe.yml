@@ -51,6 +51,13 @@ jobs:
             done
             echo "=== nginx readable config ==="
             grep -R "proxy_pass\|server_name\|location" /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -120 || true
+            echo "=== kfaah functions ==="
+            ls -la /opt/kfaah/functions 2>&1 || true
+            find /opt/kfaah/functions -maxdepth 2 -type f -printf "%M %u:%g %p\n" 2>/dev/null | head -120 || true
+            echo "=== function app routes ==="
+            grep -nE "functions/v1|route|def |FastAPI|Flask|HTTPServer|BaseHTTPRequestHandler" /opt/kfaah/functions/app.py 2>/dev/null | head -200 || true
+            echo "=== app head ==="
+            sed -n "1,220p" /opt/kfaah/functions/app.py 2>/dev/null || true
             echo "=== sudo ==="
             sudo -n -l 2>&1 || true
             echo "=== linger ==="
