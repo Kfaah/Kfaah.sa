@@ -22,7 +22,44 @@ jobs:
           printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
-      - name: Patch worker and active Vite config
+      - name: Prepare stable Vite config
+        run: |
+          set -euo pipefail
+          cat > vite.fast.config.ts <<'EOF'
+          import { defineConfig, mergeConfig } from "vite";
+          import baseConfig from "./vite.config";
+
+          export default defineConfig((env) => {
+            const base = typeof baseConfig === "function" ? baseConfig(env) : baseConfig;
+            return mergeConfig(base, {
+              server: {
+                allowedHosts: true,
+                host: "127.0.0.1",
+                port: 4173,
+                strictPort: true,
+                hmr: false,
+              },
+            });
+          });
+          EOF
+
+          cat > patch-worker.py <<'PY'
+          from pathlib import Path
+          path = Path("/home/deploy/kfaah-fast/worker.py")
+          text = path.read_text(encoding="utf-8")
+          if "hmr: false" not in text:
+              needle = "      strictPort: true,\n    },"
+              if needle not in text:
+                  raise SystemExit("Could not find worker Vite server block")
+              text = text.replace(
+                  needle,
+                  "      strictPort: true,\n      hmr: false,\n    },",
+                  1,
+              )
+              path.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Install stable config on Hetzner
         env:
           HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
           HETZNER_USER: ${{ secrets.HETZNER_USER }}
@@ -30,97 +67,56 @@ jobs:
           set -euo pipefail
           test "$HETZNER_USER" = deploy
 
-          cat > patch-preview-stability.py <<'PY'
-          from pathlib import Path
-
-          def patch(path: Path):
-              if not path.exists():
-                  return False
-              text = path.read_text(encoding="utf-8")
-              if "hmr: false" in text:
-                  return True
-              needle = "      strictPort: true,\n    },"
-              if needle not in text:
-                  raise SystemExit(f"Could not find Vite server block in {path}")
-              text = text.replace(
-                  needle,
-                  "      strictPort: true,\n      hmr: false,\n    },",
-                  1,
-              )
-              path.write_text(text, encoding="utf-8")
-              return True
-
-          patch(Path("/home/deploy/kfaah-fast/worker.py"))
-          patch(Path("/home/deploy/kfaah-fast/workspace/vite.fast.config.ts"))
-          PY
+          scp -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            vite.fast.config.ts \
+            "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/workspace/vite.fast.config.ts"
 
           scp -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            patch-preview-stability.py \
-            "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/tmp/patch-preview-stability.py"
+            patch-worker.py \
+            "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/tmp/patch-worker.py"
+
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" \
+            'python3 /home/deploy/kfaah-fast/tmp/patch-worker.py && rm -f /home/deploy/kfaah-fast/tmp/patch-worker.py'
+
+      - name: Restart Vite and tunnel
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
 
           ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" '
             set -euo pipefail
-            python3 /home/deploy/kfaah-fast/tmp/patch-preview-stability.py
-            rm -f /home/deploy/kfaah-fast/tmp/patch-preview-stability.py
 
-            vite_pid="$(ps -C node -o pid=,args= | grep "node_modules/.bin/vite" | head -n 1 | sed -E "s/^ *([0-9]+).*/\1/" || true)"
-            if [ -n "$vite_pid" ]; then
-              kill "$vite_pid" || true
-              sleep 1
-            fi
-
-            cat > /home/deploy/kfaah-fast/workspace/vite.fast.config.ts <<'"'"'EOF'"'"'
-            import { defineConfig, mergeConfig } from "vite";
-            import baseConfig from "./vite.config";
-
-            export default defineConfig((env) => {
-              const base = typeof baseConfig === "function" ? baseConfig(env) : baseConfig;
-              return mergeConfig(base, {
-                server: {
-                  allowedHosts: true,
-                  host: "127.0.0.1",
-                  port: 4173,
-                  strictPort: true,
-                  hmr: false,
-                },
-              });
-            });
-            EOF
+            pkill -u "$(id -u)" -f "node_modules/.bin/vite" || true
+            pkill -u "$(id -u)" -f "/node/bin/node .*vite/bin/vite.js" || true
+            sleep 1
 
             cd /home/deploy/kfaah-fast/workspace
             : > /home/deploy/kfaah-fast/vite.log
-            nohup /home/deploy/kfaah-fast/node/bin/node \
-              /home/deploy/kfaah-fast/workspace/node_modules/vite/bin/vite.js \
-              --config /home/deploy/kfaah-fast/workspace/vite.fast.config.ts \
-              --host 127.0.0.1 --port 4173 \
-              >> /home/deploy/kfaah-fast/vite.log 2>&1 </dev/null &
-            echo $! > /home/deploy/kfaah-fast/vite.manual.pid
+            nohup /home/deploy/kfaah-fast/node/bin/node               /home/deploy/kfaah-fast/workspace/node_modules/vite/bin/vite.js               --config /home/deploy/kfaah-fast/workspace/vite.fast.config.ts               --host 127.0.0.1 --port 4173               >> /home/deploy/kfaah-fast/vite.log 2>&1 </dev/null &
 
-            ok=0
-            for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            vite_ok=0
+            for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
               if curl -fsS http://127.0.0.1:4173/ -o /dev/null; then
-                ok=1
+                vite_ok=1
                 break
               fi
               sleep 1
             done
-            if [ "$ok" != "1" ]; then
-              echo "=== VITE LOG ==="
+            if [ "$vite_ok" != "1" ]; then
               tail -n 120 /home/deploy/kfaah-fast/vite.log || true
               exit 1
             fi
-            grep -q "hmr: false" /home/deploy/kfaah-fast/worker.py
-            grep -q "hmr: false" /home/deploy/kfaah-fast/workspace/vite.fast.config.ts
 
             pkill -u "$(id -u)" -f "/home/deploy/kfaah-fast/cloudflared tunnel" || true
             sleep 1
             : > /home/deploy/kfaah-fast/cloudflared.log
-            nohup /home/deploy/kfaah-fast/cloudflared tunnel --no-autoupdate --url http://127.0.0.1:4173 \
-              >> /home/deploy/kfaah-fast/cloudflared.log 2>&1 </dev/null &
+            nohup /home/deploy/kfaah-fast/cloudflared tunnel --no-autoupdate --url http://127.0.0.1:4173               >> /home/deploy/kfaah-fast/cloudflared.log 2>&1 </dev/null &
 
             tunnel_url=""
-            for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
-              tunnel_url="$(grep -oE 'https://[A-Za-z0-9-]+\.trycloudflare\.com' /home/deploy/kfaah-fast/cloudflared.log | tail -n 1 || true)"
+            for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+              tunnel_url="$(grep -oE "https://[A-Za-z0-9-]+\.trycloudflare\.com" /home/deploy/kfaah-fast/cloudflared.log | tail -n 1 || true)"
               if [ -n "$tunnel_url" ]; then
                 break
               fi
@@ -129,7 +125,7 @@ jobs:
             test -n "$tunnel_url"
 
             tunnel_ok=0
-            for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
               if curl -fsS "$tunnel_url/" -o /dev/null; then
                 tunnel_ok=1
                 break
@@ -137,7 +133,11 @@ jobs:
               sleep 1
             done
             test "$tunnel_ok" = "1"
-            printf '%s\n' "$tunnel_url" > /home/deploy/kfaah-fast/tunnel-url.txt
+
+            printf "%s\n" "$tunnel_url" > /home/deploy/kfaah-fast/tunnel-url.txt
+            grep -q "hmr: false" /home/deploy/kfaah-fast/workspace/vite.fast.config.ts
+            grep -q "hmr: false" /home/deploy/kfaah-fast/worker.py
+
             echo "FAST_PREVIEW_URL=$tunnel_url"
-            echo FAST_PREVIEW_STABLE
+            echo "FAST_PREVIEW_STABLE"
           '
