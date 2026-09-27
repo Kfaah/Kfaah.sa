@@ -1,0 +1,120 @@
+name: Final Manager Preview E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      session_cookie:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mask session
+        run: echo "::add-mask::${{ inputs.session_cookie }}"
+
+      - name: Test published manager preview
+        env:
+          SESSION_COOKIE: ${{ inputs.session_cookie }}
+        run: |
+          set -euo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.1 >/dev/null
+          npx playwright install --with-deps chromium >/dev/null
+
+          cat > e2e.mjs <<'NODE'
+          import { chromium } from "playwright";
+
+          const browser = await chromium.launch({ headless: true });
+          const context = await browser.newContext();
+          await context.addCookies([{
+            name: "floot_built_app_session",
+            value: process.env.SESSION_COOKIE,
+            domain: "kfaah-manager.floot.app",
+            path: "/",
+            secure: true,
+            httpOnly: true,
+            sameSite: "Lax",
+          }]);
+
+          const page = await context.newPage();
+          const errors = [];
+          page.on("pageerror", e => errors.push("manager-pageerror: " + e.message));
+          page.on("requestfailed", r => errors.push("manager-requestfailed: " + r.url() + " " + (r.failure()?.errorText || "")));
+
+          await page.goto("https://kfaah-manager.floot.app/", { waitUntil: "domcontentloaded", timeout: 45000 });
+          await page.getByRole("heading", { name: "منصة كفاءة" }).waitFor({ timeout: 30000 });
+          await page.locator('iframe[title*="المعاينة"]').waitFor({ timeout: 30000 });
+
+          const iframe = page.locator('iframe[title*="المعاينة"]').first();
+          const src0 = await iframe.getAttribute("src");
+          if (!src0) throw new Error("Preview iframe src missing");
+
+          const handle = await iframe.elementHandle();
+          const frame = await handle?.contentFrame();
+          if (!frame) throw new Error("Preview iframe inaccessible");
+
+          await frame.waitForLoadState("domcontentloaded", { timeout: 30000 }).catch(() => {});
+          await frame.waitForTimeout(5000);
+
+          let body = await frame.locator("body").innerText().catch(() => "");
+          if (!body.includes("دخول مدير النظام")) throw new Error("Preview did not render login page");
+          if (!body.includes("الأداء الواقعي")) throw new Error("Published text is missing from preview");
+
+          const samples = [];
+          for (let i = 0; i < 10; i++) {
+            await page.waitForTimeout(2000);
+            const currentSrc = await iframe.getAttribute("src");
+            const currentBody = await frame.locator("body").innerText().catch(() => "");
+            samples.push({
+              i,
+              src: currentSrc,
+              spinner: await page.getByText("جارٍ تجهيز المعاينة...").count(),
+              hasPage: currentBody.includes("دخول مدير النظام"),
+              hasText: currentBody.includes("الأداء الواقعي"),
+            });
+          }
+
+          const srcChanged = samples.some(s => s.src !== src0);
+          const spinnerAppeared = samples.some(s => s.spinner > 0);
+          const contentLost = samples.some(s => !s.hasPage || !s.hasText);
+
+          const directLink = page.getByRole("link", { name: /فتح المعاينة مباشرة/ }).first();
+          const href = await directLink.getAttribute("href");
+          if (!href) throw new Error("Direct preview link missing");
+
+          const direct = await context.newPage();
+          await direct.goto(new URL(href, "https://kfaah-manager.floot.app").toString(), {
+            waitUntil: "domcontentloaded",
+            timeout: 45000,
+          });
+          await direct.waitForTimeout(3000);
+          const directBody = await direct.locator("body").innerText().catch(() => "");
+
+          console.log("FINAL_PREVIEW_E2E", JSON.stringify({
+            src0,
+            href,
+            srcChanged,
+            spinnerAppeared,
+            contentLost,
+            errors,
+            directHasPage: directBody.includes("دخول مدير النظام"),
+            directHasText: directBody.includes("الأداء الواقعي"),
+            samples,
+          }));
+
+          if (srcChanged) throw new Error("Iframe src changed unexpectedly");
+          if (spinnerAppeared) throw new Error("Loading screen reappeared");
+          if (contentLost) throw new Error("Preview content became unstable");
+          if (!directBody.includes("دخول مدير النظام") || !directBody.includes("الأداء الواقعي")) {
+            throw new Error("Direct preview link failed");
+          }
+
+          await browser.close();
+          NODE
+
+          node e2e.mjs
