@@ -1,0 +1,117 @@
+name: Kfaah Server Audit
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    if: >-
+      github.event.issue.number == 5 &&
+      github.event.comment.user.login == 'gaberalhrese-cloud' &&
+      github.event.comment.body == 'KFAAH_SERVER_AUDIT'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Audit server read-only
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_audit"
+          chmod 600 "$HOME/.ssh/id_kfaah_audit"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+          ssh -i "$HOME/.ssh/id_kfaah_audit" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'bash -s' > /tmp/audit.txt <<'REMOTE'
+          set +e
+          echo "=== KFAAH SERVER AUDIT (READ ONLY) ==="
+          date -u
+          echo
+          echo "=== HOST ==="
+          hostname
+          uname -a
+          df -h / /var /home 2>/dev/null
+          echo
+          echo "=== SERVICES ==="
+          systemctl list-units --type=service --all --no-pager 2>/dev/null | grep -Ei 'kfaah|postgrest|postgres|nginx|supabase|storage|kong|gotrue' | head -80
+          echo
+          for svc in kfaah-functions nginx postgresql postgrest; do
+            echo "--- $svc ---"
+            systemctl show "$svc" -p Id -p ActiveState -p SubState -p FragmentPath -p ExecStart -p EnvironmentFiles --no-pager 2>/dev/null
+          done
+          echo
+          echo "=== PROCESSES ==="
+          ps -eo pid,user,comm,args --sort=comm | grep -Ei 'kfaah|postgrest|postgres|nginx|storage|gotrue|python|node' | grep -v grep | head -120
+          echo
+          echo "=== KFAAH DIRECTORIES ==="
+          for d in /opt/kfaah /home/deploy/kfaah-fast /var/www/kfaah /var/www/kfaah-staging; do
+            echo "--- $d ---"
+            if [ -e "$d" ]; then
+              find "$d" -maxdepth 2 -type f -printf '%p\n' 2>/dev/null | head -120
+            else
+              echo "MISSING"
+            fi
+          done
+          echo
+          echo "=== SERVER SCRIPTS ==="
+          for f in /usr/local/bin/kfaah-receive-frontend /usr/local/bin/kfaah-promote-frontend; do
+            echo "--- $f ---"
+            if [ -r "$f" ]; then sed -n '1,220p' "$f"; else echo "NOT_READABLE"; fi
+          done
+          echo
+          echo "=== NGINX ROUTES ==="
+          grep -R -nE 'location .*?(rest|auth|storage|functions)|proxy_pass|root /var/www/kfaah' /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -220
+          echo
+          echo "=== FUNCTIONS SOURCE / ROUTES ==="
+          if [ -d /opt/kfaah ]; then
+            grep -R -nE 'route\(|add_url_rule|FUNCTION|functions/v1|def [a-zA-Z0-9_]+\(' /opt/kfaah 2>/dev/null | grep -vE '/node_modules/|/__pycache__/' | head -300
+          fi
+          echo
+          echo "=== DEPLOY USER PERMISSIONS ==="
+          sudo -n -l 2>/dev/null | sed -n '1,120p'
+          echo
+          echo "=== POSTGRES TOOLS ==="
+          command -v psql || true
+          pg_isready 2>/dev/null || true
+          psql -Atqc 'select current_database(), current_user;' 2>/dev/null || true
+          echo
+          echo "=== STORAGE / DATABASE DATA DIRECTORIES (COUNTS ONLY) ==="
+          for d in /var/lib/postgresql /var/lib/docker/volumes /opt/kfaah/storage /var/lib/kfaah; do
+            if [ -d "$d" ]; then
+              printf '%s files=' "$d"
+              find "$d" -type f 2>/dev/null | wc -l
+            fi
+          done
+          REMOTE
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/audit.txt')
+          s=p.read_text(errors='replace')
+          safe=[]
+          for line in s.splitlines():
+              upper=line.upper()
+              if any(k in upper for k in ['PASSWORD=', 'SECRET=', 'TOKEN=', 'PRIVATE KEY', 'SERVICE_ROLE', 'ANON_KEY=']):
+                  continue
+              safe.append(line[:500])
+          Path('/tmp/audit-safe.txt').write_text('\n'.join(safe)[:55000])
+          PY
+
+      - name: Post audit summary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo 'KFAAH_SERVER_AUDIT_REPORT'
+            echo
+            cat /tmp/audit-safe.txt
+          } > /tmp/comment.txt
+          gh issue comment 5 --repo "$GITHUB_REPOSITORY" --body-file /tmp/comment.txt
