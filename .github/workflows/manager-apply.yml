@@ -17,6 +17,11 @@ on:
         description: "Base64 encoded unified diff"
         required: true
         type: string
+      preview_path:
+        description: "Route to capture for internal review"
+        required: true
+        default: "/"
+        type: string
 
 permissions:
   contents: write
@@ -63,6 +68,33 @@ jobs:
 
       - name: Build reviewed frontend
         run: bash deploy/build-frontend.sh
+
+      - name: Capture internal preview
+        env:
+          PREVIEW_PATH: ${{ inputs.preview_path }}
+        run: |
+          set -euo pipefail
+          [[ "$PREVIEW_PATH" =~ ^/[A-Za-z0-9_./?=&%+-]*$ ]] || { echo "Invalid preview path" >&2; exit 1; }
+          npx --yes playwright@1.55.1 install --with-deps chromium
+          npm run preview -- --host 127.0.0.1 > /tmp/kfaah-vite-preview.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ -o /dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:4173/ -o /dev/null
+          npx --yes playwright@1.55.1 screenshot --viewport-size='1440,900' --wait-for-timeout=3500 "http://127.0.0.1:4173$PREVIEW_PATH" internal-preview-desktop.png
+          npx --yes playwright@1.55.1 screenshot --viewport-size='390,844' --wait-for-timeout=3500 "http://127.0.0.1:4173$PREVIEW_PATH" internal-preview-mobile.png
+          test -s internal-preview-desktop.png
+          test -s internal-preview-mobile.png
+
+      - name: Save internal preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: kfaah-internal-preview-${{ github.run_id }}
+          path: |
+            internal-preview-desktop.png
+            internal-preview-mobile.png
+          retention-days: 7
 
       - name: Commit reviewed source
         env:
