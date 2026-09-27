@@ -68,6 +68,12 @@ jobs:
             grep -nE "functions/v1|route|def |FastAPI|Flask|HTTPServer|BaseHTTPRequestHandler" /opt/kfaah/functions/app.py 2>/dev/null | head -200 || true
             echo "=== app head ==="
             sed -n "1,220p" /opt/kfaah/functions/app.py 2>/dev/null || true
+            echo "=== fast worker ==="
+            ps -ef | grep "kfaah-fast/worker.py" | grep -v grep || true
+            echo "--- worker log ---"
+            tail -80 /home/deploy/kfaah-fast/worker.log 2>/dev/null || true
+            echo "--- tunnel log ---"
+            tail -80 /home/deploy/kfaah-fast/cloudflared.log 2>/dev/null || true
             echo "=== sudo ==="
             sudo -n -l 2>&1 || true
             echo "=== linger ==="
