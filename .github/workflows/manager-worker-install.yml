@@ -79,7 +79,7 @@ jobs:
               kill "$(cat worker.pid)" || true
               sleep 1
             fi
-            pkill -u "$(id -u)" -f "node.*vite" 2>/dev/null || true
+            ps -u "$(id -u)" -o pid=,comm=,args= | awk '$2 == "node" && $0 ~ /vite/ {print $1}' | xargs -r kill || true
             rm -f "$ROOT/vite-allowed-host.txt"
             chmod 700 worker.py
             nohup env PATH="$NODE_DIR/bin:$PATH" KFAAH_FAST_ROOT="$ROOT"               python3 "$ROOT/worker.py" >>"$ROOT/worker.log" 2>&1 </dev/null &
