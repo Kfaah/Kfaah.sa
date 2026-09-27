@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { PageGuide } from "@/components/layout/PageGuide";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { usePreviewMode } from "@/contexts/PreviewModeContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -12,6 +13,7 @@ import { Link } from "react-router-dom";
 
 export default function MyPerformance() {
   const { user } = useAuth();
+  const { isPreviewMode } = usePreviewMode();
   const [loading, setLoading] = useState(true);
   const [employee, setEmployee] = useState<any>(null);
   const [stats, setStats] = useState({
@@ -23,6 +25,11 @@ export default function MyPerformance() {
   const [recentChecks, setRecentChecks] = useState<any[]>([]);
 
   useEffect(() => {
+    if (isPreviewMode) {
+      setEmployee({ full_name: "معاينة", job_role: "وضع المعاينة" });
+      setLoading(false);
+      return;
+    }
     if (!user) return;
     (async () => {
       const { data: emp } = await supabase
@@ -70,7 +77,7 @@ export default function MyPerformance() {
       setRecentChecks((evRes.data ?? []) as any[]);
       setLoading(false);
     })();
-  }, [user]);
+  }, [user, isPreviewMode]);
 
   if (loading) return <DashboardLayout><div className="flex items-center justify-center py-24"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></DashboardLayout>;
 
