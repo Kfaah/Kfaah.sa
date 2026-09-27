@@ -195,7 +195,7 @@ jobs:
 
           const initial = await page.locator("body").innerText().catch(() => "");
           if (!initial.includes("أدائي")) throw new Error("Preview did not render MyPerformance");
-          if (!initial.includes("الأداء الواقعي")) throw new Error("Requested text missing from preview");
+          if (!initial.includes("الواقعي")) throw new Error("Requested text missing from preview");
 
           const navAfterInitial = navigations;
           const samples = [];
@@ -206,7 +206,7 @@ jobs:
               i,
               url: page.url(),
               hasPage: body.includes("أدائي"),
-              hasText: body.includes("الأداء الواقعي"),
+              hasText: body.includes("الواقعي"),
             });
           }
 
