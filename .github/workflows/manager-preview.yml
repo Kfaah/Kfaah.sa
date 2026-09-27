@@ -72,8 +72,8 @@ jobs:
             sleep 1
           done
           curl -fsS http://127.0.0.1:4173/ -o /dev/null
-          npx --yes playwright@1.55.1 screenshot --viewport-size='1440,900' --wait-for-timeout=3500 "http://127.0.0.1:4173$PREVIEW_PATH" internal-preview-desktop.png
-          npx --yes playwright@1.55.1 screenshot --viewport-size='390,844' --wait-for-timeout=3500 "http://127.0.0.1:4173$PREVIEW_PATH" internal-preview-mobile.png
+          npx --yes playwright@1.55.1 screenshot --full-page --viewport-size='1440,900' --wait-for-timeout=3500 "http://127.0.0.1:4173$PREVIEW_PATH" internal-preview-desktop.png
+          npx --yes playwright@1.55.1 screenshot --full-page --viewport-size='390,844' --wait-for-timeout=3500 "http://127.0.0.1:4173$PREVIEW_PATH" internal-preview-mobile.png
           test -s internal-preview-desktop.png
           test -s internal-preview-mobile.png
 
