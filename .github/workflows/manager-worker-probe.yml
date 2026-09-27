@@ -1,5 +1,5 @@
 name: Probe Kfaah manager worker host
-# health-check-v4
+# health-check-v5
 
 on:
   push:
