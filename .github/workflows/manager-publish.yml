@@ -107,6 +107,16 @@ jobs:
           test -s /tmp/kfaah-home.html
           echo "LIVE_OK https://kfaah.sa sha=$REVIEW_SHA"
 
+      - name: Sync fast preview baseline
+        if: ${{ success() }}
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
+          rsync -az --delete             --exclude node_modules             --exclude .git             -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"             ./ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/baseline/"
+          rsync -az --delete             --exclude node_modules             --exclude .git             -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"             ./ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/workspace/"
+
       - name: Remove temporary review branch
         if: ${{ success() }}
         env:
