@@ -205,7 +205,7 @@ export default function Auth() {
           </CardTitle>
           <CardDescription>
             {isLogin
-              ? "أدخل بياناتك للوصول إلى حسابك"
+              ? "أدخل بياناتك للوصول إلى حسابك بحماية عالية جدا"
               : "أنشئ حسابك للبدء في استخدام النظام"}
           </CardDescription>
         </CardHeader>
