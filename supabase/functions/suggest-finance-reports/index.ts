@@ -3,6 +3,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.0";
+import { authorizationErrorResponse, requireOrganizationAccess } from "../_shared/authz.ts";
 
 const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -15,6 +16,7 @@ Deno.serve(async (req) => {
     if (!organization_id) return new Response(JSON.stringify({ error: "organization_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const supa = createClient(SUPABASE_URL, SERVICE_KEY);
+    await requireOrganizationAccess(req, organization_id, supa);
 
     const [orgRes, expRes, donRes, insRes] = await Promise.all([
       supa.from("organizations").select("name").eq("id", organization_id).maybeSingle(),
@@ -98,6 +100,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
+    const authError = authorizationErrorResponse(e, corsHeaders);
+    if (authError) return authError;
     console.error(e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "unknown" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
