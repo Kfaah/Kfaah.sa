@@ -1,0 +1,185 @@
+name: Kfaah Correct DB Audit
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    if: >-
+      github.event.issue.number == 5 &&
+      github.event.comment.user.login == 'gaberalhrese-cloud' &&
+      github.event.comment.body == 'KFAAH_CORRECT_DB_AUDIT'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect correct Supabase directory and DB read-only
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_audit"
+          chmod 600 "$HOME/.ssh/id_kfaah_audit"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+          ssh -i "$HOME/.ssh/id_kfaah_audit" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'bash -s' > /tmp/audit.txt 2>&1 <<'REMOTE'
+          set +e
+          ROOT=/opt/kfaah/production/supabase
+          echo "=== ROOT ==="
+          stat -c '%A %U:%G %n' "$ROOT" 2>&1
+          find "$ROOT" -maxdepth 2 -type f -printf '%M %u:%g %p\n' 2>/dev/null | head -160
+
+          echo
+          echo "=== ENV NAMES ==="
+          for f in "$ROOT"/.env "$ROOT"/.env.production "$ROOT"/docker-compose.yml "$ROOT"/docker-compose.yaml; do
+            if [ -r "$f" ]; then
+              echo "-- $f"
+              if [[ "$f" == *.env || "$f" == */.env || "$f" == *.production ]]; then
+                sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' "$f" | sort
+              else
+                grep -E '^[[:space:]]*[A-Za-z0-9_-]+:|image:|container_name:|ports:|-[[:space:]]*"[0-9]+:[0-9]+"' "$f" | head -220
+              fi
+            fi
+          done
+
+          echo
+          echo "=== FIND PSQL ==="
+          PSQL="$(find /nix/store /usr /opt -type f -path '*/bin/psql' -perm -111 2>/dev/null | head -1)"
+          echo "PSQL_FOUND=$([ -n "$PSQL" ] && echo yes || echo no)"
+          [ -n "$PSQL" ] && "$PSQL" --version
+
+          echo
+          echo "=== DB READ ONLY ==="
+          if [ -z "$PSQL" ]; then
+            echo "NO_PSQL"
+            exit 0
+          fi
+
+          ENVFILE=""
+          for f in "$ROOT"/.env "$ROOT"/.env.production; do
+            [ -r "$f" ] && ENVFILE="$f" && break
+          done
+          if [ -z "$ENVFILE" ]; then
+            echo "NO_READABLE_ENV"
+            exit 0
+          fi
+          set -a
+          . "$ENVFILE"
+          set +a
+
+          DBPASS="${POSTGRES_PASSWORD:-${POSTGRES_PASSWORD_SUPABASE:-}}"
+          DBUSER="${POSTGRES_USER:-postgres}"
+          DBNAME="${POSTGRES_DB:-postgres}"
+          if [ -z "$DBPASS" ]; then
+            echo "NO_DB_PASSWORD_VAR"
+            exit 0
+          fi
+
+          export PGPASSWORD="$DBPASS"
+          run_sql() {
+            "$PSQL" -h 127.0.0.1 -p 5432 -U "$DBUSER" -d "$DBNAME" -X -v ON_ERROR_STOP=1 -P pager=off "$@"
+          }
+
+          run_sql -AtF '|' -c "select 'connected',current_database(),current_user;"
+          echo "--- TABLES ---"
+          run_sql -AtF '|' -c "
+            select table_name from information_schema.tables
+            where table_schema='public'
+              and table_name in (
+                'organizations','user_organizations','organization_profiles','organization_branding',
+                'employees','tasks','operational_plans','executive_plans',
+                'data_uploads_log','deep_analyses','analysis_runs',
+                'donor_insights','smart_tasks','marketing_ideas',
+                'org_external_sources','action_plans','accountability_questions','accountability_tasks'
+              ) order by table_name;"
+          echo "--- COLUMNS ---"
+          run_sql -AtF '|' -c "
+            select table_name,string_agg(column_name,',' order by ordinal_position)
+            from information_schema.columns
+            where table_schema='public'
+              and table_name in (
+                'organizations','user_organizations','organization_profiles','organization_branding',
+                'employees','tasks','operational_plans','executive_plans',
+                'data_uploads_log','deep_analyses','analysis_runs',
+                'donor_insights','smart_tasks','marketing_ideas'
+              )
+            group by table_name order by table_name;"
+          echo "--- FUNCTIONS ---"
+          run_sql -AtF '|' -c "
+            select proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+            where n.nspname='public' and proname in (
+              'get_org_branding','get_user_organization_id','is_super_admin',
+              'manager_can_access_org','is_user_approved_in_org'
+            ) order by proname;"
+          echo "--- TADABBUR CORE COUNTS ---"
+          run_sql -AtF '|' -c "
+            with t as (
+              select id,name,slug from public.organizations
+              where slug in ('tadabbur','tdabar') or name ilike '%تدبر%'
+              order by created_at asc limit 1
+            )
+            select 'org',id::text,regexp_replace(name,E'[\n\r|]+',' ','g'),coalesce(slug,'') from t
+            union all select 'employees',count(*)::text,'','' from public.employees,t where organization_id=t.id
+            union all select 'tasks',count(*)::text,'','' from public.tasks,t where organization_id=t.id
+            union all select 'operational_plans',count(*)::text,'','' from public.operational_plans,t where organization_id=t.id
+            union all select 'executive_plans',count(*)::text,'','' from public.executive_plans,t where organization_id=t.id;"
+          echo "--- OPTIONAL COUNTS ---"
+          for tbl in data_uploads_log deep_analyses analysis_runs donor_insights smart_tasks marketing_ideas; do
+            "$PSQL" -h 127.0.0.1 -p 5432 -U "$DBUSER" -d "$DBNAME" -X -P pager=off -AtF '|' -c "
+              with t as (
+                select id from public.organizations
+                where slug in ('tadabbur','tdabar') or name ilike '%تدبر%'
+                order by created_at asc limit 1
+              )
+              select '$tbl',count(*) from public.$tbl,t where organization_id=t.id;" 2>/dev/null || echo "$tbl|MISSING_OR_ERROR"
+          done
+          echo "--- ALL ORG CORE COUNTS ---"
+          run_sql -AtF '|' -c "
+            select coalesce(o.slug,''),regexp_replace(o.name,E'[\n\r|]+',' ','g'),
+              (select count(*) from public.employees e where e.organization_id=o.id),
+              (select count(*) from public.tasks x where x.organization_id=o.id),
+              (select count(*) from public.operational_plans p where p.organization_id=o.id),
+              (select count(*) from public.executive_plans ep where ep.organization_id=o.id)
+            from public.organizations o order by o.created_at;"
+          echo "--- STORAGE COUNTS ---"
+          run_sql -AtF '|' -c "select bucket_id,count(*) from storage.objects group by bucket_id order by bucket_id;" 2>/dev/null || echo "STORAGE_UNAVAILABLE"
+          echo "--- TADABBUR STORAGE COUNTS ---"
+          run_sql -AtF '|' -c "
+            with t as (
+              select id::text id from public.organizations
+              where slug in ('tadabbur','tdabar') or name ilike '%تدبر%'
+              order by created_at asc limit 1
+            )
+            select bucket_id,count(*) from storage.objects,t
+            where name like t.id || '/%' or name ilike '%tdabar%' or name ilike '%tadabbur%'
+            group by bucket_id order by bucket_id;" 2>/dev/null || echo "TADABBUR_STORAGE_UNAVAILABLE"
+          echo "--- MIGRATION HISTORY ---"
+          run_sql -AtF '|' -c "select count(*),min(version::text),max(version::text) from supabase_migrations.schema_migrations;" 2>/dev/null || echo "NO_MIGRATION_HISTORY"
+          REMOTE
+
+      - name: Post safe audit
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('/tmp/audit.txt').read_text(errors='replace') if Path('/tmp/audit.txt').exists() else 'NO_OUTPUT'
+          safe=[]
+          for line in s.splitlines():
+              u=line.upper()
+              if any(x in u for x in ('PASSWORD=', 'SECRET=', 'TOKEN=', 'PRIVATE KEY', 'SERVICE_ROLE=', 'ANON_KEY=', 'JWT_SECRET=')):
+                  continue
+              safe.append(line[:1200])
+          Path('/tmp/safe.txt').write_text('\n'.join(safe)[:65000])
+          PY
+          { echo 'KFAAH_CORRECT_DB_AUDIT_REPORT'; echo; cat /tmp/safe.txt; } > /tmp/comment.txt
+          gh issue comment 5 --repo "$GITHUB_REPOSITORY" --body-file /tmp/comment.txt
