@@ -2,6 +2,7 @@ import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
+import { authorizationErrorResponse, requireTrustedCaller } from '../_shared/authz.ts'
 
 // Configuration baked in at scaffold time — do NOT change these manually.
 // To update, re-run the email domain setup flow.
@@ -28,9 +29,8 @@ function generateToken(): string {
     .join('')
 }
 
-// Auth note: this function uses verify_jwt = true in config.toml, so Supabase's
-// gateway validates the caller's JWT (anon or service_role) before the request
-// reaches this code. No in-function auth check is needed.
+// Caller authentication is enforced inside the function so behavior is
+// consistent across hosted and self-hosted Edge Runtime gateways.
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -50,6 +50,14 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     )
+  }
+
+  try {
+    await requireTrustedCaller(req)
+  } catch (e) {
+    const authError = authorizationErrorResponse(e, corsHeaders)
+    if (authError) return authError
+    throw e
   }
 
   // Parse request body
