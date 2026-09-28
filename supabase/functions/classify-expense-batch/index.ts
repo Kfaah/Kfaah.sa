@@ -1,3 +1,4 @@
+import { authorizationErrorResponse, requireTrustedCaller } from "../_shared/authz.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -10,6 +11,7 @@ interface Row { id: string; description: string; amount?: number; vendor?: strin
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
+    await requireTrustedCaller(req);
     const { rows, projects } = await req.json() as { rows: Row[]; projects: string[] };
     if (!Array.isArray(rows) || rows.length === 0) {
       return new Response(JSON.stringify({ classifications: [] }), {
@@ -79,6 +81,8 @@ ${rows.map((r, i) => `${i + 1}. وصف: "${r.description}" | المورد: "${r.
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
+    const authError = authorizationErrorResponse(e, corsHeaders);
+    if (authError) return authError;
     console.error(e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "unknown" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
