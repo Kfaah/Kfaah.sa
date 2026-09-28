@@ -619,7 +619,7 @@ export function Sidebar() {
                 <div className="my-2 mx-auto w-24 h-0.5 bg-gradient-to-r from-transparent rounded-full via-white/70" />
               </div>
               <div className="text-white/85 text-[11px] font-medium leading-tight">
-                نظام إدارة التسويق الإلكتروني
+                نظام إدارة التسويق الإلكتروني وتنمية الموارد المالية
               </div>
             </div>
           )}
