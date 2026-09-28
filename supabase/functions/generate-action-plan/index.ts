@@ -1,6 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import PptxGenJS from "npm:pptxgenjs@4.0.1";
+import { authorizationErrorResponse, requireOrganizationAccess } from "../_shared/authz.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -676,6 +677,8 @@ Deno.serve(async (req) => {
       });
     }
 
+    await requireOrganizationAccess(req, organization_id, admin);
+
     // 1) Latest cached AI insight
     let { data: cached } = await admin
       .from("admin_ai_insights_cache")
@@ -956,6 +959,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
+    const authError = authorizationErrorResponse(e, corsHeaders);
+    if (authError) return authError;
     console.error("generate-action-plan error:", e);
     return new Response(JSON.stringify({ error: e.message || "Unknown error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
