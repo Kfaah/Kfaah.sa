@@ -48,6 +48,7 @@ INTERNAL_AUTH_MARKERS = (
     "requireTrustedCaller(",
     "requireOrganizationAccess(",
     "requirePlatformAdmin(",
+    "isServiceRoleRequest(",
 )
 
 NON_JWT_SECRET_MARKERS = (
