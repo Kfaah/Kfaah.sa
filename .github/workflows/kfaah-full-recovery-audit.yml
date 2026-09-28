@@ -180,13 +180,8 @@ jobs:
           curl --connect-timeout 5 --max-time 10 -sS -o /tmp/rest-root -w 'rest=%{http_code} bytes=%{size_download}\n' http://127.0.0.1:8000/rest/v1/
           curl --connect-timeout 5 --max-time 10 -sS -o /tmp/storage-root -w 'storage=%{http_code} bytes=%{size_download}\n' http://127.0.0.1:8000/storage/v1/
           echo
-          echo "=== FUNCTION ROUTE GET PROBES (READ-ONLY) ==="
-          for fn in             analyze-uploaded-file parse-staff-duties-xlsx run-intelligence             generate-plan-deep generate-plan-from-excel generate-executive-plans             deep-org-analysis process-upload extract-website-info import-org-documents             create-employee evaluate-task-quality top-up-employee-tasks verify-evidence             innovation-suggestions innovation-chat admin-insights executive-report             classify-expense-batch suggest-finance-reports donor-insights report-suggestions             smart-task-dispatcher generate-related-tasks marketing-radar             marketing-suggest-campaigns marketing-generate-content marketing-evaluate-campaign             send-transactional-email fetch-platform-email-replies org-self-signup             create-org-viewer-accounts notify-task-message __kfaah_missing_probe__; do
-            code=$(curl --connect-timeout 3 --max-time 8 -sS -o /tmp/fn-probe -w '%{http_code}' "http://127.0.0.1:9001/functions/v1/$fn")
-            size=$(wc -c < /tmp/fn-probe 2>/dev/null || echo 0)
-            prefix=$(head -c 120 /tmp/fn-probe 2>/dev/null | tr '\n' ' ' | tr -cd '[:print:]')
-            echo "$fn => $code bytes=$size body=$prefix"
-          done
+          echo "=== FUNCTION ROUTE PROBES ==="
+          echo "Skipped here: function existence is checked with non-mutating OPTIONS in the next step."
           REMOTE
 
       - name: Safe OPTIONS inventory for all frontend functions
