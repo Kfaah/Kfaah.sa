@@ -12,7 +12,16 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const DEFAULT_PASSWORD = "Viewer@2026";
+const VIEWER_PASSWORD_LENGTH = 20;
+
+function generateTemporaryPassword() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%*-_";
+  const bytes = new Uint8Array(VIEWER_PASSWORD_LENGTH);
+  crypto.getRandomValues(bytes);
+  let password = "";
+  for (const byte of bytes) password += alphabet[byte % alphabet.length];
+  return `Vw9!${password.slice(4)}`;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -34,12 +43,11 @@ serve(async (req) => {
 
     const requestingUserId = claimsData.claims.sub as string;
 
-    const [{ data: isAdmin }, { data: isSuperAdmin }] = await Promise.all([
-      admin.rpc("has_role", { _user_id: requestingUserId, _role: "admin" }),
-      admin.rpc("is_super_admin", { _user_id: requestingUserId }),
-    ]);
-    if (!isAdmin && !isSuperAdmin) {
-      return json({ error: "صلاحية غير كافية" }, 403);
+    const { data: isSuperAdmin } = await admin.rpc("is_super_admin", {
+      _user_id: requestingUserId,
+    });
+    if (!isSuperAdmin) {
+      return json({ error: "صلاحية مدير النظام مطلوبة" }, 403);
     }
 
     // Load all active organizations
@@ -84,11 +92,12 @@ serve(async (req) => {
           continue;
         }
 
-        // Create the auth user
+        // Create the auth user with a unique one-time password.
+        const temporaryPassword = generateTemporaryPassword();
         const { data: authData, error: createErr } =
           await admin.auth.admin.createUser({
             email: internalEmail,
-            password: DEFAULT_PASSWORD,
+            password: temporaryPassword,
             email_confirm: true,
             user_metadata: {
               full_name: org.name,
@@ -152,7 +161,7 @@ serve(async (req) => {
           slug: org.slug,
           status: "created",
           username,
-          password: DEFAULT_PASSWORD,
+          password: temporaryPassword,
         });
       } catch (e: any) {
         results.push({
