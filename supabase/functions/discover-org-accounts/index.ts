@@ -3,6 +3,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.0";
+import { authorizationErrorResponse, requireOrganizationAccess } from "../_shared/authz.ts";
 
 const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -142,6 +143,7 @@ Deno.serve(async (req) => {
     if (!organization_id) return new Response(JSON.stringify({ error: "organization_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const supa = createClient(SUPABASE_URL, SERVICE_KEY);
+    await requireOrganizationAccess(req, organization_id, supa);
     const { data: org } = await supa.from("organizations").select("id,name").eq("id", organization_id).single();
     if (!org) return new Response(JSON.stringify({ error: "org_not_found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const { data: prof } = await supa.from("organization_profiles").select("*").eq("organization_id", organization_id).maybeSingle();
@@ -218,6 +220,8 @@ Deno.serve(async (req) => {
       registered_sources: toInsert.length,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
+    const authError = authorizationErrorResponse(e, corsHeaders);
+    if (authError) return authError;
     console.error("discover-org-accounts failed", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "unknown" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
