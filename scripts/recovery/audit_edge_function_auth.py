@@ -44,6 +44,10 @@ INTERNAL_AUTH_MARKERS = (
     "verifyCaller(",
     "verifyAuth(",
     "verifyUser(",
+    "requireAuthenticatedUser(",
+    "requireTrustedCaller(",
+    "requireOrganizationAccess(",
+    "requirePlatformAdmin(",
 )
 
 NON_JWT_SECRET_MARKERS = (
