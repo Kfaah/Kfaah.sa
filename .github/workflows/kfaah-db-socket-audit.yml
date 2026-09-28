@@ -1,0 +1,81 @@
+name: Kfaah DB Socket Audit
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    if: >-
+      github.event.issue.number == 5 &&
+      github.event.comment.user.login == 'gaberalhrese-cloud' &&
+      github.event.comment.body == 'KFAAH_DB_SOCKET_AUDIT'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect DB service and run read-only audit
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_audit"
+          chmod 600 "$HOME/.ssh/id_kfaah_audit"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+          ssh -i "$HOME/.ssh/id_kfaah_audit" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'bash -s' > /tmp/audit.txt 2>&1 <<'REMOTE'
+          set +e
+          echo "=== UNIT ==="
+          sed -n '1,220p' /etc/systemd/system/kfaah-supabase.service 2>/dev/null | sed -E 's/(PASSWORD|SECRET|TOKEN|KEY)=.*/\1=REDACTED/g'
+          echo
+          echo "=== POSSIBLE CONFIG PATHS ==="
+          grep -R -nE 'EnvironmentFile|docker compose|compose\.ya?ml|supabase.*env' /etc/systemd/system/kfaah-supabase.service /opt/kfaah 2>/dev/null | head -120 | sed -E 's/(PASSWORD|SECRET|TOKEN|KEY)=.*/\1=REDACTED/g'
+          echo
+          echo "=== CONFIG FILE PERMISSIONS ==="
+          for f in /opt/kfaah/.env /opt/kfaah/supabase/.env /opt/kfaah/docker-compose.yml /opt/kfaah/docker-compose.yaml /opt/kfaah/supabase/docker-compose.yml /opt/kfaah/supabase/docker-compose.yaml; do
+            [ -e "$f" ] && stat -c '%A %U:%G %n' "$f"
+          done
+          echo
+          echo "=== LOCAL PORT TESTS ==="
+          for p in 5432 6543 8000 9001 3000 9999; do
+            (echo >/dev/tcp/127.0.0.1/$p) >/dev/null 2>&1 && echo "$p OPEN" || true
+          done
+          echo
+          echo "=== PG TOOLS ==="
+          command -v psql || true
+          psql --version 2>/dev/null || true
+          echo
+          echo "=== SAFE ENV NAMES ==="
+          for f in /opt/kfaah/.env /opt/kfaah/supabase/.env; do
+            if [ -r "$f" ]; then
+              echo "-- $f"
+              sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' "$f" | sort
+            fi
+          done
+          REMOTE
+
+      - name: Post safe audit
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('/tmp/audit.txt').read_text(errors='replace') if Path('/tmp/audit.txt').exists() else 'NO_OUTPUT'
+          safe=[]
+          for line in s.splitlines():
+              u=line.upper()
+              if any(x in u for x in ('PRIVATE KEY', 'SERVICE_ROLE=', 'ANON_KEY=', 'PASSWORD=', 'SECRET=', 'TOKEN=')):
+                  continue
+              safe.append(line[:1000])
+          Path('/tmp/safe.txt').write_text('\n'.join(safe)[:40000])
+          PY
+          { echo 'KFAAH_DB_SOCKET_AUDIT_REPORT'; echo; cat /tmp/safe.txt; } > /tmp/comment.txt
+          gh issue comment 5 --repo "$GITHUB_REPOSITORY" --body-file /tmp/comment.txt
