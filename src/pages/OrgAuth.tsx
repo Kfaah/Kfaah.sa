@@ -384,7 +384,7 @@ export default function OrgAuth() {
           >
             {org.name}
           </h1>
-          <p className="text-sm text-slate-300 mt-1.5">منصة إدارة التسويق الإلكتروني بالذكاء الاصطناعي</p>
+          <p className="text-sm text-slate-300 mt-1.5">منصة إدارة التسويق الإلكتروني وتنمية الموارد المالية بالذكاء الاصطناعي</p>
 
           {/* Decorative divider */}
           <div className="flex items-center justify-center gap-2 mt-3" aria-hidden="true">
