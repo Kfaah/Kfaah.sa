@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { authorizationErrorResponse, requireOrganizationAccess } from "../_shared/authz.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,14 +16,24 @@ Deno.serve(async (req) => {
     if (!KFAAH_AI_API_KEY) throw new Error("KFAAH_AI_API_KEY not configured");
 
     const supa = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const [cRes, mRes, chRes, prevRes] = await Promise.all([
-      supa.from("marketing_campaigns").select("*").eq("id", campaign_id).maybeSingle(),
+    const { data: c } = await supa
+      .from("marketing_campaigns")
+      .select("*")
+      .eq("id", campaign_id)
+      .maybeSingle();
+    if (!c) return new Response(JSON.stringify({ error: "campaign not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    await requireOrganizationAccess(req, c.organization_id, supa);
+
+    const [mRes, chRes, prevRes] = await Promise.all([
       supa.from("marketing_campaign_metrics").select("*").eq("campaign_id", campaign_id),
       supa.from("marketing_campaign_channels").select("channel, status").eq("campaign_id", campaign_id),
-      supa.from("marketing_playbook_memory").select("insight_type, finding, channel, audience_segment").limit(20),
+      supa
+        .from("marketing_playbook_memory")
+        .select("insight_type, finding, channel, audience_segment")
+        .eq("organization_id", c.organization_id)
+        .limit(20),
     ]);
-    const c = cRes.data;
-    if (!c) return new Response(JSON.stringify({ error: "campaign not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const metrics = mRes.data ?? [];
     const totals = metrics.reduce((acc: any, m: any) => ({
@@ -139,6 +150,8 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({ evaluation: evalResult, totals }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
+    const authError = authorizationErrorResponse(e, corsHeaders);
+    if (authError) return authError;
     console.error(e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
