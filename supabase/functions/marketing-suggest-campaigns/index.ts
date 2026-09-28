@@ -9,7 +9,7 @@ const corsHeaders = {
 async function fetchSiteText(url: string): Promise<string> {
   try {
     const resp = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; LovableBot/1.0)" },
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; KfaahBot/1.0)" },
       signal: AbortSignal.timeout(8000),
     });
     if (!resp.ok) return "";
