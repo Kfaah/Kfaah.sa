@@ -143,18 +143,44 @@ serve(async (req) => {
           continue;
         }
 
-        // Link to the organization as their default org
-        await admin.from("user_organizations").insert({
+        // Link to the organization as an approved system-created viewer.
+        const { error: membershipErr } = await admin.from("user_organizations").insert({
           user_id: authData.user.id,
           organization_id: org.id,
           is_default: true,
+          approval_status: "approved",
+          approved_at: new Date().toISOString(),
         });
+        if (membershipErr) {
+          await admin.from("employees").delete().eq("user_id", authData.user.id);
+          await admin.auth.admin.deleteUser(authData.user.id);
+          results.push({
+            org: org.name,
+            slug: org.slug,
+            status: "error",
+            message: membershipErr.message,
+          });
+          continue;
+        }
 
-        // Assign 'viewer' role
-        await admin.from("user_roles").insert({
+        // Assign 'viewer' role. If this fails, roll back the partial account
+        // so the UI never reports a usable viewer that cannot actually access.
+        const { error: roleErr } = await admin.from("user_roles").insert({
           user_id: authData.user.id,
           role: "viewer",
         });
+        if (roleErr) {
+          await admin.from("user_organizations").delete().eq("user_id", authData.user.id);
+          await admin.from("employees").delete().eq("user_id", authData.user.id);
+          await admin.auth.admin.deleteUser(authData.user.id);
+          results.push({
+            org: org.name,
+            slug: org.slug,
+            status: "error",
+            message: roleErr.message,
+          });
+          continue;
+        }
 
         results.push({
           org: org.name,
