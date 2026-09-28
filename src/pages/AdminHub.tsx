@@ -172,7 +172,7 @@ export default function AdminHub() {
             </div>
             <div>
               <h1 className="text-white font-bold text-lg leading-tight">لوحة مدير النظام</h1>
-              <p className="text-white/70 text-xs">نظام إدارة التسويق الإلكتروني للجمعيات</p>
+              <p className="text-white/70 text-xs">نظام إدارة التسويق الإلكتروني وتنمية الموارد المالية للجمعيات</p>
             </div>
           </div>
           <Button onClick={handleSignOut} variant="ghost" size="sm" className="gap-2 text-white hover:bg-white/10">
