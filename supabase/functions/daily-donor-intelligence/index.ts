@@ -1,9 +1,10 @@
 // Daily Donor Intelligence Engine
 // Runs deep behavioral analysis on donations + subscriptions + campaigns
-// + gifts + abandoned carts + failed donations, then asks Lovable AI to
+// + gifts + abandoned carts + failed donations, then asks Kfaah AI to
 // generate insights, creative ideas, and ready-to-assign smart tasks.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { authorizationErrorResponse, requireOrganizationAccess } from "../_shared/authz.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -299,6 +300,8 @@ Deno.serve(async (req) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
+    await requireOrganizationAccess(req, orgId, supa);
+
     const snapshot = await buildSignals(supa, orgId);
 
     // اطلب من النموذج التحليل
@@ -442,6 +445,8 @@ ${JSON.stringify(snapshot.signals, null, 2)}
       },
     });
   } catch (e: any) {
+    const authError = authorizationErrorResponse(e, corsHeaders);
+    if (authError) return authError;
     console.error("daily-donor-intelligence error", e);
     return json({ error: e?.message || "خطأ غير متوقع" }, 500);
   }
