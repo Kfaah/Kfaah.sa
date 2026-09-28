@@ -7,6 +7,7 @@
 // daily-donor-intelligence run with trigger=top_up.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { authorizationErrorResponse, requireOrganizationAccess } from "../_shared/authz.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,6 +39,8 @@ Deno.serve(async (req) => {
     const orgId: string | undefined = body.organization_id || body.organizationId;
     const onlyUser: string | undefined = body.user_id;
     if (!orgId) return json({ error: "organization_id مطلوب" }, 400);
+
+    await requireOrganizationAccess(req, orgId, supa);
 
     const today = new Date().toISOString().slice(0, 10);
 
@@ -203,6 +206,8 @@ Deno.serve(async (req) => {
 
     return json({ ok: true, filled, employees: employees.length, reports });
   } catch (e: any) {
+    const authError = authorizationErrorResponse(e, corsHeaders);
+    if (authError) return authError;
     console.error("top-up-employee-tasks error", e);
     return json({ error: e?.message || "خطأ غير متوقع" }, 500);
   }
