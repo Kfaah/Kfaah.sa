@@ -43,6 +43,36 @@ jobs:
             echo "$fn => $code $prefix"
           done
 
+      - name: Public organization identity audit
+        run: |
+          set -euo pipefail
+          : "${KFAAH_ANON_KEY:?Missing public anon key}"
+          echo "::add-mask::$KFAAH_ANON_KEY"
+          echo "=== PUBLIC ORGANIZATION IDENTITIES ==="
+          for slug in tadabbur tdabar sawab nujabaa atff harf najah tanmiah riyadah maather d-alqasaba; do
+            body=$(curl --connect-timeout 8 --max-time 20 -sS \
+              -X POST "$KFAAH_URL/rest/v1/rpc/get_organization_by_slug" \
+              -H "apikey: $KFAAH_ANON_KEY" \
+              -H "Authorization: Bearer $KFAAH_ANON_KEY" \
+              -H 'Content-Type: application/json' \
+              -d "$(jq -n --arg slug "$slug" '{_slug:$slug}')")
+            printf '%s' "$body" | jq -c --arg requested "$slug" '
+              if type=="array" and length>0 then
+                .[0] | {
+                  requested_slug:$requested,
+                  exists:true,
+                  id:(.id // null),
+                  name:(.name // null),
+                  slug:(.slug // null),
+                  active:(.is_active // null),
+                  self_signup:(.allow_self_signup // null),
+                  logo_host:((.logo_url // "") | capture("^https?://(?<host>[^/]+)")?.host // null)
+                }
+              else
+                {requested_slug:$requested,exists:false}
+              end'
+          done
+
       - name: Authenticated demo storage round-trip
         run: |
           set -euo pipefail
