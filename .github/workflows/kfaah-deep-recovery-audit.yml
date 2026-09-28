@@ -89,6 +89,7 @@ jobs:
           fi
 
       - name: Read-only server service summary
+        if: always()
         env:
           HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
           HETZNER_USER: ${{ secrets.HETZNER_USER }}
