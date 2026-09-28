@@ -18,7 +18,7 @@ import {
 
 const LOGO_URL = 'https://kfaah.sa/storage/v1/object/public/email-assets/kafaa-logo-v2.png'
 const BRAND_NAME = 'منصة كفاءة'
-const TAGLINE = 'منصة إدارة التسويق الإلكتروني للجمعيات بكفاءة'
+const TAGLINE = 'منصة إدارة التسويق الإلكتروني وتنمية الموارد المالية للجمعيات بكفاءة'
 
 interface InviteEmailProps {
   siteName: string
@@ -43,7 +43,7 @@ export const InviteEmail = ({
         <Text style={text}>
           تمت دعوتك للانضمام إلى{' '}
           <Link href={siteUrl} style={link}><strong>{BRAND_NAME}</strong></Link>
-          {' '}— منصة إدارة التسويق الإلكتروني للجمعيات بكفاءة. اضغط على الزر أدناه لقبول الدعوة وإنشاء حسابك.
+          {' '}— منصة إدارة التسويق الإلكتروني وتنمية الموارد المالية للجمعيات بكفاءة. اضغط على الزر أدناه لقبول الدعوة وإنشاء حسابك.
         </Text>
         <Section style={buttonSection}>
           <Button style={button} href={confirmationUrl}>قبول الدعوة</Button>
