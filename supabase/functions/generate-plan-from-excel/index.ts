@@ -1,6 +1,7 @@
+import { authorizationErrorResponse, requireTrustedCaller } from "../_shared/authz.ts";
 // Edge function: generate-plan-from-excel
 // Takes an uploaded Excel plan (columns + rows + plan name) and generates
-// a complete, professional operational plan using Lovable AI.
+// a complete, professional operational plan using Kfaah AI.
 // Smart: even with sparse data, it infers the goal and builds a coherent plan.
 
 const corsHeaders = {
@@ -97,6 +98,7 @@ Deno.serve(async (req) => {
   }
 
   try {
+    await requireTrustedCaller(req);
     const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY");
     if (!KFAAH_AI_API_KEY) {
       return json({ error: "AI service not configured" }, 500);
@@ -211,6 +213,8 @@ ${sampleRows.length ? JSON.stringify(sampleRows, null, 2) : "(لا توجد صف
       rows: outRows,
     });
   } catch (err) {
+    const authError = authorizationErrorResponse(err, corsHeaders);
+    if (authError) return authError;
     console.error("generate-plan-from-excel error:", err);
     return json({ error: err instanceof Error ? err.message : "خطأ غير متوقع" }, 500);
   }
