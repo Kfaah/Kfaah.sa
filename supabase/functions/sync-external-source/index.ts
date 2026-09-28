@@ -3,6 +3,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.0";
+import { authorizationErrorResponse, requireOrganizationAccess } from "../_shared/authz.ts";
 
 const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY")!;
 const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
@@ -18,6 +19,7 @@ Deno.serve(async (req) => {
     const supa = createClient(SUPABASE_URL, SERVICE_KEY);
     const { data: src } = await supa.from("org_external_sources").select("*").eq("id", source_id).maybeSingle();
     if (!src) return new Response(JSON.stringify({ error: "source_not_found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    await requireOrganizationAccess(req, src.organization_id, supa);
 
     // Some rows were stored as a bare handle (e.g. "TADABUR_KSA") which is not a
     // fetchable address. Rebuild a real URL from the platform kind, and persist it
@@ -313,6 +315,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
+    const authError = authorizationErrorResponse(e, corsHeaders);
+    if (authError) return authError;
     console.error(e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "unknown" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
