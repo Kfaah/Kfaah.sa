@@ -1,3 +1,4 @@
+import { authorizationErrorResponse, requireTrustedCaller } from "../_shared/authz.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -291,6 +292,7 @@ function findDocumentPages(html: string, baseUrl: string): string[] {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
+    await requireTrustedCaller(req);
     const { url } = await req.json();
     if (!url) {
       return new Response(JSON.stringify({ error: "url required" }), {
@@ -405,6 +407,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
+    const authError = authorizationErrorResponse(e, corsHeaders);
+    if (authError) return authError;
     return new Response(JSON.stringify({ error: (e as Error).message }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
