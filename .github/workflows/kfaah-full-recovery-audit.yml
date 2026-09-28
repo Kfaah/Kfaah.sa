@@ -184,6 +184,41 @@ jobs:
           echo "Skipped here: function existence is checked with non-mutating OPTIONS in the next step."
           REMOTE
 
+      - name: Probe native self-hosted Edge Runtime path
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+          ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_audit"
+          chmod 600 "$HOME/.ssh/id_kfaah_audit"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          echo "::add-mask::$ANON_KEY"
+
+          ssh -i "$HOME/.ssh/id_kfaah_audit" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" \
+            "ANON_KEY='$ANON_KEY' bash -s" <<'REMOTE'
+          set +e
+          echo "=== NATIVE SUPABASE FUNCTIONS VIA :8000 ==="
+          for path in hello __kfaah_native_missing_probe__ generate-plan-deep; do
+            code=$(curl --connect-timeout 4 --max-time 10 -sS -o /tmp/native-fn.out -w '%{http_code}' \
+              -H "apikey: $ANON_KEY" \
+              -X OPTIONS "http://127.0.0.1:8000/functions/v1/$path")
+            size=$(wc -c < /tmp/native-fn.out 2>/dev/null || echo 0)
+            prefix=$(head -c 160 /tmp/native-fn.out 2>/dev/null | tr '\n' ' ' | tr -cd '[:print:]')
+            echo "OPTIONS $path => $code bytes=$size body=$prefix"
+          done
+          echo "=== NATIVE HELLO GET ==="
+          code=$(curl --connect-timeout 4 --max-time 10 -sS -o /tmp/native-hello.out -w '%{http_code}' \
+            -H "apikey: $ANON_KEY" \
+            "http://127.0.0.1:8000/functions/v1/hello")
+          echo "hello => $code bytes=$(wc -c < /tmp/native-hello.out 2>/dev/null || echo 0) body=$(head -c 180 /tmp/native-hello.out 2>/dev/null | tr '\n' ' ' | tr -cd '[:print:]')"
+          REMOTE
+
       - name: Safe OPTIONS inventory for all frontend functions
         env:
           HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
