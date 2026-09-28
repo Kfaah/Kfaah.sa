@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-import { authorizationErrorResponse, requireAuthenticatedUser } from "../_shared/authz.ts";
+import { authorizationErrorResponse, requireTrustedCaller } from "../_shared/authz.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    await requireAuthenticatedUser(req);
+    await requireTrustedCaller(req);
     const { report_type, filters, aggregates, samples } = await req.json();
     const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY");
     if (!KFAAH_AI_API_KEY) throw new Error("KFAAH_AI_API_KEY not configured");
