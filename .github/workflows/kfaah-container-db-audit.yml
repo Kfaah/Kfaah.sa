@@ -1,0 +1,152 @@
+name: Kfaah Container DB Audit
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    if: >-
+      github.event.issue.number == 5 &&
+      github.event.comment.user.login == 'gaberalhrese-cloud' &&
+      github.event.comment.body == 'KFAAH_CONTAINER_DB_AUDIT'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Audit Hetzner container database read-only
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_audit"
+          chmod 600 "$HOME/.ssh/id_kfaah_audit"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+          ssh -i "$HOME/.ssh/id_kfaah_audit" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'bash -s' > /tmp/audit.txt 2>&1 <<'REMOTE'
+          set +e
+          echo "=== DOCKER PS ==="
+          docker ps --format '{{.Names}}|{{.Image}}|{{.Ports}}'
+          DB_CONTAINER="$(docker ps --format '{{.Names}}|{{.Image}}' | awk -F'|' 'tolower($2) ~ /postgres|supabase\/postgres/ {print $1; exit}')"
+          echo "DB_CONTAINER=$DB_CONTAINER"
+          if [ -z "$DB_CONTAINER" ]; then
+            echo "NO_DB_CONTAINER"
+            exit 0
+          fi
+
+          run_sql() {
+            docker exec "$DB_CONTAINER" psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 -P pager=off "$@"
+          }
+
+          echo
+          echo "=== CONNECTION ==="
+          run_sql -AtF '|' -c "select current_database(), current_user, version();"
+          echo
+          echo "=== IMPORTANT TABLES ==="
+          run_sql -AtF '|' -c "
+            select table_name
+            from information_schema.tables
+            where table_schema='public'
+              and table_name in (
+                'organizations','user_organizations','organization_profiles','organization_branding',
+                'employees','tasks','operational_plans','executive_plans',
+                'data_uploads_log','deep_analyses','analysis_runs',
+                'donor_insights','smart_tasks','marketing_ideas',
+                'org_external_sources','action_plans','accountability_questions','accountability_tasks'
+              )
+            order by table_name;"
+          echo
+          echo "=== IMPORTANT COLUMNS ==="
+          run_sql -AtF '|' -c "
+            select table_name, string_agg(column_name, ',' order by ordinal_position)
+            from information_schema.columns
+            where table_schema='public'
+              and table_name in (
+                'organizations','user_organizations','organization_profiles','organization_branding',
+                'employees','tasks','operational_plans','executive_plans',
+                'data_uploads_log','deep_analyses','analysis_runs',
+                'donor_insights','smart_tasks','marketing_ideas'
+              )
+            group by table_name order by table_name;"
+          echo
+          echo "=== TADABBUR COUNTS ==="
+          run_sql -AtF '|' -c "
+            with t as (
+              select id,name,slug from public.organizations
+              where slug in ('tadabbur','tdabar') or name ilike '%تدبر%'
+              order by created_at asc limit 1
+            )
+            select 'org',id::text,regexp_replace(name,E'[\n\r|]+',' ','g'),coalesce(slug,'') from t
+            union all
+            select 'employees',count(*)::text,'','' from public.employees,t where organization_id=t.id
+            union all
+            select 'tasks',count(*)::text,'','' from public.tasks,t where organization_id=t.id
+            union all
+            select 'operational_plans',count(*)::text,'','' from public.operational_plans,t where organization_id=t.id
+            union all
+            select 'executive_plans',count(*)::text,'','' from public.executive_plans,t where organization_id=t.id
+            union all
+            select 'uploads',case when to_regclass('public.data_uploads_log') is null then '-1' else (select count(*)::text from public.data_uploads_log,t where organization_id=t.id) end,'',''
+            union all
+            select 'deep_analyses',case when to_regclass('public.deep_analyses') is null then '-1' else (select count(*)::text from public.deep_analyses,t where organization_id=t.id) end,'',''
+            union all
+            select 'analysis_runs',case when to_regclass('public.analysis_runs') is null then '-1' else (select count(*)::text from public.analysis_runs,t where organization_id=t.id) end,'',''
+            union all
+            select 'donor_insights',case when to_regclass('public.donor_insights') is null then '-1' else (select count(*)::text from public.donor_insights,t where organization_id=t.id) end,'',''
+            union all
+            select 'smart_tasks',case when to_regclass('public.smart_tasks') is null then '-1' else (select count(*)::text from public.smart_tasks,t where organization_id=t.id) end,'',''
+            union all
+            select 'marketing_ideas',case when to_regclass('public.marketing_ideas') is null then '-1' else (select count(*)::text from public.marketing_ideas,t where organization_id=t.id) end,'','';"
+          echo
+          echo "=== ALL ORG CORE COUNTS ==="
+          run_sql -AtF '|' -c "
+            select o.id,o.slug,regexp_replace(o.name,E'[\n\r|]+',' ','g'),
+              (select count(*) from public.employees e where e.organization_id=o.id),
+              (select count(*) from public.tasks x where x.organization_id=o.id),
+              (select count(*) from public.operational_plans p where p.organization_id=o.id),
+              (select count(*) from public.executive_plans ep where ep.organization_id=o.id)
+            from public.organizations o order by o.created_at;"
+          echo
+          echo "=== STORAGE BUCKET COUNTS ==="
+          run_sql -AtF '|' -c "select bucket_id,count(*) from storage.objects group by bucket_id order by bucket_id;"
+          echo
+          echo "=== TADABBUR STORAGE ==="
+          run_sql -AtF '|' -c "
+            with t as (
+              select id::text as id from public.organizations
+              where slug in ('tadabbur','tdabar') or name ilike '%تدبر%'
+              order by created_at asc limit 1
+            )
+            select bucket_id,count(*) from storage.objects,t
+            where name like t.id || '/%' or name ilike '%tdabar%' or name ilike '%tadabbur%'
+            group by bucket_id order by bucket_id;"
+          echo
+          echo "=== MIGRATION HISTORY COUNT ==="
+          run_sql -AtF '|' -c "select count(*),min(version::text),max(version::text) from supabase_migrations.schema_migrations;" 2>/dev/null || echo "NO_MIGRATION_HISTORY"
+          REMOTE
+
+      - name: Post safe audit
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('/tmp/audit.txt').read_text(errors='replace') if Path('/tmp/audit.txt').exists() else 'NO_OUTPUT'
+          safe=[]
+          for line in s.splitlines():
+              u=line.upper()
+              if any(x in u for x in ('PASSWORD=', 'SECRET=', 'TOKEN=', 'PRIVATE KEY', 'SERVICE_ROLE', 'ANON_KEY=')):
+                  continue
+              safe.append(line[:800])
+          Path('/tmp/safe.txt').write_text('\n'.join(safe)[:60000])
+          PY
+          { echo 'KFAAH_CONTAINER_DB_AUDIT_REPORT'; echo; cat /tmp/safe.txt; } > /tmp/comment.txt
+          gh issue comment 5 --repo "$GITHUB_REPOSITORY" --body-file /tmp/comment.txt
