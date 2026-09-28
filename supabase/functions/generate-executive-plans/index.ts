@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { authorizationErrorResponse, requireOrganizationAccess } from "../_shared/authz.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -47,6 +48,12 @@ serve(async (req) => {
     const filterEmployeeIds: string[] = Array.isArray(employeeIds) ? employeeIds.filter(Boolean) : [];
     const hasPlanFilter = filterOperationalIds.length > 0 || filterExcelIds.length > 0;
     const activeOrganizationId = typeof organizationId === "string" && organizationId.trim() ? organizationId.trim() : null;
+    if (!activeOrganizationId) {
+      return new Response(JSON.stringify({ error: "organizationId required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY");
     if (!KFAAH_AI_API_KEY) {
@@ -56,6 +63,7 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+    await requireOrganizationAccess(req, activeOrganizationId, supabase);
 
     // قاعدة جمعية تدبر: كل نشاط تسويقي يُسند حصراً إلى مدير التسويق ناصر.
     const shouldLoadTadabburMarketingManager = !activeOrganizationId || activeOrganizationId === TADABBUR_ORG_ID;
@@ -1129,6 +1137,8 @@ ${i + 1}. النشاط: ${p.activityName}
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    const authError = authorizationErrorResponse(error, corsHeaders);
+    if (authError) return authError;
     console.error("generate-executive-plans error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "حدث خطأ غير متوقع" }),
