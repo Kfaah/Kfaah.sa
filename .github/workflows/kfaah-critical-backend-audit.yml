@@ -1,0 +1,146 @@
+name: Kfaah Critical Backend Audit
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    if: >-
+      github.event.issue.number == 5 &&
+      github.event.comment.user.login == 'gaberalhrese-cloud' &&
+      github.event.comment.body == 'KFAAH_CRITICAL_BACKEND_AUDIT'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Audit critical REST schema, storage and function routes
+        env:
+          ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          python3 - <<'PY' > /tmp/report.txt
+          import json, os, urllib.parse, urllib.request, urllib.error
+          BASE="https://kfaah.sa"
+          KEY=os.environ["ANON_KEY"]
+          H={"apikey":KEY,"Authorization":"Bearer "+KEY,"Accept":"application/json"}
+
+          critical={
+            "data_uploads_log":[
+              "id","organization_id","uploaded_by","file_name","file_type","detected_schema",
+              "total_rows","inserted_rows","duplicate_rows","failed_rows","status","error_log",
+              "for_date","created_at","completed_at","file_path","storage_bucket",
+              "ai_analysis","ai_analyzed_at","ai_model"
+            ],
+            "deep_analyses":[
+              "id","organization_id","trigger_source","upload_id","status","sources",
+              "donations_summary","donors_segmentation","campaigns_analysis","website_insights",
+              "store_insights","social_insights","overall_assessment","strengths","gaps",
+              "recommendations","questions_generated","tasks_generated","ai_model","error_message",
+              "started_at","completed_at","created_by","created_at","updated_at",
+              "analysis_evidence","gap_evidence","source_previews","source_breakdown","document_insights"
+            ],
+            "analysis_runs":[
+              "id","organization_id","triggered_by","trigger_source","upload_id","scope","status",
+              "insights_generated","tasks_generated","ideas_generated","events_detected","ai_model",
+              "duration_ms","error_message","summary","started_at","completed_at"
+            ],
+            "organization_profiles":[
+              "organization_id","logo_url","primary_color","secondary_color","accent_color","updated_at"
+            ],
+            "organization_branding":[
+              "organization_id","site_name","site_tagline","display_name","logo_url","favicon_url",
+              "primary_color","secondary_color","accent_color","updated_at"
+            ],
+            "user_organizations":["user_id","organization_id","approval_status","is_default"],
+            "staff_duties_imports":["id","organization_id","uploaded_by","file_name","file_path","file_size_bytes","status"],
+            "org_external_sources":["id","organization_id","kind","url","label","summary","last_status","last_synced_at"],
+            "accountability_questions":["id","organization_id","deep_analysis_id","status"],
+            "accountability_tasks":["id","organization_id","source","source_id","status"],
+            "donor_insights":["id","organization_id","title","summary","generated_at"],
+            "smart_tasks":["id","organization_id","title","status","created_at"],
+            "marketing_ideas":["id","organization_id","title","status","created_at"],
+            "employees":["id","organization_id","user_id","full_name","role_level"],
+            "tasks":["id","organization_id","assigned_to","status"],
+            "operational_plans":["id","organization_id"],
+            "executive_plans":["id","organization_id"],
+          }
+
+          def request(method,url,body=None,headers=None):
+              hh=dict(H)
+              if headers: hh.update(headers)
+              data=None if body is None else body.encode()
+              req=urllib.request.Request(url,data=data,headers=hh,method=method)
+              try:
+                  with urllib.request.urlopen(req,timeout=12) as r:
+                      return r.status,r.read(3000).decode("utf-8","replace")
+              except urllib.error.HTTPError as e:
+                  return e.code,e.read(3000).decode("utf-8","replace")
+              except Exception as e:
+                  return 0,str(e)
+
+          print("=== REST CRITICAL SCHEMA ===")
+          for table,cols in critical.items():
+              missing=[]
+              table_missing=False
+              for col in cols:
+                  q=urllib.parse.urlencode({"select":col,"limit":"0"})
+                  st,b=request("GET",f"{BASE}/rest/v1/{table}?{q}")
+                  if st==404 and ("PGRST205" in b or "Could not find the table" in b):
+                      table_missing=True
+                      break
+                  if st==400 and ("PGRST204" in b or ("column" in b.lower() and "Could not find" in b)):
+                      missing.append(col)
+              if table_missing:
+                  print(f"TABLE_MISSING|{table}")
+              elif missing:
+                  print(f"COLUMNS_MISSING|{table}|{','.join(missing)}")
+              else:
+                  print(f"TABLE_OK|{table}")
+
+          print("=== STORAGE BUCKETS ===")
+          buckets=[
+            "data-uploads","org-documents","staff-duties-files","branding-assets",
+            "analysis-previews","action-plan-files","task-attachments","ai-plan-references"
+          ]
+          for bucket in buckets:
+              st,b=request(
+                  "POST",
+                  f"{BASE}/storage/v1/object/list/{bucket}",
+                  json.dumps({"prefix":"","limit":1,"offset":0}),
+                  {"Content-Type":"application/json"}
+              )
+              summary=b.replace("\n"," ")[:180]
+              print(f"BUCKET|{bucket}|{st}|{summary}")
+
+          print("=== FUNCTION OPTIONS ===")
+          funcs=[
+            "process-upload","analyze-uploaded-file","deep-org-analysis","run-intelligence",
+            "generate-plan-deep","generate-plan-from-excel","generate-executive-plans",
+            "generate-related-tasks","parse-staff-duties-xlsx","daily-donor-intelligence",
+            "evaluate-task-quality","verify-evidence","admin-insights","executive-report",
+            "innovation-suggestions","donor-insights","marketing-radar","create-employee",
+            "extract-website-info","import-org-documents"
+          ]
+          funcs.append("__definitely_missing_kfaah_function__")
+          for fn in funcs:
+              st,b=request(
+                  "OPTIONS",
+                  f"{BASE}/functions/v1/{fn}",
+                  None,
+                  {
+                    "Origin":"https://kfaah.sa",
+                    "Access-Control-Request-Method":"POST",
+                    "Access-Control-Request-Headers":"authorization,apikey,content-type",
+                  }
+              )
+              print(f"FUNCTION|{fn}|{st}|{b.replace(chr(10),' ')[:160]}")
+          PY
+
+      - name: Post result
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          { echo 'KFAAH_CRITICAL_BACKEND_AUDIT_REPORT'; echo; cat /tmp/report.txt; } > /tmp/comment.txt
+          gh issue comment 5 --repo "$GITHUB_REPOSITORY" --body-file /tmp/comment.txt
