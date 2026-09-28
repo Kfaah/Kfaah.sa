@@ -1,0 +1,79 @@
+name: Kfaah Production Supabase Audit
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    if: >-
+      github.event.issue.number == 5 &&
+      github.event.comment.user.login == 'gaberalhrese-cloud' &&
+      github.event.comment.body == 'KFAAH_PROD_SUPABASE_AUDIT'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect production Supabase layout safely
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_audit"
+          chmod 600 "$HOME/.ssh/id_kfaah_audit"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+          ssh -i "$HOME/.ssh/id_kfaah_audit" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'bash -s' > /tmp/audit.txt 2>&1 <<'REMOTE'
+          set +e
+          ROOT=/opt/kfaah/production/supabase
+          echo "=== ROOT ==="
+          ls -ld /opt/kfaah /opt/kfaah/production "$ROOT" 2>&1
+          echo
+          echo "=== FILES ==="
+          find "$ROOT" -maxdepth 2 -type f -printf '%M %u:%g %p\n' 2>/dev/null | head -160
+          echo
+          echo "=== SAFE ENV NAMES ==="
+          for f in "$ROOT"/.env "$ROOT"/*.env "$ROOT"/docker/.env; do
+            [ -r "$f" ] || continue
+            echo "-- $f"
+            sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' "$f" | sort
+          done
+          echo
+          echo "=== COMPOSE SERVICES ==="
+          for f in "$ROOT"/docker-compose.yml "$ROOT"/docker-compose.yaml "$ROOT"/compose.yml "$ROOT"/compose.yaml; do
+            if [ -r "$f" ]; then
+              echo "-- $f"
+              grep -nE '^[[:space:]]{0,4}[A-Za-z0-9_-]+:|container_name:|image:|ports:|5432|6543|8000|9001|3000' "$f" | head -260
+            fi
+          done
+          echo
+          echo "=== FUNCTION GATEWAY CONFIG ==="
+          stat -c '%A %U:%G %n' /opt/kfaah/functions/app.py 2>/dev/null
+          grep -nE 'KNOWN|FUNCTION|functions/v1|route|handler|URL|PORT' /opt/kfaah/functions/app.py 2>/dev/null | head -260
+          REMOTE
+
+      - name: Post safe audit
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('/tmp/audit.txt').read_text(errors='replace') if Path('/tmp/audit.txt').exists() else 'NO_OUTPUT'
+          safe=[]
+          for line in s.splitlines():
+              u=line.upper()
+              if any(x in u for x in ('PRIVATE KEY', 'PASSWORD=', 'SECRET=', 'TOKEN=', 'SERVICE_ROLE=', 'ANON_KEY=')):
+                  continue
+              safe.append(line[:1000])
+          Path('/tmp/safe.txt').write_text('\n'.join(safe)[:60000])
+          PY
+          { echo 'KFAAH_PROD_SUPABASE_AUDIT_REPORT'; echo; cat /tmp/safe.txt; } > /tmp/comment.txt
+          gh issue comment 5 --repo "$GITHUB_REPOSITORY" --body-file /tmp/comment.txt
