@@ -3,6 +3,7 @@ import { ImapFlow } from 'npm:imapflow@1.0.164'
 import { simpleParser } from 'npm:mailparser@3.7.1'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { Buffer } from 'node:buffer'
+import { authorizationErrorResponse, requirePlatformAdmin } from '../_shared/authz.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,6 +32,13 @@ Deno.serve(async (req) => {
   }
 
   const supabase = createClient(supabaseUrl, serviceKey)
+  try {
+    await requirePlatformAdmin(req, supabase)
+  } catch (e) {
+    const authError = authorizationErrorResponse(e, corsHeaders)
+    if (authError) return authError
+    throw e
+  }
   const stats = { fetched: 0, inserted: 0, skipped: 0, errors: 0 }
 
   console.log('[imap] connecting as', user)
