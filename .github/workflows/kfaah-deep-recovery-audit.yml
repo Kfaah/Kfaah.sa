@@ -1,0 +1,115 @@
+name: Kfaah Deep Recovery Audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/kfaah-deep-recovery-audit.yml'
+      - 'supabase/**'
+      - 'src/**'
+      - '.kfaah/requests/2026-09-28-full-platform-recovery.md'
+
+permissions:
+  contents: read
+
+jobs:
+  deep-audit:
+    runs-on: ubuntu-latest
+    env:
+      KFAAH_URL: https://kfaah.sa
+      KFAAH_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Safe function route inventory
+        run: |
+          set +e
+          functions=(
+            admin-insights analyze-organization analyze-uploaded-file classify-expense-batch
+            create-employee create-org-viewer-accounts daily-donor-intelligence deep-org-analysis
+            delete-employee discover-org-accounts donor-insights evaluate-task-quality executive-report
+            extract-website-info fetch-platform-email-replies generate-executive-plans generate-plan-deep
+            generate-plan-from-excel generate-related-tasks generate-smart-report handle-email-unsubscribe
+            impersonate-user import-org-documents innovation-chat innovation-suggestions marketing-design-brief
+            marketing-evaluate-campaign marketing-generate-content marketing-radar marketing-suggest-campaigns
+            notify-task-message org-self-signup parse-staff-duties-xlsx process-upload report-suggestions
+            run-intelligence secure-backup-to-github send-transactional-email setup-demo smart-task-dispatcher
+            suggest-finance-reports sync-external-source top-up-employee-tasks verify-evidence
+          )
+          echo "=== OPTIONS ROUTE INVENTORY ==="
+          for fn in "${functions[@]}"; do
+            code=$(curl --connect-timeout 5 --max-time 12 -sS -o /tmp/fn-body -w '%{http_code}'               -X OPTIONS "$KFAAH_URL/functions/v1/$fn")
+            prefix=$(head -c 100 /tmp/fn-body 2>/dev/null | tr '\n' ' ' | tr -cd '[:print:]')
+            echo "$fn => $code $prefix"
+          done
+
+      - name: Authenticated demo storage round-trip
+        run: |
+          set -euo pipefail
+          : "${KFAAH_ANON_KEY:?Missing public anon key}"
+
+          demo=$(curl --fail-with-body -sS             -X POST "$KFAAH_URL/functions/v1/setup-demo"             -H "apikey: $KFAAH_ANON_KEY"             -H "Authorization: Bearer $KFAAH_ANON_KEY"             -H 'Content-Type: application/json'             -d '{}')
+          email=$(printf '%s' "$demo" | jq -r '.email // empty')
+          password=$(printf '%s' "$demo" | jq -r '.password // empty')
+          test -n "$email"
+          test -n "$password"
+          echo "::add-mask::$email"
+          echo "::add-mask::$password"
+
+          login=$(curl --fail-with-body -sS             -X POST "$KFAAH_URL/auth/v1/token?grant_type=password"             -H "apikey: $KFAAH_ANON_KEY"             -H "Authorization: Bearer $KFAAH_ANON_KEY"             -H 'Content-Type: application/json'             --data "$(jq -n --arg email "$email" --arg password "$password" '{email:$email,password:$password}')")
+          token=$(printf '%s' "$login" | jq -r '.access_token // empty')
+          uid=$(printf '%s' "$login" | jq -r '.user.id // empty')
+          test -n "$token"
+          test -n "$uid"
+          echo "::add-mask::$token"
+          echo "DEMO_LOGIN_OK"
+
+          org="00000000-0000-0000-0000-0000000000de"
+          prefix="$org/archive/profiles"
+          for mb in 1 10; do
+            file="/tmp/kfaah-probe-${mb}mb.bin"
+            head -c "$((mb*1024*1024))" /dev/zero > "$file"
+            object="$prefix/recovery-probe-${GITHUB_RUN_ID}-${mb}mb.bin"
+            code=$(curl --connect-timeout 10 --max-time 60 -sS -o /tmp/storage-upload.out -w '%{http_code}'               -X POST "$KFAAH_URL/storage/v1/object/org-documents/$object"               -H "apikey: $KFAAH_ANON_KEY"               -H "Authorization: Bearer $token"               -H 'Content-Type: application/octet-stream'               -H 'x-upsert: false'               --data-binary @"$file")
+            body=$(head -c 240 /tmp/storage-upload.out | tr '\n' ' ' | tr -cd '[:print:]')
+            echo "ORG_DOCUMENTS_UPLOAD_${mb}MB => HTTP $code $body"
+            if [ "$code" -ge 200 ] && [ "$code" -lt 300 ]; then
+              del=$(curl --connect-timeout 10 --max-time 30 -sS -o /tmp/storage-delete.out -w '%{http_code}'                 -X DELETE "$KFAAH_URL/storage/v1/object/org-documents/$object"                 -H "apikey: $KFAAH_ANON_KEY"                 -H "Authorization: Bearer $token")
+              echo "ORG_DOCUMENTS_DELETE_${mb}MB => HTTP $del"
+            fi
+          done
+
+          ai_object="$uid/recovery-probe-${GITHUB_RUN_ID}.txt"
+          code=$(printf 'kfaah recovery probe' | curl --connect-timeout 10 --max-time 30 -sS -o /tmp/ai-upload.out -w '%{http_code}'             -X POST "$KFAAH_URL/storage/v1/object/ai-plan-references/$ai_object"             -H "apikey: $KFAAH_ANON_KEY"             -H "Authorization: Bearer $token"             -H 'Content-Type: text/plain'             -H 'x-upsert: false'             --data-binary @-)
+          body=$(head -c 240 /tmp/ai-upload.out | tr '\n' ' ' | tr -cd '[:print:]')
+          echo "AI_PLAN_REFERENCES_UPLOAD => HTTP $code $body"
+          if [ "$code" -ge 200 ] && [ "$code" -lt 300 ]; then
+            del=$(curl --connect-timeout 10 --max-time 30 -sS -o /tmp/ai-delete.out -w '%{http_code}'               -X DELETE "$KFAAH_URL/storage/v1/object/ai-plan-references/$ai_object"               -H "apikey: $KFAAH_ANON_KEY"               -H "Authorization: Bearer $token")
+            echo "AI_PLAN_REFERENCES_DELETE => HTTP $del"
+          fi
+
+      - name: Read-only server service summary
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_audit"
+          chmod 600 "$HOME/.ssh/id_kfaah_audit"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+          ssh -i "$HOME/.ssh/id_kfaah_audit" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'bash -s' <<'REMOTE'
+          set +e
+          echo "=== SERVICE SUMMARY ==="
+          for s in nginx kfaah-functions kfaah-supabase kfaah-mail-sync kfaah-offsite-backup; do
+            echo "$s|$(systemctl is-active "$s" 2>/dev/null || true)|$(systemctl is-enabled "$s" 2>/dev/null || true)"
+          done
+          echo "=== FUNCTIONS UNIT SAFE METADATA ==="
+          systemctl show kfaah-functions             -p User -p Group -p ActiveState -p SubState -p FragmentPath -p ExecStart -p EnvironmentFiles             --no-pager 2>/dev/null
+          echo "=== RECENT FUNCTIONS ERRORS ==="
+          journalctl -u kfaah-functions --since '2 hours ago' -p warning --no-pager 2>/dev/null | tail -80
+          REMOTE
