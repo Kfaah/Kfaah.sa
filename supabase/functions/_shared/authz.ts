@@ -85,6 +85,23 @@ export async function requireOrganizationAccess(
   return { kind: "user" as const, user };
 }
 
+export async function requirePlatformAdmin(req: Request, admin: any) {
+  if (isServiceRoleRequest(req)) {
+    return { kind: "service_role" as const, user: null };
+  }
+
+  const user = await requireAuthenticatedUser(req);
+  const [{ data: isSuper }, { data: isAdmin }] = await Promise.all([
+    admin.rpc("is_super_admin", { _user_id: user.id }),
+    admin.rpc("has_role", { _user_id: user.id, _role: "admin" }),
+  ]);
+
+  if (isSuper === true || isAdmin === true) {
+    return { kind: "user" as const, user };
+  }
+  throw new KfaahAuthorizationError("صلاحية إدارية مطلوبة", 403);
+}
+
 export function authorizationErrorResponse(
   error: unknown,
   corsHeaders: Record<string, string>,
