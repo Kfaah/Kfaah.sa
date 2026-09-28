@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
+import { authorizationErrorResponse, requireOrganizationAccess } from "../_shared/authz.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -113,6 +114,7 @@ Deno.serve(async (req) => {
     const op: any = opm?.operational_plans;
     const responsibleEmpId: string | null = op?.responsible_employee_id ?? null;
     const orgId: string = (ep as any).organization_id;
+    await requireOrganizationAccess(req, orgId, admin);
 
     // Fetch all employees in this org with departments + titles for AI context
     const { data: employees } = await admin
@@ -554,6 +556,8 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
+    const authError = authorizationErrorResponse(e, corsHeaders);
+    if (authError) return authError;
     console.error("generate-related-tasks error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
