@@ -1,0 +1,81 @@
+name: Kfaah Edge Functions Boot
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/kfaah-edge-functions-boot.yml'
+      - 'supabase/functions/**'
+      - 'supabase/config.toml'
+      - 'src/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  boot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start isolated local Supabase stack
+        run: supabase start
+
+      - name: Resolve local API credentials safely
+        run: |
+          supabase status -o env > /tmp/supabase-local.env
+          chmod 600 /tmp/supabase-local.env
+          set -a
+          . /tmp/supabase-local.env
+          set +a
+          test -n "${API_URL:-}"
+          test -n "${ANON_KEY:-}"
+          echo "::add-mask::$ANON_KEY"
+          printf 'API_URL=%s\n' "$API_URL" >> "$GITHUB_ENV"
+          printf 'ANON_KEY=%s\n' "$ANON_KEY" >> "$GITHUB_ENV"
+
+      - name: Inventory functions invoked by the frontend
+        run: |
+          python3 - <<'PY' > /tmp/kfaah-functions.txt
+          from pathlib import Path
+          import re
+          found=set()
+          rx=re.compile(r'functions\s*\.\s*invoke\(\s*["\']([^"\']+)["\']', re.S)
+          for p in list(Path("src").rglob("*.ts")) + list(Path("src").rglob("*.tsx")):
+              found.update(rx.findall(p.read_text(encoding="utf-8", errors="replace")))
+          for name in sorted(found):
+              print(name)
+          PY
+          test -s /tmp/kfaah-functions.txt
+          echo "frontend_functions=$(wc -l < /tmp/kfaah-functions.txt)"
+
+      - name: Boot every frontend Edge Function
+        run: |
+          set -euo pipefail
+          failed=0
+          while IFS= read -r fn; do
+            code="$(curl --connect-timeout 5 --max-time 30 -sS               -o /tmp/kfaah-function-body               -w '%{http_code}'               -X OPTIONS               -H "apikey: $ANON_KEY"               -H "Authorization: Bearer $ANON_KEY"               -H 'Origin: http://127.0.0.1'               -H 'Access-Control-Request-Method: POST'               -H 'Access-Control-Request-Headers: authorization,apikey,content-type'               "$API_URL/functions/v1/$fn" || true)"
+            bytes="$(wc -c < /tmp/kfaah-function-body 2>/dev/null || echo 0)"
+            echo "$fn|HTTP=$code|bytes=$bytes"
+            if [[ "$code" == "000" || "$code" -ge 500 ]]; then
+              echo "BOOT_FAILURE|$fn|HTTP=$code"
+              head -c 500 /tmp/kfaah-function-body || true
+              echo
+              failed=1
+            fi
+          done < /tmp/kfaah-functions.txt
+          [[ "$failed" -eq 0 ]] || exit 1
+
+      - name: Static authorization contract audit
+        run: python3 scripts/recovery/audit_edge_function_auth.py
+
+      - name: Stop local Supabase
+        if: always()
+        run: supabase stop --no-backup || true
