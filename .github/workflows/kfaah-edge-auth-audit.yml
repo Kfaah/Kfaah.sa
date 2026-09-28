@@ -1,0 +1,21 @@
+name: Kfaah Edge Auth Audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/kfaah-edge-auth-audit.yml'
+      - 'supabase/functions/**'
+      - 'supabase/config.toml'
+      - 'scripts/recovery/audit_edge_function_auth.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/recovery/audit_edge_function_auth.py
