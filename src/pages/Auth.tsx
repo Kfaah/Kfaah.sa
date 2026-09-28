@@ -191,7 +191,7 @@ export default function Auth() {
           </h1>
           <div className="relative">
             <p className="text-lg font-semibold text-white/90">
-              نظام إدارة التسويق الإلكتروني
+              نظام إدارة التسويق الإلكتروني وتنمية الموارد المالية
             </p>
             <div className="mt-3 mx-auto w-32 h-0.5 bg-gradient-to-r from-transparent via-white/60 to-transparent rounded-full" />
           </div>
