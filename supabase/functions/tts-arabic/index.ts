@@ -1,4 +1,5 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { authorizationErrorResponse, requireTrustedCaller } from "../_shared/authz.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,6 +9,7 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
+    await requireTrustedCaller(req);
     const { text, voice_id = "JBFqnCBsd6RMkjVDRZzb" } = await req.json();
     const key = Deno.env.get("ELEVENLABS_API_KEY");
     if (!key) return new Response("missing key", { status: 500 });
@@ -27,6 +29,8 @@ Deno.serve(async (req) => {
     const buf = await r.arrayBuffer();
     return new Response(buf, { headers: { ...corsHeaders, "Content-Type": "audio/mpeg" } });
   } catch (e) {
+    const authError = authorizationErrorResponse(e, corsHeaders);
+    if (authError) return authError;
     return new Response(String(e), { status: 500, headers: corsHeaders });
   }
 });
