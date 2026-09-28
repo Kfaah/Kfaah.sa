@@ -1,3 +1,4 @@
+import { authorizationErrorResponse, requireTrustedCaller } from "../_shared/authz.ts";
 // deno-lint-ignore-file no-explicit-any
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,6 +13,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    await requireTrustedCaller(req);
     const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY");
     if (!KFAAH_AI_API_KEY) throw new Error("KFAAH_AI_API_KEY not configured");
     const { metrics, period_label } = await req.json();
@@ -79,6 +81,8 @@ Deno.serve(async (req) => {
     }
     return new Response(JSON.stringify({ report: parsed }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e: any) {
+    const authError = authorizationErrorResponse(e, corsHeaders);
+    if (authError) return authError;
     console.error("executive-report error:", e);
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
