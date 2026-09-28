@@ -113,6 +113,9 @@ jobs:
           print('\n'.join(sorted(set(legacy))) if legacy else 'NONE')
           PY
 
+      - name: Audit Edge Function authorization contracts
+        run: python3 scripts/recovery/audit_edge_function_auth.py
+
       - name: Build production frontend
         run: bash deploy/build-frontend.sh
 
