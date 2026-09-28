@@ -5,6 +5,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3.25.76";
+import { authorizationErrorResponse, requireOrganizationAccess } from "../_shared/authz.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -293,6 +294,18 @@ Deno.serve(async (req) => {
     });
   }
   const { organization_id, metrics, from, to } = parsed.data;
+
+  try {
+    const authAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    await requireOrganizationAccess(req, organization_id, authAdmin);
+  } catch (e) {
+    const authError = authorizationErrorResponse(e, corsHeaders);
+    if (authError) return authError;
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "authorization_failed" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
