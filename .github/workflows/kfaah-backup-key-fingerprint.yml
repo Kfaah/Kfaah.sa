@@ -1,0 +1,50 @@
+name: Kfaah Backup Public Key Fingerprint Audit
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    if: >-
+      github.event.issue.number == 5 &&
+      github.event.comment.user.login == 'gaberalhrese-cloud' &&
+      github.event.comment.body == 'KFAAH_BACKUP_KEY_FINGERPRINT'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compare public key fingerprint only
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_audit"
+          chmod 600 "$HOME/.ssh/id_kfaah_audit"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          ssh -i "$HOME/.ssh/id_kfaah_audit" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'bash -s' > /tmp/fp.txt <<'REMOTE'
+          set +e
+          PUB=/home/deploy/kfaah-fast/public.pem
+          EXPECTED=fa7e02da0a4f6c41da30383b3af1861f67168a0f1548ad6c4eb4495c78496570
+          if [ ! -r "$PUB" ]; then
+            echo "PUBLIC_KEY_READABLE=no"
+            exit 0
+          fi
+          FP="$(openssl pkey -pubin -in "$PUB" -outform DER 2>/dev/null | sha256sum | awk '{print $1}')"
+          echo "PUBLIC_KEY_READABLE=yes"
+          echo "FINGERPRINT_MATCH=$([ "$FP" = "$EXPECTED" ] && echo yes || echo no)"
+          echo "FINGERPRINT=$FP"
+          REMOTE
+      - name: Post result
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          { echo 'KFAAH_BACKUP_KEY_FINGERPRINT_REPORT'; echo; cat /tmp/fp.txt; } > /tmp/comment.txt
+          gh issue comment 5 --repo "$GITHUB_REPOSITORY" --body-file /tmp/comment.txt
