@@ -1,0 +1,81 @@
+name: Kfaah Migration Replay
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/kfaah-migration-replay.yml'
+      - 'supabase/migrations/**'
+      - 'supabase/config.toml'
+      - 'src/integrations/supabase/types.ts'
+      - 'scripts/recovery/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase database
+        run: supabase db start
+
+      - name: Replay all source migrations from scratch
+        run: supabase db reset
+
+      - name: Generate local schema types
+        run: supabase gen types typescript --local > /tmp/kfaah-local-types.ts
+
+      - name: Compare table contract
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          def tables(path: str):
+              text=Path(path).read_text(encoding='utf-8', errors='replace')
+              lines=text.splitlines()
+              out=[]
+              in_tables=False
+              depth=0
+              for line in lines:
+                  if line.strip()=="Tables: {":
+                      in_tables=True
+                      depth=1
+                      continue
+                  if not in_tables:
+                      continue
+                  if line.startswith("    Views:"):
+                      break
+                  m=re.match(r"^      ([A-Za-z0-9_]+): {$", line)
+                  if m:
+                      out.append(m.group(1))
+              return sorted(set(out))
+
+          expected=tables("src/integrations/supabase/types.ts")
+          actual=tables("/tmp/kfaah-local-types.ts")
+          missing=sorted(set(expected)-set(actual))
+          extra=sorted(set(actual)-set(expected))
+          print(f"EXPECTED_TABLES={len(expected)}")
+          print(f"LOCAL_REPLAY_TABLES={len(actual)}")
+          print(f"MISSING_AFTER_REPLAY={len(missing)}")
+          for x in missing:
+              print("MISSING|" + x)
+          print(f"EXTRA_AFTER_REPLAY={len(extra)}")
+          for x in extra:
+              print("EXTRA|" + x)
+          if missing:
+              raise SystemExit("Migration replay did not reproduce the application table contract")
+          PY
+
+      - name: Static Edge Function authorization audit
+        run: python3 scripts/recovery/audit_edge_function_auth.py
