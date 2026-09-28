@@ -188,3 +188,98 @@ jobs:
             echo "$fn => $code bytes=$size body=$prefix"
           done
           REMOTE
+
+      - name: Safe OPTIONS inventory for all frontend functions
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_audit"
+          chmod 600 "$HOME/.ssh/id_kfaah_audit"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          ssh -i "$HOME/.ssh/id_kfaah_audit" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'bash -s' <<'REMOTE'
+          set +e
+          for fn in \
+            admin-insights analyze-organization analyze-uploaded-file classify-expense-batch \
+            create-employee create-org-viewer-accounts daily-donor-intelligence deep-org-analysis \
+            delete-employee discover-org-accounts donor-insights evaluate-task-quality executive-report \
+            extract-website-info fetch-platform-email-replies generate-executive-plans generate-plan-deep \
+            generate-plan-from-excel generate-related-tasks generate-smart-report handle-email-unsubscribe \
+            impersonate-user import-org-documents innovation-chat innovation-suggestions marketing-design-brief \
+            marketing-evaluate-campaign marketing-generate-content marketing-radar marketing-suggest-campaigns \
+            notify-task-message org-self-signup parse-staff-duties-xlsx process-upload report-suggestions \
+            run-intelligence secure-backup-to-github send-transactional-email setup-demo smart-task-dispatcher \
+            suggest-finance-reports sync-external-source top-up-employee-tasks verify-evidence; do
+            code=$(curl -X OPTIONS --connect-timeout 3 --max-time 6 -sS -o /tmp/options-probe -w '%{http_code}' "http://127.0.0.1:9001/functions/v1/$fn")
+            size=$(wc -c < /tmp/options-probe 2>/dev/null || echo 0)
+            prefix=$(head -c 140 /tmp/options-probe 2>/dev/null | tr '\n' ' ' | tr -cd '[:print:]')
+            echo "OPTIONS $fn => $code bytes=$size body=$prefix"
+          done
+          REMOTE
+
+      - name: Authenticated demo storage smoke test
+        env:
+          ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$ANON_KEY"
+          echo "::add-mask::$ANON_KEY"
+          base="https://kfaah.sa"
+          demo_org="00000000-0000-0000-0000-0000000000de"
+
+          setup_code=$(curl --connect-timeout 8 --max-time 25 -sS -o /tmp/demo-setup.json -w '%{http_code}' \
+            -X POST "$base/functions/v1/setup-demo" \
+            -H "apikey: $ANON_KEY" \
+            -H "Authorization: Bearer $ANON_KEY" \
+            -H 'Content-Type: application/json' \
+            -d '{}')
+          echo "setup-demo HTTP=$setup_code bytes=$(wc -c < /tmp/demo-setup.json)"
+          email=$(jq -r '.email // empty' /tmp/demo-setup.json)
+          password=$(jq -r '.password // empty' /tmp/demo-setup.json)
+          test -n "$email"
+          test -n "$password"
+
+          login_code=$(curl --connect-timeout 8 --max-time 25 -sS -o /tmp/demo-login.json -w '%{http_code}' \
+            -X POST "$base/auth/v1/token?grant_type=password" \
+            -H "apikey: $ANON_KEY" \
+            -H 'Content-Type: application/json' \
+            -d "$(jq -n --arg email "$email" --arg password "$password" '{email:$email,password:$password}')")
+          echo "demo-login HTTP=$login_code bytes=$(wc -c < /tmp/demo-login.json)"
+          access=$(jq -r '.access_token // empty' /tmp/demo-login.json)
+          test -n "$access"
+          echo "::add-mask::$access"
+
+          path="$demo_org/archive/audit/kfaah-smoke-${GITHUB_RUN_ID}.txt"
+          printf 'Kfaah storage smoke test %s\n' "$GITHUB_RUN_ID" > /tmp/kfaah-smoke.txt
+          upload_code=$(curl --connect-timeout 8 --max-time 25 -sS -o /tmp/storage-upload.json -w '%{http_code}' \
+            -X POST "$base/storage/v1/object/org-documents/$path" \
+            -H "apikey: $ANON_KEY" \
+            -H "Authorization: Bearer $access" \
+            -H 'Content-Type: text/plain' \
+            -H 'x-upsert: false' \
+            --data-binary @/tmp/kfaah-smoke.txt)
+          echo "org-documents upload HTTP=$upload_code body=$(head -c 300 /tmp/storage-upload.json | tr '\n' ' ')"
+
+          if [[ "$upload_code" =~ ^2 ]]; then
+            signed_code=$(curl --connect-timeout 8 --max-time 25 -sS -o /tmp/storage-signed.json -w '%{http_code}' \
+              -X POST "$base/storage/v1/object/sign/org-documents/$path" \
+              -H "apikey: $ANON_KEY" \
+              -H "Authorization: Bearer $access" \
+              -H 'Content-Type: application/json' \
+              -d '{"expiresIn":60}')
+            echo "org-documents signed-url HTTP=$signed_code bytes=$(wc -c < /tmp/storage-signed.json)"
+
+            delete_code=$(curl --connect-timeout 8 --max-time 25 -sS -o /tmp/storage-delete.json -w '%{http_code}' \
+              -X DELETE "$base/storage/v1/object/org-documents/$path" \
+              -H "apikey: $ANON_KEY" \
+              -H "Authorization: Bearer $access")
+            echo "org-documents cleanup HTTP=$delete_code bytes=$(wc -c < /tmp/storage-delete.json)"
+          fi
+
+          # Fail the smoke step if the principal upload path used by Uploads.tsx is broken.
+          [[ "$upload_code" =~ ^2 ]]
