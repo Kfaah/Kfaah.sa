@@ -1,0 +1,53 @@
+name: Kfaah Backup Key Audit
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    if: >-
+      github.event.issue.number == 5 &&
+      github.event.comment.user.login == 'gaberalhrese-cloud' &&
+      github.event.comment.body == 'KFAAH_BACKUP_KEY_AUDIT'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compare backup key fingerprints safely
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_audit"
+          chmod 600 "$HOME/.ssh/id_kfaah_audit"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+          ssh -i "$HOME/.ssh/id_kfaah_audit" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'bash -s' > /tmp/audit.txt 2>&1 <<'REMOTE'
+          set +e
+          EXPECTED=fa7e02da0a4f6c41da30383b3af1861f67168a0f1548ad6c4eb4495c78496570
+          echo "EXPECTED=$EXPECTED"
+          for f in             /home/deploy/.secrets/kfaah-backup-private.pem             /home/deploy/kfaah-backup-private.pem             /home/deploy/kfaah-fast/private.pem             /home/deploy/private.pem; do
+            if [ -r "$f" ]; then
+              fp="$(openssl pkey -in "$f" -pubout -outform DER 2>/dev/null | sha256sum | awk '{print $1}')"
+              echo "$f|$fp|$([ "$fp" = "$EXPECTED" ] && echo MATCH || echo NO_MATCH)"
+            else
+              echo "$f|MISSING_OR_UNREADABLE"
+            fi
+          done
+          REMOTE
+
+      - name: Post audit
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          { echo 'KFAAH_BACKUP_KEY_AUDIT_REPORT'; echo; cat /tmp/audit.txt; } > /tmp/comment.txt
+          gh issue comment 5 --repo "$GITHUB_REPOSITORY" --body-file /tmp/comment.txt
