@@ -222,6 +222,45 @@ jobs:
           echo "hello => $code bytes=$(wc -c < /tmp/native-hello.out 2>/dev/null || echo 0) body=$(head -c 180 /tmp/native-hello.out 2>/dev/null | tr '\n' ' ' | tr -cd '[:print:]')"
           REMOTE
 
+      - name: Probe API key compatibility across native gateway
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+          ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$ANON_KEY"
+          echo "::add-mask::$ANON_KEY"
+          if [[ "$ANON_KEY" == sb_publishable_* ]]; then
+            echo "configured_public_key_type=publishable"
+          elif [[ "$ANON_KEY" == eyJ* ]]; then
+            echo "configured_public_key_type=legacy_jwt_anon"
+          else
+            echo "configured_public_key_type=other"
+          fi
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_audit"
+          chmod 600 "$HOME/.ssh/id_kfaah_audit"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          ssh -i "$HOME/.ssh/id_kfaah_audit" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" \
+            "ANON_KEY='$ANON_KEY' bash -s" <<'REMOTE'
+          set +e
+          probe() {
+            label="$1"; shift
+            code=$(curl --connect-timeout 4 --max-time 10 -sS -o /tmp/key-probe.out -w '%{http_code}' "$@")
+            body=$(head -c 220 /tmp/key-probe.out 2>/dev/null | tr '\n' ' ' | tr -cd '[:print:]')
+            echo "$label => HTTP $code bytes=$(wc -c < /tmp/key-probe.out 2>/dev/null || echo 0) body=$body"
+          }
+          probe "auth-health-apikey" -H "apikey: $ANON_KEY" http://127.0.0.1:8000/auth/v1/health
+          probe "rest-root-apikey" -H "apikey: $ANON_KEY" http://127.0.0.1:8000/rest/v1/
+          probe "hello-apikey" -H "apikey: $ANON_KEY" http://127.0.0.1:8000/functions/v1/hello
+          probe "hello-auth" -H "Authorization: Bearer $ANON_KEY" http://127.0.0.1:8000/functions/v1/hello
+          probe "hello-both" -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" http://127.0.0.1:8000/functions/v1/hello
+          REMOTE
+
       - name: Safe OPTIONS inventory for all frontend functions
         env:
           HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
