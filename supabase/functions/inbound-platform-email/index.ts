@@ -7,8 +7,24 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-kfaah-inbound-secret',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+
+function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let diff = 0
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return diff === 0
+}
+
+function verifyInboundSecret(req: Request): boolean {
+  const expected = Deno.env.get('KFAAH_EMAIL_WEBHOOK_SECRET') || ''
+  if (!expected) return false
+  const auth = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '').trim() || ''
+  const header = req.headers.get('x-kfaah-inbound-secret')?.trim() || ''
+  return (auth && safeEqual(auth, expected)) || (header && safeEqual(header, expected))
 }
 
 function normalizeMessageId(v: any): string | null {
@@ -28,6 +44,12 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'method_not_allowed' }), {
       status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
+  if (!verifyInboundSecret(req)) {
+    return new Response(JSON.stringify({ error: 'unauthorized_webhook' }), {
+      status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
 
