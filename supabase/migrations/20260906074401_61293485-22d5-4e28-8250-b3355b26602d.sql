@@ -214,7 +214,13 @@ REVOKE EXECUTE ON FUNCTION public.enqueue_email(text, jsonb) FROM anon, authenti
 REVOKE EXECUTE ON FUNCTION public.delete_email(text, bigint) FROM anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.read_email_batch(text, integer, integer) FROM anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.move_to_dlq(text, text, bigint, jsonb) FROM anon, authenticated;
-REVOKE EXECUTE ON FUNCTION public.email_queue_dispatch() FROM anon, authenticated;
+DO $
+BEGIN
+  IF to_regprocedure('public.email_queue_dispatch()') IS NOT NULL THEN
+    EXECUTE 'REVOKE EXECUTE ON FUNCTION public.email_queue_dispatch() FROM anon, authenticated';
+  END IF;
+END
+$;
 REVOKE EXECUTE ON FUNCTION public.allocate_expense(uuid) FROM anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public._upsert_baseline(uuid, text, numeric) FROM anon, authenticated;
 
