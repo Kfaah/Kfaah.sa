@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { authorizationErrorResponse, requireOrganizationAccess } from "../_shared/authz.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,7 +16,7 @@ async function fetchSnippet(url: string): Promise<string> {
     const t = setTimeout(() => ctrl.abort(), 8000);
     const res = await fetch(url, {
       signal: ctrl.signal,
-      headers: { "User-Agent": "Mozilla/5.0 LovableBot" },
+      headers: { "User-Agent": "Mozilla/5.0 KfaahBot" },
     });
     clearTimeout(t);
     if (!res.ok) return `[تعذّر الوصول: ${res.status}]`;
@@ -44,6 +45,7 @@ Deno.serve(async (req) => {
     }
 
     const sb = createClient(SUPABASE_URL, SERVICE_ROLE);
+    await requireOrganizationAccess(req, organization_id, sb);
 
     const { data: org } = await sb.from("organizations").select("*").eq("id", organization_id).single();
     const { data: profile } = await sb
@@ -164,6 +166,8 @@ ${sources.map((s) => `--- ${s.label} (${s.url}) ---\n${s.content}`).join("\n\n")
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
+    const authError = authorizationErrorResponse(e, corsHeaders);
+    if (authError) return authError;
     return new Response(JSON.stringify({ error: (e as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
