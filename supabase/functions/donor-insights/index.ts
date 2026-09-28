@@ -1,6 +1,7 @@
+import { authorizationErrorResponse, requireTrustedCaller } from "../_shared/authz.ts";
 // Edge function: donor-insights
 // Receives anonymized aggregated donor activity stats and returns AI-generated
-// creative engagement ideas via Lovable AI Gateway with structured tool-calling.
+// creative engagement ideas via Kfaah AI service with structured tool-calling.
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -100,6 +101,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    await requireTrustedCaller(req);
     const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY");
     if (!KFAAH_AI_API_KEY) throw new Error("KFAAH_AI_API_KEY غير مهيّأ");
 
@@ -155,7 +157,7 @@ ${JSON.stringify(payload.elite_breakdown, null, 2)}
       });
     }
     if (aiResp.status === 402) {
-      return new Response(JSON.stringify({ error: "نفدت رصيدك في Lovable AI. أضف رصيداً من الإعدادات." }), {
+      return new Response(JSON.stringify({ error: "نفدت رصيدك في Kfaah AI. أضف رصيداً من الإعدادات." }), {
         status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -181,6 +183,8 @@ ${JSON.stringify(payload.elite_breakdown, null, 2)}
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
+    const authError = authorizationErrorResponse(e, corsHeaders);
+    if (authError) return authError;
     console.error("donor-insights error:", e);
     return new Response(JSON.stringify({ error: e?.message || "خطأ غير متوقع" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
