@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { authorizationErrorResponse, requireOrganizationAccess } from "../_shared/authz.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,6 +24,7 @@ Deno.serve(async (req) => {
     if (!c) {
       return new Response(JSON.stringify({ error: "campaign not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    await requireOrganizationAccess(req, c.organization_id, supa);
 
     const channelGuide: Record<string, string> = {
       whatsapp: "رسالة واتساب: قصيرة (سطرين-3)، شخصية، إيموجي مناسب، CTA واضح برابط تبرع.",
@@ -91,6 +93,8 @@ Deno.serve(async (req) => {
     const args = JSON.parse(aiData.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments ?? '{"variants":[]}');
     return new Response(JSON.stringify({ variants: args.variants ?? [] }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
+    const authError = authorizationErrorResponse(e, corsHeaders);
+    if (authError) return authError;
     console.error(e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
