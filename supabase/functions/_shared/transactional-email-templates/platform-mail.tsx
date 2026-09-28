@@ -6,7 +6,7 @@ import type { TemplateEntry } from './registry.ts'
 
 const LOGO_URL = 'https://kfaah.sa/storage/v1/object/public/email-assets/kafaa-logo-v2.png'
 const BRAND_NAME = 'منصة كفاءة'
-const TAGLINE = 'منصة إدارة التسويق الإلكتروني للجمعيات بكفاءة'
+const TAGLINE = 'منصة إدارة التسويق الإلكتروني وتنمية الموارد المالية للجمعيات بكفاءة'
 
 interface Props {
   subject?: string
