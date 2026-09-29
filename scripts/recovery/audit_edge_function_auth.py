@@ -62,6 +62,31 @@ NON_JWT_SECRET_MARKERS = (
     "HMAC",
 )
 
+
+# Public functions that intentionally use service-role access must satisfy a
+# function-specific source contract. This turns a manual recovery note into a
+# failing CI invariant: if a safety check is later removed, the function falls
+# back to PUBLIC-config-needs-review and CI fails.
+CONSTRAINED_PUBLIC_CONTRACTS = {
+    "org-self-signup": (
+        "allow_self_signup",
+        "signInWithPassword",
+        'approval_status: "pending"',
+        'is_default: false',
+        "createdNewUser",
+        "deleteUser",
+        "password.length < 8",
+    ),
+    "handle-email-unsubscribe": (
+        "email_unsubscribe_tokens",
+        "suppressed_emails",
+        "used_at",
+        "is('used_at', null)",
+        r"^[a-f0-9]{64}$",
+        "Invalid or expired token",
+    ),
+}
+
 rows = []
 for index in sorted(FUNCTIONS.glob("*/index.ts")):
     name = index.parent.name
@@ -72,11 +97,19 @@ for index in sorted(FUNCTIONS.glob("*/index.ts")):
     internal_auth = any(marker in text for marker in INTERNAL_AUTH_MARKERS)
     secret_guard = any(marker in text for marker in NON_JWT_SECRET_MARKERS)
     config_public = name in PUBLIC_CONFIG
+    public_contract = CONSTRAINED_PUBLIC_CONTRACTS.get(name)
+    constrained_public = bool(
+        config_public
+        and public_contract
+        and all(marker in text for marker in public_contract)
+    )
 
     if internal_auth:
         classification = "internal-auth"
     elif secret_guard:
         classification = "secret/webhook-guard"
+    elif constrained_public:
+        classification = "constrained-public-flow"
     elif config_public:
         classification = "PUBLIC-config-needs-review"
     else:
@@ -91,10 +124,12 @@ for name, classification, config_public in rows:
 
 runtime_dependent = [r[0] for r in rows if r[1] == "RUNTIME-JWT-DEPENDENT"]
 public_review = [r[0] for r in rows if r[1] == "PUBLIC-config-needs-review"]
+constrained_public = [r[0] for r in rows if r[1] == "constrained-public-flow"]
 
 print()
 print(f"service-role functions: {len(rows)}")
 print(f"runtime JWT dependent: {len(runtime_dependent)}")
+print(f"constrained public flows: {len(constrained_public)}")
 print(f"public config needing explicit review: {len(public_review)}")
 
 if runtime_dependent:
@@ -116,6 +151,9 @@ if public_review:
         "that each has a webhook secret, signed payload, or tightly constrained public flow."
     )
 
-# The audit is informational during recovery. The CI workflow records the list,
-# while the runtime recovery gate decides whether a given gateway mode is safe.
+if public_review:
+    raise SystemExit(
+        "One or more public service-role functions lack a reviewed constrained-flow contract"
+    )
+
 sys.exit(0)
