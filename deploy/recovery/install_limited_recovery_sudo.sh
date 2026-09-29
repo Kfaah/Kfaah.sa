@@ -57,6 +57,9 @@ set -euo pipefail
 RECOVERY="/usr/local/libexec/kfaah-backend-recovery"
 SCHEMA_GATE="/usr/local/libexec/kfaah-production-schema-gate"
 SCHEMA_PLAN="/usr/local/libexec/kfaah-schema-recovery-plan"
+SUPABASE_CLI="/usr/local/libexec/supabase-recovery-cli"
+SUPABASE_CLI_VERSION="2.118.0"
+SUPABASE_CLI_ARCHIVE_SHA256="f6089a86fb9d9221c958193a277338daddd6822f706929943812fa32e106c86d"
 
 STATE_ROOT="/var/lib/kfaah-recovery"
 INCOMING="$STATE_ROOT/incoming"
@@ -96,6 +99,68 @@ case "$mode" in
   native-canary)
     [[ "$#" -eq 0 ]] || die "native-canary takes no arguments"
     KFAAH_RECOVERY_MODE=native-canary "$RECOVERY"
+    ;;
+
+  install-cli)
+    [[ "$#" -eq 2 ]] || die "usage: install-cli <official-tar.gz> <sha256>"
+    cli_archive="$1"
+    cli_expected="$2"
+    [[ "$cli_expected" == "$SUPABASE_CLI_ARCHIVE_SHA256" ]] ||       die "Supabase CLI archive hash is not the pinned official digest"
+
+    cli_archive_real="$(realpath -e "$cli_archive")"
+    incoming_real="$(realpath -e "$INCOMING")"
+    case "$cli_archive_real" in
+      "$incoming_real"/*) ;;
+      *) die "CLI archive must be inside $INCOMING" ;;
+    esac
+
+    cli_actual="$(sha256sum "$cli_archive_real" | awk '{print $1}')"
+    [[ "$cli_actual" == "$SUPABASE_CLI_ARCHIVE_SHA256" ]] ||       die "Supabase CLI official archive sha256 mismatch"
+
+    cli_stage="$STAGED/supabase-cli-$SUPABASE_CLI_VERSION"
+    rm -rf "$cli_stage"
+    install -d -o root -g root -m 0700 "$cli_stage"
+
+    python3 - "$cli_archive_real" "$cli_stage" <<'PY'
+import pathlib
+import sys
+import tarfile
+
+archive = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2]).resolve()
+binary_member = None
+
+with tarfile.open(archive, "r:gz") as tf:
+    members = tf.getmembers()
+    for member in members:
+        p = pathlib.PurePosixPath(member.name)
+        if p.is_absolute() or ".." in p.parts:
+            raise SystemExit(f"unsafe CLI archive path: {member.name}")
+        if member.issym() or member.islnk() or member.isdev() or member.isfifo():
+            raise SystemExit(f"unsafe CLI archive member: {member.name}")
+        if member.isfile() and p.name == "supabase":
+            if binary_member is not None:
+                raise SystemExit("multiple supabase binaries in archive")
+            binary_member = member
+
+    if binary_member is None:
+        raise SystemExit("supabase binary missing from official archive")
+
+    source = tf.extractfile(binary_member)
+    if source is None:
+        raise SystemExit("could not extract supabase binary")
+    output = target / "supabase"
+    with output.open("wb") as dst:
+        dst.write(source.read())
+PY
+
+    install -o root -g root -m 0755 "$cli_stage/supabase" "$SUPABASE_CLI"
+    cli_version="$("$SUPABASE_CLI" --version | tr -d '\r' | tail -1)"
+    [[ "$cli_version" == "$SUPABASE_CLI_VERSION" ]] ||       die "unexpected Supabase CLI version: $cli_version"
+
+    printf '%s\n' "$SUPABASE_CLI_ARCHIVE_SHA256" > "$STATE_ROOT/supabase-cli.sha256"
+    chown root:root "$STATE_ROOT/supabase-cli.sha256"
+    chmod 0600 "$STATE_ROOT/supabase-cli.sha256"
     ;;
 
   install-functions)
@@ -205,7 +270,9 @@ PY
     [[ "$#" -eq 0 ]] || die "schema-plan takes no arguments"
     [[ -r "$CONTRACT_DIR/types.ts" ]] || die "current schema contract missing"
     [[ -d "$CONTRACT_DIR/migrations" ]] || die "current migration bundle missing"
-    "$SCHEMA_PLAN"
+    [[ -x "$SUPABASE_CLI" ]] || die "pinned Supabase CLI is not installed"
+    [[ "$("$SUPABASE_CLI" --version | tr -d '\r' | tail -1)" == "$SUPABASE_CLI_VERSION" ]] ||       die "installed Supabase CLI version is not pinned version"
+    KFAAH_SUPABASE_CLI="$SUPABASE_CLI" "$SCHEMA_PLAN"
     ;;
 
   schema-gate)
