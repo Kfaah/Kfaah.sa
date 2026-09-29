@@ -73,6 +73,46 @@ jobs:
           done < /tmp/kfaah-functions.txt
           [[ "$failed" -eq 0 ]] || exit 1
 
+      - name: End-to-end demo authentication on native Edge Runtime
+        run: |
+          set -euo pipefail
+
+          demo_json="$(curl --fail-with-body -sS \
+            -X POST "$API_URL/functions/v1/setup-demo" \
+            -H "apikey: $ANON_KEY" \
+            -H "Authorization: Bearer $ANON_KEY" \
+            -H 'Content-Type: application/json' \
+            -d '{}')"
+
+          email="$(printf '%s' "$demo_json" | jq -r '.email // empty')"
+          password="$(printf '%s' "$demo_json" | jq -r '.password // empty')"
+          test -n "$email"
+          test -n "$password"
+          echo "::add-mask::$email"
+          echo "::add-mask::$password"
+
+          login_json="$(curl --fail-with-body -sS \
+            -X POST "$API_URL/auth/v1/token?grant_type=password" \
+            -H "apikey: $ANON_KEY" \
+            -H "Authorization: Bearer $ANON_KEY" \
+            -H 'Content-Type: application/json' \
+            --data "$(jq -n --arg email "$email" --arg password "$password" '{email:$email,password:$password}')")"
+
+          token="$(printf '%s' "$login_json" | jq -r '.access_token // empty')"
+          uid="$(printf '%s' "$login_json" | jq -r '.user.id // empty')"
+          test -n "$token"
+          test -n "$uid"
+          echo "::add-mask::$token"
+
+          membership="$(curl --fail-with-body -sS \
+            "$API_URL/rest/v1/user_organizations?select=organization_id,approval_status&user_id=eq.$uid&organization_id=eq.00000000-0000-0000-0000-0000000000de" \
+            -H "apikey: $ANON_KEY" \
+            -H "Authorization: Bearer $token")"
+
+          test "$(printf '%s' "$membership" | jq 'length')" -ge 1
+          test "$(printf '%s' "$membership" | jq -r '.[0].approval_status')" = "approved"
+          echo "NATIVE_SETUP_DEMO_LOGIN_OK"
+
       - name: Static authorization contract audit
         run: python3 scripts/recovery/audit_edge_function_auth.py
 
