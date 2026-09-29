@@ -10,8 +10,8 @@ set -euo pipefail
 
 [[ "$EUID" -eq 0 ]] || { echo "ERROR: root required" >&2; exit 1; }
 
-OPERATOR="\${RECOVERY_OPERATOR:-}"
-SOURCE_ROOT="\${SOURCE_ROOT:-$(pwd)}"
+OPERATOR="${RECOVERY_OPERATOR:-}"
+SOURCE_ROOT="${SOURCE_ROOT:-$(pwd)}"
 
 RECOVERY="/usr/local/libexec/kfaah-backend-recovery"
 SCHEMA_GATE="/usr/local/libexec/kfaah-production-schema-gate"
@@ -82,7 +82,7 @@ run_mutation() {
 [[ -x "$SCHEMA_GATE" ]] || die "root-owned schema gate missing"
 [[ -x "$SCHEMA_PLAN" ]] || die "root-owned schema plan missing"
 
-mode="\${1:-audit}"
+mode="${1:-audit}"
 shift || true
 
 case "$mode" in
