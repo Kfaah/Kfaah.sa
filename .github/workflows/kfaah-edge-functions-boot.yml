@@ -274,6 +274,59 @@ jobs:
           echo "NATIVE_SELF_SIGNUP_OWNERSHIP_PROOF_OK"
           echo "NATIVE_PENDING_SIGNUP_HAS_NO_ROLE_OK"
 
+      - name: End-to-end one-click email unsubscribe
+        run: |
+          set -euo pipefail
+
+          UNSUB_EMAIL="kfaah-unsubscribe-${GITHUB_RUN_ID}@test.local"
+          UNSUB_TOKEN="$(printf '%s' "kfaah-unsubscribe-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" | sha256sum | awk '{print $1}')"
+          echo "::add-mask::$UNSUB_EMAIL"
+          echo "::add-mask::$UNSUB_TOKEN"
+
+          curl --fail-with-body -sS \
+            -X POST "$API_URL/rest/v1/email_unsubscribe_tokens" \
+            -H "apikey: $SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+            -H 'Content-Type: application/json' \
+            --data "$(jq -n --arg email "$UNSUB_EMAIL" --arg token "$UNSUB_TOKEN" \
+              '{email:$email,token:$token}')" >/dev/null
+
+          validate_json="$(curl --fail-with-body -sS \
+            "$API_URL/functions/v1/handle-email-unsubscribe?token=$UNSUB_TOKEN" \
+            -H "apikey: $ANON_KEY")"
+          test "$(printf '%s' "$validate_json" | jq -r '.valid')" = "true"
+
+          unsubscribe_json="$(curl --fail-with-body -sS \
+            -X POST "$API_URL/functions/v1/handle-email-unsubscribe?token=$UNSUB_TOKEN" \
+            -H "apikey: $ANON_KEY" \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            --data 'List-Unsubscribe=One-Click')"
+          test "$(printf '%s' "$unsubscribe_json" | jq -r '.success')" = "true"
+
+          token_state="$(curl --fail-with-body -sS \
+            "$API_URL/rest/v1/email_unsubscribe_tokens?select=used_at&token=eq.$UNSUB_TOKEN" \
+            -H "apikey: $SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SERVICE_ROLE_KEY")"
+          test "$(printf '%s' "$token_state" | jq 'length')" -eq 1
+          test "$(printf '%s' "$token_state" | jq -r '.[0].used_at // empty')" != ""
+
+          suppressed="$(curl --fail-with-body -sS \
+            "$API_URL/rest/v1/suppressed_emails?select=email,reason&email=eq.$UNSUB_EMAIL" \
+            -H "apikey: $SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SERVICE_ROLE_KEY")"
+          test "$(printf '%s' "$suppressed" | jq 'length')" -eq 1
+          test "$(printf '%s' "$suppressed" | jq -r '.[0].reason')" = "unsubscribe"
+
+          replay_json="$(curl --fail-with-body -sS \
+            -X POST "$API_URL/functions/v1/handle-email-unsubscribe?token=$UNSUB_TOKEN" \
+            -H "apikey: $ANON_KEY" \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            --data 'List-Unsubscribe=One-Click')"
+          test "$(printf '%s' "$replay_json" | jq -r '.reason')" = "already_unsubscribed"
+
+          echo "NATIVE_EMAIL_UNSUBSCRIBE_TOKEN_OK"
+          echo "NATIVE_EMAIL_UNSUBSCRIBE_REPLAY_SAFE"
+
       - name: End-to-end organization document upload
         run: |
           set -euo pipefail
