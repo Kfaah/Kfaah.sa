@@ -32,8 +32,16 @@ jobs:
       - name: Replay all source migrations from scratch
         run: supabase db reset
 
-      - name: Generate local schema types
-        run: supabase gen types typescript --local --schema public > /tmp/kfaah-local-types.ts
+      - name: Query locally replayed public tables
+        run: |
+          set -euo pipefail
+          db_container="$(docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | head -1)"
+          test -n "$db_container"
+          docker exec "$db_container" psql -U postgres -d postgres -X -At \
+            -c "select table_name from information_schema.tables where table_schema='public' and table_type='BASE TABLE' order by table_name;" \
+            > /tmp/kfaah-local-tables.txt
+          test -s /tmp/kfaah-local-tables.txt
+          echo "catalog_tables=$(wc -l < /tmp/kfaah-local-tables.txt)"
 
       - name: Compare table contract
         run: |
@@ -41,53 +49,36 @@ jobs:
           from pathlib import Path
           import re
 
-          TABLE_RE = re.compile(r'^(?:"|\')?([A-Za-z0-9_]+)(?:"|\')?:\s*\{$')
-
-          def tables(path: str):
+          def committed_tables(path: str):
               lines = Path(path).read_text(encoding="utf-8", errors="replace").splitlines()
               out = []
               in_tables = False
-              depth = 0
-
               for line in lines:
-                  stripped = line.strip()
-
-                  if not in_tables:
-                      if stripped == "Tables: {":
-                          in_tables = True
-                          depth = 1
+                  if line.strip() == "Tables: {":
+                      in_tables = True
                       continue
-
-                  # A table is a direct child of Tables, i.e. encountered when
-                  # brace depth is exactly 1. This is stable across formatter/
-                  # Supabase CLI indentation changes.
-                  if depth == 1:
-                      m = TABLE_RE.match(stripped)
-                      if m:
-                          out.append(m.group(1))
-
-                  depth += line.count("{") - line.count("}")
-                  if depth <= 0:
+                  if not in_tables:
+                      continue
+                  if line.startswith("    Views:"):
                       break
-
+                  m = re.match(r"^      ([A-Za-z0-9_]+): \\{$", line)
+                  if m:
+                      out.append(m.group(1))
               return sorted(set(out))
 
-          expected = tables("src/integrations/supabase/types.ts")
-          actual = tables("/tmp/kfaah-local-types.ts")
+          expected = committed_tables("src/integrations/supabase/types.ts")
+          actual = sorted({
+              line.strip()
+              for line in Path("/tmp/kfaah-local-tables.txt").read_text(
+                  encoding="utf-8", errors="replace"
+              ).splitlines()
+              if line.strip()
+          })
 
           if not expected:
               raise SystemExit("Could not parse the committed application table contract")
           if not actual:
-              print("Generated types excerpt around Tables:")
-              generated = Path("/tmp/kfaah-local-types.ts").read_text(
-                  encoding="utf-8", errors="replace"
-              ).splitlines()
-              for i, line in enumerate(generated):
-                  if "Tables:" in line:
-                      for sample in generated[max(0, i - 2): i + 24]:
-                          print(sample)
-                      break
-              raise SystemExit("Could not parse any tables from the locally replayed schema")
+              raise SystemExit("PostgreSQL catalog returned no public base tables after replay")
 
           missing = sorted(set(expected) - set(actual))
           extra = sorted(set(actual) - set(expected))
