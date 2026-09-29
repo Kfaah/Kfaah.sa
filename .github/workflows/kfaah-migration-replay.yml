@@ -41,41 +41,34 @@ jobs:
           from pathlib import Path
           import re
 
+          TABLE_RE = re.compile(r'^(?:"|\')?([A-Za-z0-9_]+)(?:"|\')?:\s*\{$')
+
           def tables(path: str):
               lines = Path(path).read_text(encoding="utf-8", errors="replace").splitlines()
               out = []
               in_tables = False
-              tables_indent = None
-              child_indent = None
+              depth = 0
 
               for line in lines:
                   stripped = line.strip()
-                  indent = len(line) - len(line.lstrip())
-
-                  if stripped == "Tables: {":
-                      in_tables = True
-                      tables_indent = indent
-                      child_indent = None
-                      continue
 
                   if not in_tables:
+                      if stripped == "Tables: {":
+                          in_tables = True
+                          depth = 1
                       continue
 
-                  # The generated format/indentation can vary between Supabase CLI
-                  # versions. Stop only when leaving the Tables block.
-                  if tables_indent is not None and indent <= tables_indent:
-                      in_tables = False
-                      continue
+                  # A table is a direct child of Tables, i.e. encountered when
+                  # brace depth is exactly 1. This is stable across formatter/
+                  # Supabase CLI indentation changes.
+                  if depth == 1:
+                      m = TABLE_RE.match(stripped)
+                      if m:
+                          out.append(m.group(1))
 
-                  # Capture only direct children of Tables, not Row/Insert/etc.
-                  m = re.match(r'^(?:"|\')?([A-Za-z0-9_]+)(?:"|\')?:\s*\{$', stripped)
-                  if not m:
-                      continue
-
-                  if child_indent is None:
-                      child_indent = indent
-                  if indent == child_indent:
-                      out.append(m.group(1))
+                  depth += line.count("{") - line.count("}")
+                  if depth <= 0:
+                      break
 
               return sorted(set(out))
 
@@ -91,7 +84,7 @@ jobs:
               ).splitlines()
               for i, line in enumerate(generated):
                   if "Tables:" in line:
-                      for sample in generated[max(0, i - 2): i + 18]:
+                      for sample in generated[max(0, i - 2): i + 24]:
                           print(sample)
                       break
               raise SystemExit("Could not parse any tables from the locally replayed schema")
