@@ -1,0 +1,65 @@
+name: Kfaah One Shot Publish
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/kfaah-one-shot-publish.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kfaah-one-shot-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: https://kfaah.sa
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      KFAAH_DEPLOY_TARGET: production
+      KFAAH_EXPECTED_API_URL: https://kfaah.sa
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Build frontend
+        run: bash deploy/build-frontend.sh
+
+      - name: Upload to staging
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test "$HETZNER_USER" = deploy
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_publish"
+          chmod 600 "$HOME/.ssh/id_kfaah_publish"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          rsync -az --delete --delay-updates -e "ssh -i $HOME/.ssh/id_kfaah_publish -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" dist/ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/incoming/"
+          ssh -i "$HOME/.ssh/id_kfaah_publish" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'sudo /usr/local/bin/kfaah-receive-frontend /home/deploy/incoming'
+
+      - name: Promote live and verify
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i "$HOME/.ssh/id_kfaah_publish" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'sudo /usr/local/bin/kfaah-promote-frontend --live'
+          curl -fsS --retry 8 --retry-delay 4 https://kfaah.sa/ -o /tmp/kfaah-home.html
+          test -s /tmp/kfaah-home.html
+          curl -fsS --retry 8 --retry-delay 4 https://kfaah.sa/functions/v1/hello -o /tmp/kfaah-function.txt
+          echo "LIVE_OK https://kfaah.sa"
