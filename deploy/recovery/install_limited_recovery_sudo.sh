@@ -127,6 +127,8 @@ PY
   cutover)
     [[ "$#" -eq 1 ]] || die "usage: cutover CONFIRM-NATIVE-CUTOVER"
     [[ "$1" == "CONFIRM-NATIVE-CUTOVER" ]] || die "explicit confirmation missing"
+    [[ -f "$STATE_ROOT/schema-ready" ]] || die "production schema has not been accepted"
+    [[ "$(stat -c '%U:%G:%a' "$STATE_ROOT/schema-ready")" == "root:root:600" ]] ||       die "schema-ready marker must be root-owned mode 600"
     KFAAH_RECOVERY_MODE=native-canary "$RECOVERY"
     run_mutation cutover
     ;;
