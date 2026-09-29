@@ -189,7 +189,7 @@ native_canary() {
 
   note "Resolving the active legacy client key without printing it"
   local anon_key
-  anon_key="$("\${COMPOSE[@]}" exec -T functions sh -lc \
+  anon_key="$("${COMPOSE[@]}" exec -T functions sh -lc \
     'printf %s "$SUPABASE_ANON_KEY"' 2>/dev/null || true)"
   [[ -n "$anon_key" ]] || \
     die "SUPABASE_ANON_KEY is unavailable inside the native functions service."
