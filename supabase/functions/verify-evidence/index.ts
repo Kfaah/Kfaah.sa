@@ -39,6 +39,18 @@ Deno.serve(async (req) => {
     });
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.slice(7).trim()
+      : "";
+    if (!token) return jsonResp({ error: "غير مصرح" }, 401);
+
+    const { data: callerData, error: callerError } =
+      await admin.auth.getUser(token);
+    if (callerError || !callerData?.user) {
+      return jsonResp({ error: "غير مصرح" }, 401);
+    }
+    const callerId = callerData.user.id;
+
     const body = (await req.json()) as VerifyBody;
     if (!body?.question_id || !body?.evidence_url) {
       return jsonResp({ error: "question_id و evidence_url مطلوبان" }, 400);
@@ -51,6 +63,48 @@ Deno.serve(async (req) => {
       .eq("id", body.question_id)
       .maybeSingle();
     if (qErr || !q) return jsonResp({ error: "السؤال غير متاح" }, 403);
+
+    // Explicit server-side authorization before any service-role write.
+    // Allowed callers:
+    // - platform super admin;
+    // - organization-scoped admin for this exact organization;
+    // - the employee explicitly assigned to this accountability question.
+    const [{ data: isSuper }, { data: membership }, { data: scopedAdmin }, { data: assignedEmployee }] =
+      await Promise.all([
+        admin.rpc("is_super_admin", { _user_id: callerId }),
+        admin
+          .from("user_organizations")
+          .select("id")
+          .eq("user_id", callerId)
+          .eq("organization_id", q.organization_id)
+          .eq("approval_status", "approved")
+          .maybeSingle(),
+        admin
+          .from("user_roles")
+          .select("id")
+          .eq("user_id", callerId)
+          .eq("organization_id", q.organization_id)
+          .eq("role", "admin")
+          .maybeSingle(),
+        q.target_employee_id
+          ? admin
+              .from("employees")
+              .select("id")
+              .eq("id", q.target_employee_id)
+              .eq("organization_id", q.organization_id)
+              .eq("user_id", callerId)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+
+    const authorized =
+      isSuper === true ||
+      (!!membership && !!scopedAdmin) ||
+      (!!membership && !!assignedEmployee);
+
+    if (!authorized) {
+      return jsonResp({ error: "ليس لديك صلاحية للتحقق من هذا الإثبات" }, 403);
+    }
 
     // 2) Insert pending evidence_check (admin client to bypass employee RLS for write)
     const { data: chk, error: chkErr } = await admin
