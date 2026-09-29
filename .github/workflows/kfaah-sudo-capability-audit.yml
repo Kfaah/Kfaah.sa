@@ -1,0 +1,54 @@
+name: Kfaah Sudo Capability Audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/kfaah-sudo-capability-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Inspect deploy sudo capabilities safely
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          : "${HETZNER_HOST:?Missing HETZNER_HOST}"
+          : "${HETZNER_USER:?Missing HETZNER_USER}"
+          : "${HETZNER_SSH_KEY:?Missing HETZNER_SSH_KEY}"
+          : "${HETZNER_KNOWN_HOSTS:?Missing HETZNER_KNOWN_HOSTS}"
+
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_audit"
+          chmod 600 "$HOME/.ssh/id_kfaah_audit"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+          ssh -i "$HOME/.ssh/id_kfaah_audit" \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$HETZNER_USER@$HETZNER_HOST" 'bash -s' <<'REMOTE'
+          set +e
+          echo "=== IDENTITY ==="
+          id
+          echo
+          echo "=== SUDO NONINTERACTIVE CAPABILITIES ==="
+          sudo -n -l 2>&1
+          echo
+          echo "=== SAFE PATH ACCESS ==="
+          for p in /opt/kfaah /opt/kfaah/production /opt/kfaah/production/supabase /opt/kfaah/functions /etc/nginx; do
+            if [ -r "$p" ]; then r=yes; else r=no; fi
+            if [ -w "$p" ]; then w=yes; else w=no; fi
+            printf '%s|read=%s|write=%s\n' "$p" "$r" "$w"
+          done
+          REMOTE
