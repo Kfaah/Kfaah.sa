@@ -202,6 +202,76 @@ jobs:
           echo "NATIVE_CREATE_EMPLOYEE_ORG_SCOPE_OK"
           echo "NATIVE_CROSS_ORG_ACCOUNT_MUTATION_BLOCKED"
 
+      - name: End-to-end self-signup ownership proof
+        run: |
+          set -euo pipefail
+
+          SELF_ORG="00000000-0000-0000-0000-0000000000e3"
+          SELF_SLUG="ci-self-signup"
+          SELF_USERNAME="9911111111"
+          SELF_EMAIL="$SELF_USERNAME@user.local"
+          SELF_PASSWORD="Qa9!SelfSignup${GITHUB_RUN_NUMBER}"
+          WRONG_PASSWORD="Qa9!WrongSignup${GITHUB_RUN_NUMBER}"
+
+          for secret in "$SELF_EMAIL" "$SELF_PASSWORD" "$WRONG_PASSWORD"; do
+            echo "::add-mask::$secret"
+          done
+
+          curl --fail-with-body -sS \
+            -X POST "$API_URL/rest/v1/organizations" \
+            -H "apikey: $SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+            -H 'Content-Type: application/json' \
+            --data "$(jq -n --arg id "$SELF_ORG" --arg slug "$SELF_SLUG"               '{id:$id,name:"CI Self Signup Org",slug:$slug,is_active:true,allow_self_signup:true}')" \
+            >/tmp/self-org.json
+
+          existing_user="$(curl --fail-with-body -sS \
+            -X POST "$API_URL/auth/v1/admin/users" \
+            -H "apikey: $SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+            -H 'Content-Type: application/json' \
+            --data "$(jq -n --arg e "$SELF_EMAIL" --arg p "$SELF_PASSWORD"               '{email:$e,password:$p,email_confirm:true}')")"
+          SELF_UID="$(printf '%s' "$existing_user" | jq -r '.id // empty')"
+          test -n "$SELF_UID"
+          echo "::add-mask::$SELF_UID"
+
+          wrong_code="$(curl -sS -o /tmp/self-wrong.out -w '%{http_code}' \
+            -X POST "$API_URL/functions/v1/org-self-signup" \
+            -H "apikey: $ANON_KEY" \
+            -H 'Content-Type: application/json' \
+            --data "$(jq -n               --arg slug "$SELF_SLUG" --arg username "$SELF_USERNAME" --arg p "$WRONG_PASSWORD"               '{slug:$slug,username:$username,password:$p,first_name:"CI",last_name:"Existing"}')")"
+          test "$wrong_code" = "401"
+
+          memberships_before="$(curl --fail-with-body -sS \
+            "$API_URL/rest/v1/user_organizations?select=id&user_id=eq.$SELF_UID&organization_id=eq.$SELF_ORG" \
+            -H "apikey: $SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SERVICE_ROLE_KEY")"
+          test "$(printf '%s' "$memberships_before" | jq 'length')" -eq 0
+
+          signup_json="$(curl --fail-with-body -sS \
+            -X POST "$API_URL/functions/v1/org-self-signup" \
+            -H "apikey: $ANON_KEY" \
+            -H 'Content-Type: application/json' \
+            --data "$(jq -n               --arg slug "$SELF_SLUG" --arg username "$SELF_USERNAME" --arg p "$SELF_PASSWORD"               '{slug:$slug,username:$username,password:$p,first_name:"CI",last_name:"Existing"}')")"
+          test "$(printf '%s' "$signup_json" | jq -r '.status')" = "pending"
+
+          membership="$(curl --fail-with-body -sS \
+            "$API_URL/rest/v1/user_organizations?select=approval_status,is_default&user_id=eq.$SELF_UID&organization_id=eq.$SELF_ORG" \
+            -H "apikey: $SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SERVICE_ROLE_KEY")"
+          test "$(printf '%s' "$membership" | jq 'length')" -eq 1
+          test "$(printf '%s' "$membership" | jq -r '.[0].approval_status')" = "pending"
+          test "$(printf '%s' "$membership" | jq -r '.[0].is_default')" = "false"
+
+          roles="$(curl --fail-with-body -sS \
+            "$API_URL/rest/v1/user_roles?select=role&user_id=eq.$SELF_UID" \
+            -H "apikey: $SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SERVICE_ROLE_KEY")"
+          test "$(printf '%s' "$roles" | jq 'length')" -eq 0
+
+          echo "NATIVE_SELF_SIGNUP_OWNERSHIP_PROOF_OK"
+          echo "NATIVE_PENDING_SIGNUP_HAS_NO_ROLE_OK"
+
       - name: Static authorization contract audit
         run: python3 scripts/recovery/audit_edge_function_auth.py
 
