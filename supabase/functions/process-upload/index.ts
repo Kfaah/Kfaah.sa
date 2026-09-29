@@ -323,6 +323,7 @@ Deno.serve(async (req) => {
         uploaded_by: userId,
         file_name: file.name,
         file_type: file.type || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        file_size_bytes: file.size,
         for_date: forDate,
         detected_schema: detected,
         total_rows: rows.length,
