@@ -95,7 +95,7 @@ const PROTECTED_ROOTS = new Set([
   "operational-plans", "profile", "settings", "uploads", "intelligence",
   "internal-dashboard", "my-accountability", "my-performance", "employee-onboarding",
   "staff-duties-upload", "my-assistant", "performance", "organizations",
-  "messages",
+  "messages", "inbox", "platform-mail", "internal-inbox",
 ]);
 
 function isPublicEntryPath(pathname: string) {
@@ -378,10 +378,10 @@ function AppRoutes() {
       <Route path="/about/vision-mission" element={<PlatformVisionMission />} />
       <Route path="/about/goals" element={<PlatformGoals />} />
       <Route path="/support" element={<PlatformSupport />} />
-      <Route path="/inbox" element={<SupportInbox />} />
-      <Route path="/platform-mail" element={<PlatformMail />} />
+      <Route path="/inbox" element={<SuperAdminRoute><SupportInbox /></SuperAdminRoute>} />
+      <Route path="/platform-mail" element={<SuperAdminRoute><PlatformMail /></SuperAdminRoute>} />
       <Route path="/messages" element={<Messages />} />
-      <Route path="/internal-inbox" element={<InternalInbox />} />
+      <Route path="/internal-inbox" element={<SuperAdminRoute><InternalInbox /></SuperAdminRoute>} />
       <Route path="/unsubscribe" element={<Unsubscribe />} />
       <Route path="/letter-invitation" element={<LetterPage />} />
 
