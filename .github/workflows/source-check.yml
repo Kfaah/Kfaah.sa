@@ -45,6 +45,7 @@ jobs:
           node --check scripts/recovery/plan-tadabbur-reconcile.mjs
           node --check scripts/recovery/test-tadabbur-reconcile.mjs
           node scripts/recovery/test-tadabbur-reconcile.mjs
+          python3 -m py_compile deploy/recovery/export_tadabbur_current_snapshot.py
       - name: Verify production bundle is independent
         run: |
           set -euo pipefail
