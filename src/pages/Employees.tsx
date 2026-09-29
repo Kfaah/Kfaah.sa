@@ -318,7 +318,7 @@ const Employees = () => {
     try {
       const { data, error } = await supabase
         .from("departments")
-        .insert({ name: newDepartment.name, color: newDepartment.color })
+        .insert({ name: newDepartment.name, color: newDepartment.color, organization_id: currentOrg?.id })
         .select()
         .single();
       
@@ -347,7 +347,7 @@ const Employees = () => {
         .insert({ 
           name: newRole.name, 
           color: newRole.color,
-          department_id: newRole.department_id || null 
+          department_id: newRole.department_id || null,\n          organization_id: currentOrg?.id 
         })
         .select()
         .single();
