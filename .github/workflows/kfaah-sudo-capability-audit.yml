@@ -52,3 +52,15 @@ jobs:
             printf '%s|read=%s|write=%s\n' "$p" "$r" "$w"
           done
           REMOTE
+
+          echo "=== ROOT SSH PROBE ==="
+          if ssh -i "$HOME/.ssh/id_kfaah_audit" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=8 \
+            "root@$HETZNER_HOST" 'test "$(id -u)" = 0'; then
+            echo "ROOT_SSH_WITH_EXISTING_KEY=yes"
+          else
+            echo "ROOT_SSH_WITH_EXISTING_KEY=no"
+          fi
