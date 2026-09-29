@@ -61,7 +61,7 @@ jobs:
                       continue
                   if line.startswith("    Views:"):
                       break
-                  m = re.match(r"^      ([A-Za-z0-9_]+): \\{$", line)
+                  m = re.match(r"^      ([A-Za-z0-9_]+): \{$", line)
                   if m:
                       out.append(m.group(1))
               return sorted(set(out))
