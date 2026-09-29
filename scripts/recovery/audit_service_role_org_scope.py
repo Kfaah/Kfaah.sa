@@ -14,6 +14,7 @@ script can be switched to fail-closed.
 from pathlib import Path
 import json
 import re
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 FUNCTIONS = ROOT / "supabase" / "functions"
@@ -101,7 +102,7 @@ print(f"suspicious_functions={len(suspicious)}")
 for row in suspicious:
     print("SUSPICIOUS|" + row["function"])
 
-Path("/tmp/kfaah-service-role-org-scope.json").write_text(
+Path(tempfile.gettempdir(), "kfaah-service-role-org-scope.json").write_text(
     json.dumps(
         {"rows": rows, "suspicious": suspicious},
         ensure_ascii=False,
@@ -110,5 +111,6 @@ Path("/tmp/kfaah-service-role-org-scope.json").write_text(
     encoding="utf-8",
 )
 
-# Report-only until the current codebase has been reviewed function by function.
+if suspicious:
+    raise SystemExit("Service-role organization-scope audit failed")
 raise SystemExit(0)
