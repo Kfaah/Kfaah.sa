@@ -274,6 +274,65 @@ jobs:
           echo "NATIVE_SELF_SIGNUP_OWNERSHIP_PROOF_OK"
           echo "NATIVE_PENDING_SIGNUP_HAS_NO_ROLE_OK"
 
+      - name: End-to-end self-signup rate limit
+        run: |
+          set -euo pipefail
+
+          RATE_ORG="33333333-3333-4333-8333-333333333333"
+          RATE_SLUG="ci-signup-rate-limit"
+          RATE_USERNAME="9933333333"
+          RATE_EMAIL="$RATE_USERNAME@user.local"
+          RATE_PASSWORD="Qa9!RateLimit${GITHUB_RUN_NUMBER}"
+          WRONG_PASSWORD="Qa9!WrongRate${GITHUB_RUN_NUMBER}"
+
+          for secret in "$RATE_EMAIL" "$RATE_PASSWORD" "$WRONG_PASSWORD"; do
+            echo "::add-mask::$secret"
+          done
+
+          curl --fail-with-body -sS \
+            -X POST "$API_URL/rest/v1/organizations" \
+            -H "apikey: $SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+            -H 'Content-Type: application/json' \
+            --data "$(jq -n --arg id "$RATE_ORG" --arg slug "$RATE_SLUG" \
+              '{id:$id,name:"CI Rate Limit Org",slug:$slug,is_active:true,allow_self_signup:true}')" \
+            >/dev/null
+
+          curl --fail-with-body -sS \
+            -X POST "$API_URL/auth/v1/admin/users" \
+            -H "apikey: $SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+            -H 'Content-Type: application/json' \
+            --data "$(jq -n --arg e "$RATE_EMAIL" --arg p "$RATE_PASSWORD" \
+              '{email:$e,password:$p,email_confirm:true}')" \
+            >/dev/null
+
+          for attempt in $(seq 1 8); do
+            code="$(curl -sS -o /tmp/rate-limit-$attempt.out -w '%{http_code}' \
+              -X POST "$API_URL/functions/v1/org-self-signup" \
+              -H "apikey: $ANON_KEY" \
+              -H 'Content-Type: application/json' \
+              --data "$(jq -n \
+                --arg slug "$RATE_SLUG" \
+                --arg username "$RATE_USERNAME" \
+                --arg p "$WRONG_PASSWORD" \
+                '{slug:$slug,username:$username,password:$p,first_name:"Rate",last_name:"Limit"}')")"
+            test "$code" = "401"
+          done
+
+          blocked_code="$(curl -sS -o /tmp/rate-limit-blocked.out -w '%{http_code}' \
+            -X POST "$API_URL/functions/v1/org-self-signup" \
+            -H "apikey: $ANON_KEY" \
+            -H 'Content-Type: application/json' \
+            --data "$(jq -n \
+              --arg slug "$RATE_SLUG" \
+              --arg username "$RATE_USERNAME" \
+              --arg p "$WRONG_PASSWORD" \
+              '{slug:$slug,username:$username,password:$p,first_name:"Rate",last_name:"Limit"}')")"
+          test "$blocked_code" = "429"
+
+          echo "NATIVE_SELF_SIGNUP_RATE_LIMIT_OK"
+
       - name: End-to-end one-click email unsubscribe
         run: |
           set -euo pipefail
