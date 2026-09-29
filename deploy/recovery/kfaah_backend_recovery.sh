@@ -194,64 +194,32 @@ native_canary() {
   [[ -n "$anon_key" ]] || \
     die "SUPABASE_ANON_KEY is unavailable inside the native functions service."
 
-  note "Testing a real native function call using the current browser key contract"
-  local demo_json
-  demo_json="$(curl --connect-timeout 5 --max-time 30 --fail-with-body -sS \
-    -X POST "$base/functions/v1/setup-demo" \
+  note "Testing Auth health through the native gateway without creating users"
+  local auth_code
+  auth_code="$(curl --connect-timeout 5 --max-time 15 -sS \
+    -o /tmp/kfaah-native-auth-health.out \
+    -w '%{http_code}' \
     -H "apikey: $anon_key" \
-    -H "Authorization: Bearer $anon_key" \
-    -H 'Content-Type: application/json' \
-    -d '{}' || true)"
+    "$base/auth/v1/health" || true)"
+  [[ "$auth_code" == "200" ]] || \
+    die "Native Auth health canary failed (HTTP $auth_code)."
 
-  local demo_email demo_password
-  demo_email="$(printf '%s' "$demo_json" | python3 -c \
-    'import json,sys; d=json.load(sys.stdin); print(d.get("email",""))' \
-    2>/dev/null || true)"
-  demo_password="$(printf '%s' "$demo_json" | python3 -c \
-    'import json,sys; d=json.load(sys.stdin); print(d.get("password",""))' \
-    2>/dev/null || true)"
-
-  [[ -n "$demo_email" && -n "$demo_password" ]] || \
-    die "Native setup-demo did not return usable demo credentials."
-
-  note "Testing Auth login against the same native gateway"
-  local login_json access_token
-  login_json="$(python3 - "$demo_email" "$demo_password" <<'PY' | \
-    curl --connect-timeout 5 --max-time 30 --fail-with-body -sS \
-      -X POST "$base/auth/v1/token?grant_type=password" \
-      -H "apikey: $anon_key" \
-      -H 'Content-Type: application/json' \
-      --data-binary @- || true
-import json, sys
-print(json.dumps({"email": sys.argv[1], "password": sys.argv[2]}))
-PY
-  )"
-
-  access_token="$(printf '%s' "$login_json" | python3 -c \
-    'import json,sys; d=json.load(sys.stdin); print(d.get("access_token",""))' \
-    2>/dev/null || true)"
-  [[ -n "$access_token" ]] || \
-    die "Native Auth login failed with the browser key contract."
-
-  note "Testing a protected Kfaah function with a real user JWT"
+  note "Testing privileged Edge Function rejection with an anonymous browser key"
   local protected_code
   protected_code="$(curl --connect-timeout 5 --max-time 20 -sS \
     -o /tmp/kfaah-native-protected.out \
     -w '%{http_code}' \
     -X POST "$base/functions/v1/impersonate-user" \
     -H "apikey: $anon_key" \
-    -H "Authorization: Bearer $access_token" \
+    -H "Authorization: Bearer $anon_key" \
     -H 'Content-Type: application/json' \
     -d '{}' || true)"
 
-  # The demo viewer is authenticated but not a super admin, so 403 is the
-  # expected result. 401 means the native auth/key contract is still broken.
-  [[ "$protected_code" == "403" ]] || \
-    die "Protected native function auth canary failed (expected HTTP 403, got $protected_code)."
+  [[ "$protected_code" == "401" || "$protected_code" == "403" ]] || \
+    die "Protected native function must reject anonymous caller (got HTTP $protected_code)."
 
-  unset anon_key demo_json demo_email demo_password login_json access_token
-  note "Native entrypoint + Auth + protected-function canaries passed."
-}
+  unset anon_key
+  note "Read-only native entrypoint + Auth health + authorization canaries passed."}
 
 cutover() {
   require_mutation_approval
