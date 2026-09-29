@@ -118,7 +118,7 @@ jobs:
               if line.startswith("    Views:"):
                   break
 
-              table_match = re.match(r"^      ([A-Za-z0-9_]+): \\{$", line)
+              table_match = re.match(r"^      ([A-Za-z0-9_]+): \{$", line)
               if table_match:
                   current_table = table_match.group(1)
                   in_row = False
