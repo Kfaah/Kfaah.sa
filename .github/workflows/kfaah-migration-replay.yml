@@ -40,8 +40,13 @@ jobs:
           docker exec "$db_container" psql -U postgres -d postgres -X -At \
             -c "select table_name from information_schema.tables where table_schema='public' and table_type='BASE TABLE' order by table_name;" \
             > /tmp/kfaah-local-tables.txt
+          docker exec "$db_container" psql -U postgres -d postgres -X -At -F '|' \
+            -c "select table_name,column_name from information_schema.columns where table_schema='public' order by table_name,ordinal_position;" \
+            > /tmp/kfaah-local-columns.txt
           test -s /tmp/kfaah-local-tables.txt
+          test -s /tmp/kfaah-local-columns.txt
           echo "catalog_tables=$(wc -l < /tmp/kfaah-local-tables.txt)"
+          echo "catalog_columns=$(wc -l < /tmp/kfaah-local-columns.txt)"
 
       - name: Compare table contract
         run: |
@@ -94,6 +99,64 @@ jobs:
 
           if missing:
               raise SystemExit("Migration replay did not reproduce the application table contract")
+
+          # Compare the committed Row contract at column granularity as well.
+          lines = Path("src/integrations/supabase/types.ts").read_text(
+              encoding="utf-8", errors="replace"
+          ).splitlines()
+          expected_columns = set()
+          in_tables = False
+          current_table = None
+          in_row = False
+
+          for line in lines:
+              if line.strip() == "Tables: {":
+                  in_tables = True
+                  continue
+              if not in_tables:
+                  continue
+              if line.startswith("    Views:"):
+                  break
+
+              table_match = re.match(r"^      ([A-Za-z0-9_]+): \\{$", line)
+              if table_match:
+                  current_table = table_match.group(1)
+                  in_row = False
+                  continue
+
+              if current_table and line == "        Row: {":
+                  in_row = True
+                  continue
+
+              if in_row:
+                  if line == "        }":
+                      in_row = False
+                      continue
+                  column_match = re.match(r"^          ([A-Za-z0-9_]+): ", line)
+                  if column_match:
+                      expected_columns.add((current_table, column_match.group(1)))
+
+          actual_columns = set()
+          for raw in Path("/tmp/kfaah-local-columns.txt").read_text(
+              encoding="utf-8", errors="replace"
+          ).splitlines():
+              if not raw.strip() or "|" not in raw:
+                  continue
+              table_name, column_name = raw.split("|", 1)
+              actual_columns.add((table_name.strip(), column_name.strip()))
+
+          if not expected_columns:
+              raise SystemExit("Could not parse committed column contract")
+
+          missing_columns = sorted(expected_columns - actual_columns)
+          print(f"EXPECTED_COLUMNS={len(expected_columns)}")
+          print(f"LOCAL_REPLAY_COLUMNS={len(actual_columns)}")
+          print(f"MISSING_COLUMNS_AFTER_REPLAY={len(missing_columns)}")
+          for table_name, column_name in missing_columns:
+              print(f"MISSING_COLUMN|{table_name}|{column_name}")
+
+          if missing_columns:
+              raise SystemExit("Migration replay did not reproduce the application column contract")
           PY
 
       - name: Static Edge Function authorization audit
