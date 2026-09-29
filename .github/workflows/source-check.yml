@@ -34,6 +34,9 @@ jobs:
 
       - name: Audit system-admin authorization guardrails
         run: python3 scripts/recovery/audit_admin_security.py
+
+      - name: Audit service-role organization scope
+        run: python3 scripts/recovery/audit_service_role_org_scope.py
       - name: Verify production bundle is independent
         run: |
           set -euo pipefail
