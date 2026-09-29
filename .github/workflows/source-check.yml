@@ -25,6 +25,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: bash deploy/build-frontend.sh
+      - name: Validate recovery shell scripts
+        run: bash -n deploy/recovery/kfaah_backend_recovery.sh
+
       - name: Audit system-admin authorization guardrails
         run: python3 scripts/recovery/audit_admin_security.py
       - name: Verify production bundle is independent
