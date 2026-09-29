@@ -194,7 +194,8 @@ const COMPOSITES = {
   role_permissions: ["organization_id", "role", "module"],
   organization_profiles: ["organization_id"],
   organization_branding: ["organization_id"],
-  organization_settings: ["organization_id"]
+  organization_settings: ["organization_id"],
+  profiles: ["user_id"]
 };
 
 function stableKey(table, row) {
