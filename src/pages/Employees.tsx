@@ -310,6 +310,10 @@ const Employees = () => {
 
   // Add Department
   const handleAddDepartment = async () => {
+    if (!currentOrg?.id) {
+      toast.error("تعذر تحديد الجمعية الحالية");
+      return;
+    }
     if (!newDepartment.name) {
       toast.error("يرجى إدخال اسم القسم");
       return;
@@ -318,7 +322,7 @@ const Employees = () => {
     try {
       const { data, error } = await supabase
         .from("departments")
-        .insert({ name: newDepartment.name, color: newDepartment.color, organization_id: currentOrg?.id })
+        .insert({ name: newDepartment.name, color: newDepartment.color, organization_id: currentOrg.id })
         .select()
         .single();
       
@@ -336,6 +340,10 @@ const Employees = () => {
 
   // Add Job Role
   const handleAddRole = async () => {
+    if (!currentOrg?.id) {
+      toast.error("تعذر تحديد الجمعية الحالية");
+      return;
+    }
     if (!newRole.name) {
       toast.error("يرجى إدخال اسم الدور");
       return;
