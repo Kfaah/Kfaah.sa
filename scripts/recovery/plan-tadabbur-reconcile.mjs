@@ -23,6 +23,9 @@ const currentPath = process.env.CURRENT_DATABASE_JSON
 const outDir = path.resolve(
   process.env.OUTPUT_DIR || "./tadabbur-reconcile-out"
 );
+const typesPath = path.resolve(
+  process.env.SUPABASE_TYPES_PATH || "src/integrations/supabase/types.ts"
+);
 
 function fail(message) {
   console.error("ERROR: " + message);
@@ -360,6 +363,92 @@ function redactAuth(list) {
   }));
 }
 
+function restoreOrderFromTypes(selectedTables) {
+  const deps = new Map();
+  for (const table of selectedTables) deps.set(table, new Set());
+
+  if (!fs.existsSync(typesPath)) {
+    return {
+      order: [...selectedTables].sort(),
+      unresolved: [],
+      source: "types_missing_fallback"
+    };
+  }
+
+  const typeLines = fs.readFileSync(typesPath, "utf8").split("\n");
+  let inTables = false;
+  let currentTable = null;
+  let inRelationships = false;
+
+  for (const line of typeLines) {
+    if (line.trim() === "Tables: {") {
+      inTables = true;
+      continue;
+    }
+    if (!inTables) continue;
+    if (line.startsWith("    Views:")) break;
+
+    const tableMatch = line.match(/^      ([A-Za-z0-9_]+): \{$/);
+    if (tableMatch) {
+      currentTable = tableMatch[1];
+      inRelationships = false;
+      continue;
+    }
+
+    if (currentTable && line.trim() === "Relationships: [") {
+      inRelationships = true;
+      continue;
+    }
+    if (inRelationships && line.trim() === "]") {
+      inRelationships = false;
+      continue;
+    }
+
+    if (inRelationships && currentTable && deps.has(currentTable)) {
+      const refMatch = line.match(/referencedRelation: "([A-Za-z0-9_]+)"/);
+      if (refMatch) {
+        const parent = refMatch[1];
+        if (parent !== currentTable && deps.has(parent)) {
+          deps.get(currentTable).add(parent);
+        }
+      }
+    }
+  }
+
+  const remaining = new Map(
+    [...deps.entries()].map(([table, parents]) => [table, new Set(parents)])
+  );
+  const order = [];
+
+  while (remaining.size) {
+    const ready = [...remaining.entries()]
+      .filter(([, parents]) => parents.size === 0)
+      .map(([table]) => table)
+      .sort((a, b) => {
+        if (a === "organizations") return -1;
+        if (b === "organizations") return 1;
+        return a.localeCompare(b);
+      });
+
+    if (!ready.length) break;
+
+    for (const table of ready) {
+      order.push(table);
+      remaining.delete(table);
+      for (const parents of remaining.values()) parents.delete(table);
+    }
+  }
+
+  const unresolved = [...remaining.keys()].sort();
+  return {
+    order: order.concat(unresolved),
+    unresolved,
+    source: "supabase_types_relationships"
+  };
+}
+
+const dependencyPlan = restoreOrderFromTypes(new Set(selected.keys()));
+
 const organizationItem = selected.get("organizations").values().next().value;
 const summary = {
   tool: "plan-tadabbur-reconcile",
@@ -368,6 +457,9 @@ const summary = {
   organization_name: organizationItem.row.name || null,
   current_snapshot_supplied: Boolean(currentPath),
   selected_tables: selected.size,
+  restore_order: dependencyPlan.order,
+  unresolved_dependency_tables: dependencyPlan.unresolved,
+  restore_order_source: dependencyPlan.source,
   selected_public_rows: Array.from(selected.values())
     .reduce((sum, bucket) => sum + bucket.size, 0),
   member_users: memberUserIds.size,
@@ -393,6 +485,8 @@ const planDoc = {
   summary,
   policy: {
     public_rows: "insert_missing_only",
+    restore_order: dependencyPlan.order,
+    unresolved_dependency_tables: dependencyPlan.unresolved,
     existing_different_rows: "preserve_current_manual_review",
     unkeyed_rows: "manual_review",
     auth_rows: "manual_restore_only",
