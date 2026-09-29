@@ -37,9 +37,12 @@ jobs:
           set +a
           test -n "${API_URL:-}"
           test -n "${ANON_KEY:-}"
+          test -n "${SERVICE_ROLE_KEY:-}"
           echo "::add-mask::$ANON_KEY"
+          echo "::add-mask::$SERVICE_ROLE_KEY"
           printf 'API_URL=%s\n' "$API_URL" >> "$GITHUB_ENV"
           printf 'ANON_KEY=%s\n' "$ANON_KEY" >> "$GITHUB_ENV"
+          printf 'SERVICE_ROLE_KEY=%s\n' "$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
 
       - name: Inventory functions invoked by the frontend
         run: |
@@ -112,6 +115,92 @@ jobs:
           test "$(printf '%s' "$membership" | jq 'length')" -ge 1
           test "$(printf '%s' "$membership" | jq -r '.[0].approval_status')" = "approved"
           echo "NATIVE_SETUP_DEMO_LOGIN_OK"
+
+      - name: End-to-end organization-scoped employee authorization
+        run: |
+          set -euo pipefail
+
+          DEMO_ORG="00000000-0000-0000-0000-0000000000de"
+          OTHER_ORG="00000000-0000-0000-0000-0000000000e2"
+          CALLER_EMAIL="kfaah-admin-${GITHUB_RUN_ID}@test.local"
+          TARGET_EMAIL="kfaah-cross-org-${GITHUB_RUN_ID}@test.local"
+          CALLER_PASSWORD="Qa9!KfaahAdmin${GITHUB_RUN_NUMBER}"
+          TARGET_PASSWORD="Qa9!KfaahTarget${GITHUB_RUN_NUMBER}"
+          EMPLOYEE_PASSWORD="Qa9!KfaahEmployee${GITHUB_RUN_NUMBER}"
+
+          for secret in "$CALLER_EMAIL" "$TARGET_EMAIL" "$CALLER_PASSWORD" "$TARGET_PASSWORD" "$EMPLOYEE_PASSWORD"; do
+            echo "::add-mask::$secret"
+          done
+
+          admin_user() {
+            local email="$1"
+            local password="$2"
+            curl --fail-with-body -sS \
+              -X POST "$API_URL/auth/v1/admin/users" \
+              -H "apikey: $SERVICE_ROLE_KEY" \
+              -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+              -H 'Content-Type: application/json' \
+              --data "$(jq -n --arg e "$email" --arg p "$password"                 '{email:$e,password:$p,email_confirm:true}')"
+          }
+
+          rest_post() {
+            local table="$1"
+            local payload="$2"
+            curl --fail-with-body -sS \
+              -X POST "$API_URL/rest/v1/$table" \
+              -H "apikey: $SERVICE_ROLE_KEY" \
+              -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+              -H 'Content-Type: application/json' \
+              -H 'Prefer: return=representation' \
+              --data "$payload"
+          }
+
+          caller_json="$(admin_user "$CALLER_EMAIL" "$CALLER_PASSWORD")"
+          CALLER_ID="$(printf '%s' "$caller_json" | jq -r '.id // empty')"
+          test -n "$CALLER_ID"
+          echo "::add-mask::$CALLER_ID"
+
+          rest_post user_organizations "$(jq -n             --arg uid "$CALLER_ID" --arg org "$DEMO_ORG"             '{user_id:$uid,organization_id:$org,is_default:true,approval_status:"approved"}')" >/tmp/caller-membership.json
+
+          rest_post employees "$(jq -n             --arg uid "$CALLER_ID" --arg org "$DEMO_ORG" --arg email "$CALLER_EMAIL"             '{user_id:$uid,organization_id:$org,full_name:"CI Org Admin",username:"9900000001",email:$email,phone:"0500000001",job_role:"مدير جمعية",role_color:"bg-primary",status:"active",role_level:"admin"}')" >/tmp/caller-employee.json
+
+          rest_post user_roles "$(jq -n             --arg uid "$CALLER_ID" --arg org "$DEMO_ORG"             '{user_id:$uid,role:"admin",organization_id:$org}')" >/tmp/caller-role.json
+
+          login_json="$(curl --fail-with-body -sS             -X POST "$API_URL/auth/v1/token?grant_type=password"             -H "apikey: $ANON_KEY"             -H "Content-Type: application/json"             --data "$(jq -n --arg e "$CALLER_EMAIL" --arg p "$CALLER_PASSWORD" '{email:$e,password:$p}')")"
+          CALLER_TOKEN="$(printf '%s' "$login_json" | jq -r '.access_token // empty')"
+          test -n "$CALLER_TOKEN"
+          echo "::add-mask::$CALLER_TOKEN"
+
+          create_response="$(curl --fail-with-body -sS             -X POST "$API_URL/functions/v1/create-employee"             -H "apikey: $ANON_KEY"             -H "Authorization: Bearer $CALLER_TOKEN"             -H 'Content-Type: application/json'             --data "$(jq -n               --arg org "$DEMO_ORG" --arg pass "$EMPLOYEE_PASSWORD"               '{organizationId:$org,fullName:"CI Created Employee",username:"9900000002",password:$pass,email:"created-employee@test.local",phone:"0500000002",jobRole:"موظف",roleLevel:"employee"}')")"
+
+          test "$(printf '%s' "$create_response" | jq -r '.success')" = "true"
+          CREATED_USER_ID="$(printf '%s' "$create_response" | jq -r '.employee.user_id // empty')"
+          test -n "$CREATED_USER_ID"
+          echo "::add-mask::$CREATED_USER_ID"
+
+          created_membership="$(curl --fail-with-body -sS             "$API_URL/rest/v1/user_organizations?select=organization_id,approval_status&user_id=eq.$CREATED_USER_ID&organization_id=eq.$DEMO_ORG"             -H "apikey: $SERVICE_ROLE_KEY"             -H "Authorization: Bearer $SERVICE_ROLE_KEY")"
+          test "$(printf '%s' "$created_membership" | jq 'length')" -eq 1
+          test "$(printf '%s' "$created_membership" | jq -r '.[0].approval_status')" = "approved"
+
+          rest_post organizations "$(jq -n --arg id "$OTHER_ORG"             '{id:$id,name:"CI Other Organization",slug:"ci-other-org",is_active:true}')" >/tmp/other-org.json
+
+          target_json="$(admin_user "$TARGET_EMAIL" "$TARGET_PASSWORD")"
+          TARGET_ID="$(printf '%s' "$target_json" | jq -r '.id // empty')"
+          test -n "$TARGET_ID"
+          echo "::add-mask::$TARGET_ID"
+
+          rest_post user_organizations "$(jq -n             --arg uid "$TARGET_ID" --arg org "$OTHER_ORG"             '{user_id:$uid,organization_id:$org,is_default:true,approval_status:"approved"}')" >/tmp/target-membership.json
+
+          rest_post employees "$(jq -n             --arg uid "$TARGET_ID" --arg org "$OTHER_ORG" --arg email "$TARGET_EMAIL"             '{user_id:$uid,organization_id:$org,full_name:"CI Other Employee",username:"9900000003",email:$email,phone:"0500000003",job_role:"موظف",role_color:"bg-primary",status:"active",role_level:"employee"}')" >/tmp/target-employee.json
+
+          cross_code="$(curl -sS -o /tmp/cross-org.out -w '%{http_code}'             -X POST "$API_URL/functions/v1/create-employee"             -H "apikey: $ANON_KEY"             -H "Authorization: Bearer $CALLER_TOKEN"             -H 'Content-Type: application/json'             --data "$(jq -n --arg uid "$TARGET_ID"               '{action:"sync-login",userId:$uid,username:"9900000099"}')")"
+          test "$cross_code" = "403"
+
+          cross_create_code="$(curl -sS -o /tmp/cross-create.out -w '%{http_code}'             -X POST "$API_URL/functions/v1/create-employee"             -H "apikey: $ANON_KEY"             -H "Authorization: Bearer $CALLER_TOKEN"             -H 'Content-Type: application/json'             --data "$(jq -n --arg org "$OTHER_ORG" --arg pass "$EMPLOYEE_PASSWORD"               '{organizationId:$org,fullName:"Forbidden Cross Org",username:"9900000004",password:$pass,email:"forbidden@test.local",phone:"0500000004",jobRole:"موظف",roleLevel:"employee"}')")"
+          test "$cross_create_code" = "403"
+
+          echo "NATIVE_CREATE_EMPLOYEE_ORG_SCOPE_OK"
+          echo "NATIVE_CROSS_ORG_ACCOUNT_MUTATION_BLOCKED"
 
       - name: Static authorization contract audit
         run: python3 scripts/recovery/audit_edge_function_auth.py
