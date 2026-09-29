@@ -51,6 +51,7 @@ import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { useCanAccessSettings } from "@/hooks/useCanAccessSettings";
 import { supabase } from "@/integrations/supabase/client";
+import { getOrgPrivilegeFlags } from "@/lib/orgAuthorization";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
 import namozajLogo from "@/assets/namozaj-logo.png";
 
@@ -150,12 +151,8 @@ export function Sidebar() {
   const branding = useOrgBranding();
   const { currentOrg } = useOrganization();
   const { allowed: canAccessSettings } = useCanAccessSettings();
-  const isAdminArea = location.pathname.includes("/uploads") || location.pathname.includes("/internal-dashboard");
-  const isActuallyAdmin = !previewAsEmployee && user.role === "مدير النظام";
-  const [roleLevel, setRoleLevel] = useState<"admin" | "manager" | "employee">(
-    isActuallyAdmin || isAdminArea ? "admin" : "employee"
-  );
-  const [roleReady, setRoleReady] = useState(isActuallyAdmin || isAdminArea);
+  const [roleLevel, setRoleLevel] = useState<"admin" | "manager" | "employee">("employee");
+  const [roleReady, setRoleReady] = useState(false);
   const [isViewer, setIsViewer] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
@@ -241,48 +238,48 @@ export function Sidebar() {
     return visibleNavItems;
   })();
 
-  // Resolve role_level from employees table to know which menu to show
+  // Resolve navigation privileges strictly inside the active organization.
   useEffect(() => {
+    let cancelled = false;
     const fetchRoleLevel = async () => {
-      if (!authUser) {
-        setRoleLevel("employee");
-        setRoleReady(true);
+      if (!authUser?.id || !currentOrg?.id) {
+        if (!cancelled) {
+          setRoleLevel("employee");
+          setRoleReady(true);
+        }
         return;
       }
 
       setRoleReady(false);
 
-      if (isActuallyAdmin || isAdminArea) {
+      const flags = await getOrgPrivilegeFlags(authUser.id, currentOrg.id);
+      if (cancelled) return;
+
+      if (flags.isSuperAdmin || flags.isOrgAdmin) {
         setRoleLevel("admin");
         setRoleReady(true);
         return;
       }
 
-      // 1) Check global user_roles first — admin/super_admin always wins
-      const { data: userRole } = await supabase.rpc("get_user_role", {
-        _user_id: authUser.id,
-      });
-      if (userRole === "admin" || userRole === "super_admin") {
-        setRoleLevel("admin");
-        setRoleReady(true);
-        return;
-      }
-
-      // 2) Otherwise read role_level from employees
       const { data } = await supabase
         .from("employees")
         .select("role_level")
         .eq("user_id", authUser.id)
+        .eq("organization_id", currentOrg.id)
         .maybeSingle();
-      if (data?.role_level) {
-        setRoleLevel(data.role_level as any);
-      } else {
-        setRoleLevel("employee");
-      }
+
+      if (cancelled) return;
+      setRoleLevel(
+        data?.role_level === "admin" || data?.role_level === "manager"
+          ? data.role_level
+          : "employee",
+      );
       setRoleReady(true);
     };
+
     fetchRoleLevel();
-  }, [authUser, isActuallyAdmin, isAdminArea]);
+    return () => { cancelled = true; };
+  }, [authUser?.id, currentOrg?.id]);
 
   // جلب عدد الإشعارات غير المقروءة
   useEffect(() => {
@@ -292,10 +289,15 @@ export function Sidebar() {
         return;
       }
 
-      const { count, error } = await supabase
+      let query = supabase
         .from("notifications")
         .select("*", { count: "exact", head: true })
+        .eq("user_id", authUser.id)
         .eq("is_read", false);
+      if (currentOrg?.id) {
+        query = query.eq("organization_id", currentOrg.id);
+      }
+      const { count, error } = await query;
 
       if (!error && count !== null) {
         setUnreadCount(count);
