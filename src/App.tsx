@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { PreviewModeProvider, usePreviewMode } from "@/contexts/PreviewModeContext";
 import { ConfirmDialogProvider } from "@/components/ui/confirm-dialog";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import { getOrgPrivilegeFlags } from "@/lib/orgAuthorization";
 // Eagerly-loaded shells (small + likely needed immediately)
 import PublicLanding from "./pages/PublicLanding";
 
@@ -129,6 +131,7 @@ function RouteFallback() {
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut } = useAuth();
   const { isPreviewMode } = usePreviewMode();
+  const { currentOrg, loading: orgLoading } = useOrganization();
   const location = useLocation();
 
   // Onboarding gate: any non-admin user must complete the intelligence
@@ -203,16 +206,44 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         if (!cancelled) setOnboardingState("ok");
         return;
       }
-      // Admins / super admins / managers / viewers bypass the onboarding requirement.
-      const [{ data: isAdmin }, { data: isSuper }, { data: isMgr }, { data: isViewer }] =
+      if (orgLoading) return;
+
+      // Bypass onboarding only when the privilege belongs to the active org.
+      const flags = await getOrgPrivilegeFlags(user.id, currentOrg?.id);
+      const [{ data: employee }, { data: isViewer }, membershipResult] =
         await Promise.all([
-          supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }),
-          supabase.rpc("is_super_admin", { _user_id: user.id }),
-          supabase.rpc("is_manager", { _user_id: user.id }),
+          currentOrg?.id
+            ? supabase
+                .from("employees")
+                .select("role_level")
+                .eq("user_id", user.id)
+                .eq("organization_id", currentOrg.id)
+                .maybeSingle()
+            : Promise.resolve({ data: null, error: null }),
           supabase.rpc("is_viewer", { _user_id: user.id }),
+          currentOrg?.id
+            ? supabase
+                .from("user_organizations")
+                .select("id")
+                .eq("user_id", user.id)
+                .eq("organization_id", currentOrg.id)
+                .eq("approval_status", "approved")
+                .maybeSingle()
+            : Promise.resolve({ data: null, error: null }),
         ]);
+
       if (cancelled) return;
-      if (isAdmin || isSuper || isMgr || isViewer) {
+      const managerInOrg =
+        employee?.role_level === "manager" ||
+        employee?.role_level === "admin";
+      const viewerInOrg = isViewer === true && !!membershipResult.data;
+
+      if (
+        flags.isSuperAdmin ||
+        flags.isOrgAdmin ||
+        managerInOrg ||
+        viewerInOrg
+      ) {
         setOnboardingState("ok");
         return;
       }
@@ -226,7 +257,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     };
     run();
     return () => { cancelled = true; };
-  }, [user?.id, isPreviewMode, isEmbedded, isOnboardingPath, location.pathname]);
+  }, [
+    user?.id,
+    isPreviewMode,
+    isEmbedded,
+    isOnboardingPath,
+    location.pathname,
+    currentOrg?.id,
+    orgLoading,
+  ]);
 
   // في وضع المعاينة، نسمح بالوصول مباشرة
   if (isPreviewMode) {
