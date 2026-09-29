@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import OrgInternalDashboard from "@/pages/admin/OrgInternalDashboard";
 import { WelcomeScreen } from "@/components/welcome/WelcomeScreen";
 import { useIsDemo } from "@/hooks/useIsDemo";
+import { getOrgPrivilegeFlags } from "@/lib/orgAuthorization";
 
 /**
  * Wrapper around OrgInternalDashboard for org-side access.
@@ -63,16 +64,35 @@ export default function InternalDashboard() {
         resolvedOrgId = (data as string | null) ?? null;
       }
 
-      // 2) check role: admin / super_admin / employees.role_level=admin
-      const { data: roleRow } = await supabase.rpc("get_user_role", { _user_id: user.id });
-      let canSee = roleRow === "admin" || roleRow === "super_admin" || roleRow === "viewer";
-      if (!canSee) {
-        const { data: emp } = await supabase
-          .from("employees")
-          .select("role_level")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        canSee = emp?.role_level === "admin";
+      // 2) authorize against the organization being opened.
+      let canSee = false;
+      if (resolvedOrgId) {
+        const flags = await getOrgPrivilegeFlags(user.id, resolvedOrgId);
+        canSee = flags.isSuperAdmin || flags.isOrgAdmin;
+
+        if (!canSee) {
+          const [{ data: viewer }, { data: membership }, { data: emp }] =
+            await Promise.all([
+              supabase.rpc("is_viewer", { _user_id: user.id }),
+              supabase
+                .from("user_organizations")
+                .select("id")
+                .eq("user_id", user.id)
+                .eq("organization_id", resolvedOrgId)
+                .eq("approval_status", "approved")
+                .maybeSingle(),
+              supabase
+                .from("employees")
+                .select("role_level")
+                .eq("user_id", user.id)
+                .eq("organization_id", resolvedOrgId)
+                .maybeSingle(),
+            ]);
+
+          canSee =
+            (!!viewer && !!membership) ||
+            emp?.role_level === "admin";
+        }
       }
 
       if (cancelled) return;
