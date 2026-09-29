@@ -38,6 +38,13 @@ jobs:
 
       - name: Audit service-role organization scope
         run: python3 scripts/recovery/audit_service_role_org_scope.py
+
+      - name: Validate Tadabbur reconciliation planner
+        run: |
+          set -euo pipefail
+          node --check scripts/recovery/plan-tadabbur-reconcile.mjs
+          node --check scripts/recovery/test-tadabbur-reconcile.mjs
+          node scripts/recovery/test-tadabbur-reconcile.mjs
       - name: Verify production bundle is independent
         run: |
           set -euo pipefail
