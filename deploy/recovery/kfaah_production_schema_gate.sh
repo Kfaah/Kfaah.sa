@@ -40,7 +40,7 @@ db_psql() {
   '
 }
 
-note "Reading production public table catalog"
+note "Reading schema catalog from ${DB_NAME_OVERRIDE:-production database}"
 db_psql > "$tmp/tables.txt" <<'SQL'
 select table_name
 from information_schema.tables
@@ -224,6 +224,10 @@ if missing_tables or missing_columns or hard_failures or warnings or missing_fun
 
 print("KFAAH_PRODUCTION_SCHEMA_GATE=PASS")
 PY
+
+if [[ "$MARK_READY" == "yes" && -n "$DB_NAME_OVERRIDE" ]]; then
+  die "Refusing to mark production schema ready while validating a database override"
+fi
 
 if [[ "$MARK_READY" == "yes" ]]; then
   install -d -o root -g root -m 0700 "$STATE_ROOT"
