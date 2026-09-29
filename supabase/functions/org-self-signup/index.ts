@@ -86,11 +86,34 @@ serve(async (req) => {
 
     // Atomic abuse controls. The database stores only SHA-256 digests, never
     // the raw username or client address.
+    const orgKey = await sha256Hex(`signup:org:${org.id}`);
     const identityKey = await sha256Hex(`signup:identity:${org.id}:${cleaned}`);
     const source = clientAddress(req);
     const sourceKey = source
       ? await sha256Hex(`signup:source:${org.id}:${source}`)
       : null;
+
+    const { data: orgAllowed, error: orgLimitError } =
+      await admin.rpc("consume_public_rate_limit", {
+        _scope: "org_self_signup_org",
+        _key_hash: orgKey,
+        _max_attempts: 100,
+        _window_seconds: 900,
+      });
+
+    if (orgLimitError) {
+      console.error("signup organization rate-limit failed", {
+        code: orgLimitError.code,
+      });
+      return json({ error: "تعذر التحقق من معدل الطلبات" }, 503);
+    }
+
+    if (orgAllowed !== true) {
+      return json(
+        { error: "تم بلوغ الحد المؤقت لطلبات التسجيل في هذه الجمعية. أعد المحاولة لاحقاً." },
+        429,
+      );
+    }
 
     const { data: identityAllowed, error: identityLimitError } =
       await admin.rpc("consume_public_rate_limit", {
