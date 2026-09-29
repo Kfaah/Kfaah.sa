@@ -17,6 +17,7 @@ RECOVERY="/usr/local/libexec/kfaah-backend-recovery"
 SCHEMA_GATE="/usr/local/libexec/kfaah-production-schema-gate"
 SCHEMA_PLAN="/usr/local/libexec/kfaah-schema-recovery-plan"
 PREFLIGHT="/usr/local/libexec/kfaah-operator-preflight"
+KEY_AUDIT="/usr/local/libexec/kfaah-trusted-backup-key-audit"
 WRAPPER="/usr/local/bin/kfaah-backend-recovery"
 
 STATE_ROOT="/var/lib/kfaah-recovery"
@@ -36,7 +37,8 @@ for required in \
   deploy/recovery/kfaah_backend_recovery.sh \
   deploy/recovery/kfaah_production_schema_gate.sh \
   deploy/recovery/kfaah_schema_recovery_plan.sh \
-  deploy/recovery/kfaah_operator_preflight.sh
+  deploy/recovery/kfaah_operator_preflight.sh \
+  deploy/recovery/audit_trusted_backup_key.sh
 do
   [[ -r "$SOURCE_ROOT/$required" ]] || die "reviewed script missing: $required"
 done
@@ -49,6 +51,8 @@ install -o root -g root -m 0755 \
   "$SOURCE_ROOT/deploy/recovery/kfaah_schema_recovery_plan.sh" "$SCHEMA_PLAN"
 install -o root -g root -m 0755 \
   "$SOURCE_ROOT/deploy/recovery/kfaah_operator_preflight.sh" "$PREFLIGHT"
+install -o root -g root -m 0755 \
+  "$SOURCE_ROOT/deploy/recovery/audit_trusted_backup_key.sh" "$KEY_AUDIT"
 
 install -d -o root -g root -m 0700 \
   "$STATE_ROOT" "$STAGED" "$CONTRACT_DIR"
@@ -62,6 +66,7 @@ RECOVERY="/usr/local/libexec/kfaah-backend-recovery"
 SCHEMA_GATE="/usr/local/libexec/kfaah-production-schema-gate"
 SCHEMA_PLAN="/usr/local/libexec/kfaah-schema-recovery-plan"
 PREFLIGHT="/usr/local/libexec/kfaah-operator-preflight"
+KEY_AUDIT="/usr/local/libexec/kfaah-trusted-backup-key-audit"
 SUPABASE_CLI="/usr/local/libexec/supabase-recovery-cli"
 SUPABASE_CLI_VERSION="2.118.0"
 SUPABASE_CLI_ARCHIVE_SHA256="f6089a86fb9d9221c958193a277338daddd6822f706929943812fa32e106c86d"
@@ -87,6 +92,7 @@ run_mutation() {
 [[ -x "$SCHEMA_GATE" ]] || die "root-owned schema gate missing"
 [[ -x "$SCHEMA_PLAN" ]] || die "root-owned schema plan missing"
 [[ -x "$PREFLIGHT" ]] || die "root-owned production preflight missing"
+[[ -x "$KEY_AUDIT" ]] || die "root-owned trusted-backup key audit missing"
 
 mode="${1:-audit}"
 shift || true
@@ -105,6 +111,11 @@ case "$mode" in
     [[ -d "$staged_source/supabase/functions" ]] || die "staged function source missing"
     [[ -d "$staged_source/supabase/migrations" ]] || die "staged migration source missing"
     SOURCE_ROOT="$staged_source" KFAAH_RECOVERY_SCRIPT="$RECOVERY" "$PREFLIGHT"
+    ;;
+
+  backup-key-audit)
+    [[ "$#" -eq 0 ]] || die "backup-key-audit takes no arguments"
+    "$KEY_AUDIT"
     ;;
 
   backup)
