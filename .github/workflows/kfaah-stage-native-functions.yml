@@ -24,6 +24,19 @@ jobs:
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "FUNCTIONS_ARCHIVE_SHA256=$sha"
 
+      - name: Download pinned Supabase CLI recovery archive
+        id: cli
+        run: |
+          set -euo pipefail
+          cli_archive="/tmp/supabase_2.118.0_linux_amd64.tar.gz"
+          cli_sha="f6089a86fb9d9221c958193a277338daddd6822f706929943812fa32e106c86d"
+          curl --fail --location --retry 5 --retry-all-errors \
+            "https://github.com/supabase/cli/releases/download/v2.118.0/supabase_2.118.0_linux_amd64.tar.gz" \
+            -o "$cli_archive"
+          printf '%s  %s\n' "$cli_sha" "$cli_archive" | sha256sum -c -
+          echo "archive=$cli_archive" >> "$GITHUB_OUTPUT"
+          echo "sha=$cli_sha" >> "$GITHUB_OUTPUT"
+
       - name: Configure SSH
         env:
           HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
@@ -55,6 +68,21 @@ jobs:
               }
               sudo -n /usr/local/bin/kfaah-backend-recovery audit
             '
+
+      - name: Install pinned Supabase CLI on recovery path
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          CLI_ARCHIVE: ${{ steps.cli.outputs.archive }}
+          CLI_SHA: ${{ steps.cli.outputs.sha }}
+        run: |
+          set -euo pipefail
+          remote="/var/lib/kfaah-recovery/incoming/supabase-cli-v2.118.0.tar.gz"
+          scp -i ~/.ssh/kfaah -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$CLI_ARCHIVE" "$HETZNER_USER@$HETZNER_HOST:$remote"
+          ssh -i ~/.ssh/kfaah -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$HETZNER_USER@$HETZNER_HOST" \
+            "sudo -n /usr/local/bin/kfaah-backend-recovery install-cli '$remote' '$CLI_SHA'"
 
       - name: Upload reviewed archive
         env:
@@ -92,4 +120,4 @@ jobs:
         run: |
           ssh -i ~/.ssh/kfaah -o BatchMode=yes -o StrictHostKeyChecking=yes \
             "$HETZNER_USER@$HETZNER_HOST" \
-            "rm -f '/var/lib/kfaah-recovery/incoming/${ARCHIVE_SHA}.tar.gz'"
+            "rm -f '/var/lib/kfaah-recovery/incoming/${ARCHIVE_SHA}.tar.gz' '/var/lib/kfaah-recovery/incoming/supabase-cli-v2.118.0.tar.gz'"
