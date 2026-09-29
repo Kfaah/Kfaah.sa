@@ -2191,7 +2191,7 @@ function EmployeesShowcase({
         body: { employee_id: employeeId },
       });
       if (error) throw error;
-      if (!data?.token_hash || !data?.email) throw new Error("استجابة غير صالحة");
+      if (!data?.token_hash) throw new Error("استجابة غير صالحة");
       // Sign out current session, then verify the magic link to sign in as the employee.
       await supabase.auth.signOut();
       const { error: vErr } = await supabase.auth.verifyOtp({
