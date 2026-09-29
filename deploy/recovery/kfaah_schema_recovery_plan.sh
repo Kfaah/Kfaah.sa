@@ -215,6 +215,7 @@ for raw in (plan / "clone-columns.txt").read_text().splitlines():
 
 missing_tables = sorted(expected_tables - actual_tables)
 missing_columns = sorted(expected_columns - actual_columns)
+missing_security_tables = sorted({"public_rate_limits"} - actual_tables)
 
 hard = []
 warnings = []
@@ -249,6 +250,7 @@ result = {
     "expected_tables": len(expected_tables),
     "clone_tables": len(actual_tables),
     "missing_tables": missing_tables,
+    "missing_security_tables": missing_security_tables,
     "expected_columns": len(expected_columns),
     "clone_columns": len(actual_columns),
     "missing_columns": [{"table": t, "column": c} for t, c in missing_columns],
@@ -264,13 +266,14 @@ result = {
 print(f"EXPECTED_TABLES={result['expected_tables']}")
 print(f"CLONE_TABLES={result['clone_tables']}")
 print(f"MISSING_TABLES={len(missing_tables)}")
+print(f"MISSING_SECURITY_TABLES={len(missing_security_tables)}")
 print(f"EXPECTED_COLUMNS={result['expected_columns']}")
 print(f"CLONE_COLUMNS={result['clone_columns']}")
 print(f"MISSING_COLUMNS={len(missing_columns)}")
 print(f"RLS_HARD_FAILURES={len(set(hard))}")
 print(f"RLS_WARNINGS={len(set(warnings))}")
 
-if missing_tables or missing_columns or hard or warnings:
+if missing_tables or missing_security_tables or missing_columns or hard or warnings:
     raise SystemExit("KFAAH_SCHEMA_CLONE_PLAN=FAIL")
 
 print("KFAAH_SCHEMA_CLONE_PLAN=PASS")
