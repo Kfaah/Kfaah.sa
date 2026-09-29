@@ -95,9 +95,9 @@ if not db_container:
 
 def db_query(sql: str) -> str:
     shell = (
-        'export PGPASSWORD="\${POSTGRES_PASSWORD:-}"; '
-        'exec psql -U "\${POSTGRES_USER:-postgres}" '
-        '-d "\${POSTGRES_DB:-postgres}" -X -At -v ON_ERROR_STOP=1'
+        'export PGPASSWORD="${POSTGRES_PASSWORD:-}"; '
+        'exec psql -U "${POSTGRES_USER:-postgres}" '
+        '-d "${POSTGRES_DB:-postgres}" -X -At -v ON_ERROR_STOP=1'
     )
     return run(
         ["docker", "exec", "-i", db_container, "sh", "-lc", shell],
