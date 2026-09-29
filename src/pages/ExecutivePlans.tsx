@@ -71,6 +71,7 @@ import {
   Save,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getOrgPrivilegeFlags } from "@/lib/orgAuthorization";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { formatNumberPlain, rtlIsolate, getAvailableYears, cn } from "@/lib/utils";
@@ -600,15 +601,22 @@ export default function ExecutivePlans({ embedded = false }: { embedded?: boolea
 
 
 
-  // التحقق من صلاحية المدير
+  // صلاحية الإدارة مقيدة بالجمعية التي تعرضها الصفحة.
   useEffect(() => {
+    let cancelled = false;
     const checkAdmin = async () => {
-      if (!authUser) return;
-      const { data } = await supabase.rpc("get_user_role", { _user_id: authUser.id });
-      setIsAdmin(data === "admin" || data === "super_admin");
+      if (!authUser?.id || !activeOrgId) {
+        if (!cancelled) setIsAdmin(false);
+        return;
+      }
+      const flags = await getOrgPrivilegeFlags(authUser.id, activeOrgId);
+      if (!cancelled) {
+        setIsAdmin(flags.isSuperAdmin || flags.isOrgAdmin);
+      }
     };
     checkAdmin();
-  }, [authUser]);
+    return () => { cancelled = true; };
+  }, [authUser?.id, activeOrgId]);
 
   useEffect(() => {
     const resolveRouteOrg = async () => {
