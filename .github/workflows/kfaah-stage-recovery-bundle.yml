@@ -1,0 +1,97 @@
+name: Stage Kfaah recovery bundle
+
+on:
+  push:
+    branches:
+      - audit/kfaah-full-recovery-20260928
+    paths:
+      - '.github/workflows/kfaah-stage-recovery-bundle.yml'
+      - 'supabase/functions/**'
+      - 'supabase/migrations/**'
+      - 'src/integrations/supabase/types.ts'
+      - 'deploy/recovery/**'
+      - 'scripts/recovery/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kfaah-stage-recovery-bundle
+  cancel-in-progress: false
+
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate recovery source
+        run: |
+          set -euo pipefail
+          test -d supabase/functions
+          test -d supabase/migrations
+          test -f src/integrations/supabase/types.ts
+          bash -n deploy/recovery/kfaah_backend_recovery.sh
+          bash -n deploy/recovery/install_limited_recovery_sudo.sh
+          bash -n deploy/recovery/kfaah_operator_preflight.sh
+          bash -n deploy/recovery/kfaah_production_schema_gate.sh
+          bash -n deploy/recovery/kfaah_schema_recovery_plan.sh
+          bash -n deploy/recovery/audit_trusted_backup_key.sh
+          node --check scripts/recovery/plan-tadabbur-reconcile.mjs
+          node --check scripts/recovery/generate-tadabbur-rehearsal-sql.mjs
+
+      - name: Build reviewed recovery archive
+        id: bundle
+        run: |
+          set -euo pipefail
+          BUNDLE="kfaah-recovery-${GITHUB_SHA}.tar.gz"
+          tar -czf "$BUNDLE" \
+            supabase/functions \
+            supabase/migrations \
+            src/integrations/supabase/types.ts \
+            deploy/recovery \
+            scripts/recovery
+          SHA256="$(sha256sum "$BUNDLE" | awk '{print $1}')"
+          printf '%s  %s\n' "$SHA256" "$BUNDLE" > "$BUNDLE.sha256"
+          echo "bundle=$BUNDLE" >> "$GITHUB_OUTPUT"
+          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
+          echo "RECOVERY_BUNDLE=$BUNDLE"
+          echo "RECOVERY_SHA256=$SHA256"
+
+      - name: Stage archive on Hetzner deploy account
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+          BUNDLE: ${{ steps.bundle.outputs.bundle }}
+          SHA256: ${{ steps.bundle.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          : "${HETZNER_HOST:?missing HETZNER_HOST}"
+          : "${HETZNER_USER:?missing HETZNER_USER}"
+          : "${HETZNER_SSH_KEY:?missing HETZNER_SSH_KEY}"
+          : "${HETZNER_KNOWN_HOSTS:?missing HETZNER_KNOWN_HOSTS}"
+          test "$HETZNER_USER" = "deploy"
+
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_stage"
+          chmod 600 "$HOME/.ssh/id_kfaah_stage"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+          SSH=(ssh -i "$HOME/.ssh/id_kfaah_stage" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes)
+          SCP=(scp -i "$HOME/.ssh/id_kfaah_stage" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes)
+
+          "${SSH[@]}" "$HETZNER_USER@$HETZNER_HOST" \
+            'install -d -m 0700 /home/deploy/recovery-incoming'
+
+          "${SCP[@]}" "$BUNDLE" "$BUNDLE.sha256" \
+            "$HETZNER_USER@$HETZNER_HOST:/home/deploy/recovery-incoming/"
+
+          "${SSH[@]}" "$HETZNER_USER@$HETZNER_HOST" \
+            "cd /home/deploy/recovery-incoming && sha256sum -c '$BUNDLE.sha256'"
+
+          echo "STAGED_PATH=/home/deploy/recovery-incoming/$BUNDLE"
+          echo "STAGED_SHA256=$SHA256"
