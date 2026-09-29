@@ -247,6 +247,10 @@ jobs:
               raise SystemExit(
                   "An organization-scoped table still has an unconditional user-facing RLS policy"
               )
+          if warnings:
+              raise SystemExit(
+                  "An organization-scoped table still has a global admin policy without an organization guard"
+              )
           PY
 
       - name: Static Edge Function authorization audit
