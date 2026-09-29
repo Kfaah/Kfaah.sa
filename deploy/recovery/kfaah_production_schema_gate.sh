@@ -92,14 +92,20 @@ where n.nspname = 'public'
 order by p.proname, p.pronargs;
 SQL
 
+db_psql > "$tmp/cron.txt" <<'SQL'
+select jobname, schedule
+from cron.job
+where jobname = 'cleanup-public-rate-limits-daily';
+SQL
+
 contract_sha="$(sha256sum "$CONTRACT" | awk '{print $1}')"
 
-python3 - "$CONTRACT" "$tmp/tables.txt" "$tmp/columns.txt" "$tmp/policies.txt" "$tmp/functions.txt" <<'PY'
+python3 - "$CONTRACT" "$tmp/tables.txt" "$tmp/columns.txt" "$tmp/policies.txt" "$tmp/functions.txt" "$tmp/cron.txt" <<'PY'
 from pathlib import Path
 import re
 import sys
 
-types_path, tables_path, columns_path, policies_path, functions_path = map(Path, sys.argv[1:])
+types_path, tables_path, columns_path, policies_path, functions_path, cron_path = map(Path, sys.argv[1:])
 
 lines = types_path.read_text(encoding="utf-8", errors="replace").splitlines()
 
@@ -150,12 +156,17 @@ for raw in columns_path.read_text(encoding="utf-8", errors="replace").splitlines
 
 missing_tables = sorted(expected_tables - actual_tables)
 missing_columns = sorted(expected_columns - actual_columns)
+required_extra_tables = {"public_rate_limits"}
+missing_extra_tables = sorted(required_extra_tables - actual_tables)
 
 print(f"EXPECTED_TABLES={len(expected_tables)}")
 print(f"PRODUCTION_TABLES={len(actual_tables)}")
 print(f"MISSING_TABLES={len(missing_tables)}")
 for item in missing_tables:
     print("MISSING_TABLE|" + item)
+print(f"MISSING_SECURITY_TABLES={len(missing_extra_tables)}")
+for item in missing_extra_tables:
+    print("MISSING_SECURITY_TABLE|" + item)
 
 print(f"EXPECTED_COLUMNS={len(expected_columns)}")
 print(f"PRODUCTION_COLUMNS={len(actual_columns)}")
@@ -219,7 +230,26 @@ print(f"MISSING_CRITICAL_FUNCTIONS={len(missing_functions)}")
 for name, argc in missing_functions:
     print(f"MISSING_FUNCTION|{name}|argc={argc}")
 
-if missing_tables or missing_columns or hard_failures or warnings or missing_functions:
+cron_rows = {
+    tuple(raw.split("|", 1))
+    for raw in cron_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    if "|" in raw
+}
+required_cron = {("cleanup-public-rate-limits-daily", "17 3 * * *")}
+missing_cron = sorted(required_cron - cron_rows)
+print(f"MISSING_CRON_JOBS={len(missing_cron)}")
+for name, schedule in missing_cron:
+    print(f"MISSING_CRON|{name}|{schedule}")
+
+if (
+    missing_tables
+    or missing_extra_tables
+    or missing_columns
+    or hard_failures
+    or warnings
+    or missing_functions
+    or missing_cron
+):
     raise SystemExit("KFAAH_PRODUCTION_SCHEMA_GATE=FAIL")
 
 print("KFAAH_PRODUCTION_SCHEMA_GATE=PASS")
