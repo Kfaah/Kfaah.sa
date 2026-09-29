@@ -1,0 +1,100 @@
+name: Kfaah Native Functions Cutover
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type CONFIRM-NATIVE-CUTOVER"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  cutover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      KFAAH_URL: https://kfaah.sa
+      KFAAH_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+    steps:
+      - name: Require explicit confirmation
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          test "$CONFIRMATION" = "CONFIRM-NATIVE-CUTOVER"
+
+      - name: Configure SSH
+        env:
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -d -m 0700 ~/.ssh
+          printf '%s\n' "$HETZNER_SSH_KEY" > ~/.ssh/kfaah
+          chmod 0600 ~/.ssh/kfaah
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 0600 ~/.ssh/known_hosts
+
+      - name: Cut over functions route to native Supabase Edge Runtime
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/kfaah -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$HETZNER_USER@$HETZNER_HOST" \
+            "sudo -n /usr/local/bin/kfaah-backend-recovery cutover CONFIRM-NATIVE-CUTOVER"
+
+      - name: Live native setup-demo and Auth smoke
+        run: |
+          set -euo pipefail
+          : "${KFAAH_ANON_KEY:?Missing VITE_SUPABASE_ANON_KEY}"
+
+          demo_json="$(curl --fail-with-body -sS \
+            -X POST "$KFAAH_URL/functions/v1/setup-demo" \
+            -H "apikey: $KFAAH_ANON_KEY" \
+            -H "Authorization: Bearer $KFAAH_ANON_KEY" \
+            -H 'Content-Type: application/json' \
+            -d '{}')"
+
+          email="$(printf '%s' "$demo_json" | jq -r '.email // empty')"
+          password="$(printf '%s' "$demo_json" | jq -r '.password // empty')"
+          test -n "$email"
+          test -n "$password"
+          echo "::add-mask::$email"
+          echo "::add-mask::$password"
+
+          login_json="$(curl --fail-with-body -sS \
+            -X POST "$KFAAH_URL/auth/v1/token?grant_type=password" \
+            -H "apikey: $KFAAH_ANON_KEY" \
+            -H 'Content-Type: application/json' \
+            --data "$(jq -n --arg email "$email" --arg password "$password" \
+              '{email:$email,password:$password}')")"
+
+          token="$(printf '%s' "$login_json" | jq -r '.access_token // empty')"
+          uid="$(printf '%s' "$login_json" | jq -r '.user.id // empty')"
+          test -n "$token"
+          test -n "$uid"
+          echo "::add-mask::$token"
+
+          membership="$(curl --fail-with-body -sS \
+            "$KFAAH_URL/rest/v1/user_organizations?select=organization_id,approval_status&user_id=eq.$uid&organization_id=eq.00000000-0000-0000-0000-0000000000de" \
+            -H "apikey: $KFAAH_ANON_KEY" \
+            -H "Authorization: Bearer $token")"
+          test "$(printf '%s' "$membership" | jq 'length')" -ge 1
+          test "$(printf '%s' "$membership" | jq -r '.[0].approval_status')" = "approved"
+
+          echo "LIVE_NATIVE_EDGE_AUTH_SMOKE=PASS"
+
+      - name: Roll back Nginx automatically if live smoke fails
+        if: failure()
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          ssh -i ~/.ssh/kfaah -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$HETZNER_USER@$HETZNER_HOST" \
+            "sudo -n /usr/local/bin/kfaah-backend-recovery rollback-last"
