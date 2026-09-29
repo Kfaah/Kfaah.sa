@@ -162,19 +162,95 @@ native_canary() {
   detect_compose
   find_functions_dir
   note "Native Edge Runtime canary through the self-hosted API gateway"
-  local base="http://127.0.0.1:8000/functions/v1"
+
+  local base="http://127.0.0.1:8000"
   local failed=0
   local fn
-  for fn in hello generate-plan-deep analyze-uploaded-file run-intelligence             generate-executive-plans marketing-radar report-suggestions             send-transactional-email; do
-    code="$(curl --connect-timeout 3 --max-time 12 -sS -o /tmp/kfaah-native-canary.out       -w '%{http_code}' -X OPTIONS "$base/$fn" || true)"
+  local code
+
+  for fn in hello generate-plan-deep analyze-uploaded-file run-intelligence \
+            generate-executive-plans marketing-radar report-suggestions \
+            send-transactional-email create-employee org-self-signup; do
+    code="$(curl --connect-timeout 3 --max-time 12 -sS \
+      -o /tmp/kfaah-native-canary.out \
+      -w '%{http_code}' -X OPTIONS "$base/functions/v1/$fn" || true)"
     bytes="$(wc -c < /tmp/kfaah-native-canary.out 2>/dev/null || echo 0)"
     echo "$fn|HTTP=$code|bytes=$bytes"
-    if [[ "$fn" != "hello" && "$code" == "500" ]] &&        grep -q 'could not find an appropriate entrypoint' /tmp/kfaah-native-canary.out 2>/dev/null; then
+
+    if [[ "$fn" != "hello" && "$code" == "500" ]] && \
+       grep -q 'could not find an appropriate entrypoint' \
+         /tmp/kfaah-native-canary.out 2>/dev/null; then
       failed=1
     fi
   done
-  [[ "$failed" -eq 0 ]] || die "One or more native Kfaah functions still has no runtime entrypoint."
-  note "Entrypoint canary passed. This does not replace authenticated end-to-end tests."
+
+  [[ "$failed" -eq 0 ]] || \
+    die "One or more native Kfaah functions still has no runtime entrypoint."
+
+  note "Resolving the active legacy client key without printing it"
+  local anon_key
+  anon_key="$("\${COMPOSE[@]}" exec -T functions sh -lc \
+    'printf %s "$SUPABASE_ANON_KEY"' 2>/dev/null || true)"
+  [[ -n "$anon_key" ]] || \
+    die "SUPABASE_ANON_KEY is unavailable inside the native functions service."
+
+  note "Testing a real native function call using the current browser key contract"
+  local demo_json
+  demo_json="$(curl --connect-timeout 5 --max-time 30 --fail-with-body -sS \
+    -X POST "$base/functions/v1/setup-demo" \
+    -H "apikey: $anon_key" \
+    -H "Authorization: Bearer $anon_key" \
+    -H 'Content-Type: application/json' \
+    -d '{}' || true)"
+
+  local demo_email demo_password
+  demo_email="$(printf '%s' "$demo_json" | python3 -c \
+    'import json,sys; d=json.load(sys.stdin); print(d.get("email",""))' \
+    2>/dev/null || true)"
+  demo_password="$(printf '%s' "$demo_json" | python3 -c \
+    'import json,sys; d=json.load(sys.stdin); print(d.get("password",""))' \
+    2>/dev/null || true)"
+
+  [[ -n "$demo_email" && -n "$demo_password" ]] || \
+    die "Native setup-demo did not return usable demo credentials."
+
+  note "Testing Auth login against the same native gateway"
+  local login_json access_token
+  login_json="$(python3 - "$demo_email" "$demo_password" <<'PY' | \
+    curl --connect-timeout 5 --max-time 30 --fail-with-body -sS \
+      -X POST "$base/auth/v1/token?grant_type=password" \
+      -H "apikey: $anon_key" \
+      -H 'Content-Type: application/json' \
+      --data-binary @- || true
+import json, sys
+print(json.dumps({"email": sys.argv[1], "password": sys.argv[2]}))
+PY
+  )"
+
+  access_token="$(printf '%s' "$login_json" | python3 -c \
+    'import json,sys; d=json.load(sys.stdin); print(d.get("access_token",""))' \
+    2>/dev/null || true)"
+  [[ -n "$access_token" ]] || \
+    die "Native Auth login failed with the browser key contract."
+
+  note "Testing a protected Kfaah function with a real user JWT"
+  local protected_code
+  protected_code="$(curl --connect-timeout 5 --max-time 20 -sS \
+    -o /tmp/kfaah-native-protected.out \
+    -w '%{http_code}' \
+    -X POST "$base/functions/v1/impersonate-user" \
+    -H "apikey: $anon_key" \
+    -H "Authorization: Bearer $access_token" \
+    -H 'Content-Type: application/json' \
+    -d '{}' || true)"
+
+  # The demo viewer is authenticated but not a super admin, so 403 is the
+  # expected result. 401 means the native auth/key contract is still broken.
+  [[ "$protected_code" == "403" ]] || \
+    die "Protected native function auth canary failed (expected HTTP 403, got $protected_code)."
+
+  unset anon_key demo_json demo_email demo_password login_json access_token
+  note "Native entrypoint + Auth + protected-function canaries passed."
 }
 
 cutover() {
