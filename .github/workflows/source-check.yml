@@ -29,6 +29,7 @@ jobs:
         run: |
           set -euo pipefail
           bash -n deploy/recovery/kfaah_backend_recovery.sh
+          bash -n deploy/recovery/kfaah_operator_preflight.sh
           bash -n deploy/recovery/install_limited_recovery_sudo.sh
           bash -n deploy/recovery/kfaah_production_schema_gate.sh
           bash -n deploy/recovery/kfaah_schema_recovery_plan.sh
