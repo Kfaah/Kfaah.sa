@@ -43,6 +43,24 @@ const ROLE_OPTIONS: { key: AppRole; label: string; hint: string; superOnly?: boo
 
 const roleLabel = (r: string) => ROLE_OPTIONS.find((o) => o.key === r)?.label ?? r;
 
+const ROLE_PRIORITY: AppRole[] = [
+  "super_admin",
+  "admin",
+  "moderator",
+  "hr_manager",
+  "finance_manager",
+  "accountant",
+  "time_editor",
+  "viewer",
+  "user",
+];
+
+const effectiveRole = (roles: AppRole[] | null | undefined): AppRole => {
+  const current = new Set(roles ?? []);
+  return ROLE_PRIORITY.find((role) => current.has(role)) ?? "user";
+};
+
+
 interface MemberRow {
   user_id: string;
   employee_id: string;
@@ -99,9 +117,13 @@ export default function MemberRolesSettings() {
   const changeRole = async (row: MemberRow, role: AppRole) => {
     setSavingId(row.user_id);
     try {
+      if (!row.organization_id) {
+        throw new Error("member_not_found");
+      }
       const { error } = await rpc.rpc<void>("set_org_member_role", {
         _user_id: row.user_id,
         _role: role,
+        _org_id: row.organization_id,
       });
       if (error) throw error;
       setRows((prev) =>
@@ -112,6 +134,8 @@ export default function MemberRolesSettings() {
       const msg = (e as { message?: string })?.message ?? "";
       if (msg.includes("insufficient_privileges")) {
         toast.error("هذا التغيير يحتاج صلاحية مدير النظام");
+      } else if (msg.includes("role_scoped_elsewhere")) {
+        toast.error("هذا الدور مرتبط للمستخدم بجمعية أخرى حالياً؛ غيّره من حساب مدير النظام.");
       } else if (msg.includes("demo_readonly")) {
         toast.error("الحساب التجريبي للعرض فقط");
       } else {
@@ -172,7 +196,7 @@ export default function MemberRolesSettings() {
             ) : (
               <div className="space-y-2">
                 {filtered.map((row) => {
-                  const current = (row.app_roles?.[0] ?? "user") as AppRole;
+                  const current = effectiveRole(row.app_roles);
                   const locked =
                     !isSuper && (current === "admin" || current === "super_admin");
                   return (
