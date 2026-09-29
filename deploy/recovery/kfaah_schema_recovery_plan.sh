@@ -316,3 +316,5 @@ chmod -R go-rwx "$PLAN_DIR" || true
 note "Clone plan passed. Live production database was not modified."
 echo "KFAAH_SCHEMA_PLAN_DIR=$PLAN_DIR"
 echo "KFAAH_SCHEMA_PLAN_MANIFEST=$PLAN_DIR/plan-manifest.json"
+echo "=== KFAAH_SCHEMA_PLAN_MANIFEST ==="
+cat "$PLAN_DIR/plan-manifest.json"
