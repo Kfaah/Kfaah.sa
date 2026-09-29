@@ -72,7 +72,7 @@ const getPerformanceBarColor = (performance: number) => {
 const Employees = () => {
   const navigate = useNavigate();
   const { setPreviewingEmployee } = useUser();
-  const { currentOrg } = useOrganization();
+  const { currentOrg, isSuperAdmin } = useOrganization();
   const [searchQuery, setSearchQuery] = useState("");
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -496,93 +496,64 @@ const Employees = () => {
     }
   };
 
-  // Impersonate User - Login as employee using edge function
+  // Real account impersonation is restricted to platform super admins.
   const [isImpersonating, setIsImpersonating] = useState(false);
-  
-  const handleImpersonate = async (employee: Employee) => {
+
+  const impersonateEmployee = async (
+    employee: Employee,
+    destination: string,
+  ) => {
+    if (!isSuperAdmin) {
+      toast.error("الدخول بحساب موظف متاح لمدير النظام فقط");
+      return;
+    }
     if (!employee.user_id) {
       toast.error("هذا الموظف ليس له حساب مستخدم");
       return;
     }
-    
+
     setIsImpersonating(true);
-    
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      
       const response = await supabase.functions.invoke("impersonate-user", {
         body: { userId: employee.user_id },
       });
-      
+
       if (response.error) {
-        throw new Error(response.error.message || "حدث خطأ أثناء الدخول");
+        throw new Error(
+          response.error.message || "حدث خطأ أثناء الدخول",
+        );
       }
-      
-      if (response.data?.actionLink) {
-        // Save original admin session info
-        localStorage.setItem("adminReturnSession", JSON.stringify({
-          returnUrl: window.location.pathname,
-          adminName: "المدير",
-        }));
-        
-        toast.success(`جاري الدخول كـ ${employee.full_name}...`);
-        
-        // Redirect to the magic link with cache bust to ensure latest version
-        const actionUrl = new URL(response.data.actionLink);
-        actionUrl.searchParams.set("_t", Date.now().toString());
-        window.location.href = actionUrl.toString();
-      } else {
-        throw new Error("لم يتم إنشاء رابط الدخول");
+      if (!response.data?.token_hash) {
+        throw new Error("لم يتم إنشاء رمز دخول صالح");
       }
+
+      await supabase.auth.signOut();
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        type: "magiclink",
+        token_hash: response.data.token_hash,
+      });
+      if (verifyError) throw verifyError;
+
+      toast.success(`تم الدخول بحساب ${employee.full_name}`);
+      window.location.href = destination;
     } catch (error: any) {
       console.error("Impersonate error:", error);
-      toast.error(error.message || "حدث خطأ أثناء الدخول على حساب الموظف");
+      toast.error(
+        error.message || "حدث خطأ أثناء الدخول على حساب الموظف",
+      );
     } finally {
       setIsImpersonating(false);
     }
   };
 
-  const handleImpersonateToApprovals = async (employee: Employee) => {
-    if (!employee.user_id) {
-      toast.error("هذا الموظف ليس له حساب مستخدم");
-      return;
-    }
-    
-    setIsImpersonating(true);
-    
-    try {
-      const response = await supabase.functions.invoke("impersonate-user", {
-        body: { userId: employee.user_id },
-      });
-      
-      if (response.error) {
-        throw new Error(response.error.message || "حدث خطأ أثناء الدخول");
-      }
-      
-      if (response.data?.actionLink) {
-        // Save original admin session info with redirect to approvals history
-        localStorage.setItem("adminReturnSession", JSON.stringify({
-          returnUrl: window.location.pathname,
-          adminName: "المدير",
-        }));
-        
-        toast.success(`جاري فتح سجل موافقات ${employee.full_name}...`);
-        
-        // Redirect to the magic link with a redirect param to approvals history + cache bust
-        const actionUrl = new URL(response.data.actionLink);
-        actionUrl.searchParams.set("redirect_to", "/hr-requests?section=my-approvals-history");
-        actionUrl.searchParams.set("_t", Date.now().toString());
-        window.location.href = actionUrl.toString();
-      } else {
-        throw new Error("لم يتم إنشاء رابط الدخول");
-      }
-    } catch (error: any) {
-      console.error("Impersonate error:", error);
-      toast.error(error.message || "حدث خطأ أثناء الدخول على حساب الموظف");
-    } finally {
-      setIsImpersonating(false);
-    }
-  };
+  const handleImpersonate = async (employee: Employee) =>
+    impersonateEmployee(employee, "/");
+
+  const handleImpersonateToApprovals = async (employee: Employee) =>
+    impersonateEmployee(
+      employee,
+      "/hr-requests?section=my-approvals-history",
+    );
 
   const stats = [
     { label: "إجمالي الموظفين", value: formatNumber(employees.length), icon: Users, iconBg: "bg-accent/10", iconColor: "text-accent" },
@@ -809,35 +780,39 @@ const Employees = () => {
                     <Pencil className="w-3 h-3" />
                     تعديل
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1 text-primary hover:bg-primary hover:text-primary-foreground"
-                    onClick={() => handleImpersonate(employee)}
-                    disabled={!employee.user_id || isImpersonating}
-                  >
-                    {isImpersonating ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <LogIn className="w-3 h-3" />
-                    )}
-                    دخول
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1 text-accent hover:bg-accent hover:text-accent-foreground"
-                    onClick={() => handleImpersonateToApprovals(employee)}
-                    disabled={!employee.user_id || isImpersonating}
-                    title="عرض سجل موافقات الموظف"
-                  >
-                    {isImpersonating ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <ClipboardList className="w-3 h-3" />
-                    )}
-                    الموافقات
-                  </Button>
+                  {isSuperAdmin && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1 text-primary hover:bg-primary hover:text-primary-foreground"
+                        onClick={() => handleImpersonate(employee)}
+                        disabled={!employee.user_id || isImpersonating}
+                      >
+                        {isImpersonating ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <LogIn className="w-3 h-3" />
+                        )}
+                        دخول
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1 text-accent hover:bg-accent hover:text-accent-foreground"
+                        onClick={() => handleImpersonateToApprovals(employee)}
+                        disabled={!employee.user_id || isImpersonating}
+                        title="عرض سجل موافقات الموظف"
+                      >
+                        {isImpersonating ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <ClipboardList className="w-3 h-3" />
+                        )}
+                        الموافقات
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </CardContent>
