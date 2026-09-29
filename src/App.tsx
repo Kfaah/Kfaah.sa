@@ -451,9 +451,9 @@ function AppRoutes() {
       <Route
         path="/organizations"
         element={
-          <ProtectedRoute>
+          <SuperAdminRoute>
             <Organizations />
-          </ProtectedRoute>
+          </SuperAdminRoute>
         }
       />
 
