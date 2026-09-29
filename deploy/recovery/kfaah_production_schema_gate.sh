@@ -7,10 +7,10 @@ set -euo pipefail
 
 [[ "$EUID" -eq 0 ]] || { echo "ERROR: root required" >&2; exit 1; }
 
-SUPABASE_ROOT="\${KFAAH_SUPABASE_ROOT:-/opt/kfaah/production/supabase}"
-STATE_ROOT="\${KFAAH_RECOVERY_STATE_ROOT:-/var/lib/kfaah-recovery}"
-CONTRACT="\${KFAAH_SCHEMA_TYPES:-$STATE_ROOT/current-contract/types.ts}"
-MARK_READY="\${KFAAH_SCHEMA_GATE_MARK_READY:-no}"
+SUPABASE_ROOT="${KFAAH_SUPABASE_ROOT:-/opt/kfaah/production/supabase}"
+STATE_ROOT="${KFAAH_RECOVERY_STATE_ROOT:-/var/lib/kfaah-recovery}"
+CONTRACT="${KFAAH_SCHEMA_TYPES:-$STATE_ROOT/current-contract/types.ts}"
+MARK_READY="${KFAAH_SCHEMA_GATE_MARK_READY:-no}"
 READY_MARKER="$STATE_ROOT/schema-ready"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
@@ -28,15 +28,15 @@ else
   die "Docker Compose unavailable"
 fi
 
-"\${COMPOSE[@]}" config --services | grep -qx db || die "Compose db service missing"
+"${COMPOSE[@]}" config --services | grep -qx db || die "Compose db service missing"
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 db_psql() {
-  "\${COMPOSE[@]}" exec -T db sh -lc '
-    export PGPASSWORD="\${POSTGRES_PASSWORD:-}"
-    exec psql -U "\${POSTGRES_USER:-postgres}" -d "\${POSTGRES_DB:-postgres}" -X -At -F "|"
+  "${COMPOSE[@]}" exec -T db sh -lc '
+    export PGPASSWORD="${POSTGRES_PASSWORD:-}"
+    exec psql -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-postgres}" -X -At -F "|"
   '
 }
 
