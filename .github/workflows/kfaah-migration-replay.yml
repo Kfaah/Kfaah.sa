@@ -159,5 +159,95 @@ jobs:
               raise SystemExit("Migration replay did not reproduce the application column contract")
           PY
 
+      - name: Audit final RLS organization scope
+        run: |
+          set -euo pipefail
+          db_container="$(docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | head -1)"
+          test -n "$db_container"
+          docker exec "$db_container" psql -U postgres -d postgres -X -At -F '|' -c "
+            select
+              p.tablename,
+              p.policyname,
+              p.cmd,
+              array_to_string(p.roles, ','),
+              coalesce(p.qual, ''),
+              coalesce(p.with_check, '')
+            from pg_policies p
+            where p.schemaname = 'public'
+              and exists (
+                select 1
+                from information_schema.columns c
+                where c.table_schema = 'public'
+                  and c.table_name = p.tablename
+                  and c.column_name = 'organization_id'
+              )
+            order by p.tablename, p.policyname;
+          " > /tmp/kfaah-org-policies.txt
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          rows = []
+          for raw in Path("/tmp/kfaah-org-policies.txt").read_text(
+              encoding="utf-8", errors="replace"
+          ).splitlines():
+              parts = raw.split("|", 5)
+              if len(parts) != 6:
+                  continue
+              rows.append(parts)
+
+          hard_failures = []
+          warnings = []
+          for table, policy, cmd, roles, qual, check in rows:
+              expressions = [x.strip() for x in (qual, check) if x.strip()]
+              role_text = roles.lower()
+              user_facing = any(
+                  role in role_text
+                  for role in ("authenticated", "anon", "public")
+              )
+              if not user_facing:
+                  continue
+
+              for expression in expressions:
+                  compact = re.sub(r"\s+", " ", expression.lower()).strip("() ")
+                  if compact in {"true", "'true'::boolean"}:
+                      hard_failures.append(
+                          f"{table}|{policy}|{cmd}|unconditional_true"
+                      )
+
+                  has_global_admin = (
+                      "has_role" in compact
+                      and "'admin'" in compact
+                  )
+                  has_org_guard = any(
+                      token in compact
+                      for token in (
+                          "admin_can_access_org",
+                          "has_role_in_org",
+                          "user_belongs_to_org",
+                          "get_user_organization_id",
+                          "organization_id",
+                      )
+                  )
+                  if has_global_admin and not has_org_guard:
+                      warnings.append(
+                          f"{table}|{policy}|{cmd}|global_admin_without_org_guard"
+                      )
+
+          print(f"ORG_SCOPED_POLICIES={len(rows)}")
+          print(f"RLS_HARD_FAILURES={len(set(hard_failures))}")
+          for item in sorted(set(hard_failures)):
+              print("RLS_FAIL|" + item)
+          print(f"RLS_WARNINGS={len(set(warnings))}")
+          for item in sorted(set(warnings)):
+              print("RLS_WARN|" + item)
+
+          if hard_failures:
+              raise SystemExit(
+                  "An organization-scoped table still has an unconditional user-facing RLS policy"
+              )
+          PY
+
       - name: Static Edge Function authorization audit
         run: python3 scripts/recovery/audit_edge_function_auth.py
