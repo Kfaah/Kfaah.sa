@@ -67,6 +67,11 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Token is required' }, 400)
   }
 
+  token = token.trim().toLowerCase()
+  if (!/^[a-f0-9]{64}$/.test(token)) {
+    return jsonResponse({ error: 'Invalid or expired token' }, 404)
+  }
+
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
   // Look up the token
@@ -100,7 +105,9 @@ Deno.serve(async (req) => {
     .maybeSingle()
 
   if (updateError) {
-    console.error('Failed to mark token as used', { error: updateError, token })
+    console.error('Failed to mark unsubscribe token as used', {
+      code: updateError.code,
+    })
     return jsonResponse({ error: 'Failed to process unsubscribe' }, 500)
   }
 
@@ -118,13 +125,12 @@ Deno.serve(async (req) => {
 
   if (suppressError) {
     console.error('Failed to suppress email', {
-      error: suppressError,
-      email: tokenRecord.email,
+      code: suppressError.code,
     })
     return jsonResponse({ error: 'Failed to process unsubscribe' }, 500)
   }
 
-  console.log('Email unsubscribed', { email: tokenRecord.email })
+  console.log('Email unsubscribe processed successfully')
 
   return jsonResponse({ success: true })
 })
