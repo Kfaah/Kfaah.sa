@@ -35,6 +35,13 @@ fingerprint() {
 echo "KFAAH_TRUSTED_BACKUP_KEY_AUDIT"
 echo "expected_fingerprint=$EXPECTED"
 
+CURRENT_BACKUP_PASS="/opt/kfaah/backup-keys/backup.pass"
+if [[ -s "$CURRENT_BACKUP_PASS" ]]; then
+  echo "CURRENT_SERVER_BACKUP_PASSPHRASE=READY"
+else
+  echo "CURRENT_SERVER_BACKUP_PASSPHRASE=NOT_FOUND"
+fi
+
 for key in "${candidates[@]}"; do
   [[ -r "$key" ]] || continue
   found=$((found+1))
@@ -57,7 +64,12 @@ echo "SUMMARY|candidates_readable=$found|matches=$match"
 
 if [[ "$match" -eq 1 ]]; then
   echo "KFAAH_TRUSTED_BACKUP_KEY=READY"
-  exit 0
+  if [[ -s "$CURRENT_BACKUP_PASS" ]]; then
+    echo "KFAAH_BACKUP_KEYS=READY"
+    exit 0
+  fi
+  echo "KFAAH_BACKUP_KEYS=PARTIAL"
+  exit 4
 fi
 
 if [[ "$match" -gt 1 ]]; then
