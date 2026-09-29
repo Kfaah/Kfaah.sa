@@ -16,6 +16,7 @@ SOURCE_ROOT="${SOURCE_ROOT:-$(pwd)}"
 RECOVERY="/usr/local/libexec/kfaah-backend-recovery"
 SCHEMA_GATE="/usr/local/libexec/kfaah-production-schema-gate"
 SCHEMA_PLAN="/usr/local/libexec/kfaah-schema-recovery-plan"
+PREFLIGHT="/usr/local/libexec/kfaah-operator-preflight"
 WRAPPER="/usr/local/bin/kfaah-backend-recovery"
 
 STATE_ROOT="/var/lib/kfaah-recovery"
@@ -34,7 +35,8 @@ command -v python3 >/dev/null 2>&1 || die "python3 unavailable"
 for required in \
   deploy/recovery/kfaah_backend_recovery.sh \
   deploy/recovery/kfaah_production_schema_gate.sh \
-  deploy/recovery/kfaah_schema_recovery_plan.sh
+  deploy/recovery/kfaah_schema_recovery_plan.sh \
+  deploy/recovery/kfaah_operator_preflight.sh
 do
   [[ -r "$SOURCE_ROOT/$required" ]] || die "reviewed script missing: $required"
 done
@@ -45,6 +47,8 @@ install -o root -g root -m 0755 \
   "$SOURCE_ROOT/deploy/recovery/kfaah_production_schema_gate.sh" "$SCHEMA_GATE"
 install -o root -g root -m 0755 \
   "$SOURCE_ROOT/deploy/recovery/kfaah_schema_recovery_plan.sh" "$SCHEMA_PLAN"
+install -o root -g root -m 0755 \
+  "$SOURCE_ROOT/deploy/recovery/kfaah_operator_preflight.sh" "$PREFLIGHT"
 
 install -d -o root -g root -m 0700 \
   "$STATE_ROOT" "$STAGED" "$CONTRACT_DIR"
@@ -57,6 +61,7 @@ set -euo pipefail
 RECOVERY="/usr/local/libexec/kfaah-backend-recovery"
 SCHEMA_GATE="/usr/local/libexec/kfaah-production-schema-gate"
 SCHEMA_PLAN="/usr/local/libexec/kfaah-schema-recovery-plan"
+PREFLIGHT="/usr/local/libexec/kfaah-operator-preflight"
 SUPABASE_CLI="/usr/local/libexec/supabase-recovery-cli"
 SUPABASE_CLI_VERSION="2.118.0"
 SUPABASE_CLI_ARCHIVE_SHA256="f6089a86fb9d9221c958193a277338daddd6822f706929943812fa32e106c86d"
@@ -81,6 +86,7 @@ run_mutation() {
 [[ -x "$RECOVERY" ]] || die "root-owned recovery operator missing"
 [[ -x "$SCHEMA_GATE" ]] || die "root-owned schema gate missing"
 [[ -x "$SCHEMA_PLAN" ]] || die "root-owned schema plan missing"
+[[ -x "$PREFLIGHT" ]] || die "root-owned production preflight missing"
 
 mode="${1:-audit}"
 shift || true
@@ -89,6 +95,11 @@ case "$mode" in
   audit)
     [[ "$#" -eq 0 ]] || die "audit takes no arguments"
     KFAAH_RECOVERY_MODE=audit "$RECOVERY"
+    ;;
+
+  preflight)
+    [[ "$#" -eq 0 ]] || die "preflight takes no arguments"
+    SOURCE_ROOT="$STATE_ROOT/current-contract" "$PREFLIGHT"
     ;;
 
   backup)
