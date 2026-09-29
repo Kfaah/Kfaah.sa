@@ -979,6 +979,7 @@ export type Database = {
           failed_rows: number
           file_name: string
           file_path: string | null
+          file_size_bytes: number | null
           file_type: string
           for_date: string | null
           id: string
@@ -1001,6 +1002,7 @@ export type Database = {
           failed_rows?: number
           file_name: string
           file_path?: string | null
+          file_size_bytes?: number | null
           file_type: string
           for_date?: string | null
           id?: string
@@ -1023,6 +1025,7 @@ export type Database = {
           failed_rows?: number
           file_name?: string
           file_path?: string | null
+          file_size_bytes?: number | null
           file_type?: string
           for_date?: string | null
           id?: string
