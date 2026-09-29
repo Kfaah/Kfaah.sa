@@ -87,6 +87,17 @@ run_mutation() {
   "$RECOVERY" "$@"
 }
 
+run_preflight() {
+  local staged_hash staged_source
+  staged_hash="$(cat "$STATE_ROOT/last-functions-sha256" 2>/dev/null || true)"
+  [[ "$staged_hash" =~ ^[a-f0-9]{64}$ ]] || die "no staged source bundle is registered"
+  staged_source="$STAGED/$staged_hash"
+  [[ -d "$staged_source/supabase/functions" ]] || die "staged function source missing"
+  [[ -d "$staged_source/supabase/migrations" ]] || die "staged migration source missing"
+  SOURCE_ROOT="$staged_source" KFAAH_RECOVERY_SCRIPT="$RECOVERY" "$PREFLIGHT"
+}
+
+
 [[ "$EUID" -eq 0 ]] || die "wrapper must be invoked through sudo"
 [[ -x "$RECOVERY" ]] || die "root-owned recovery operator missing"
 [[ -x "$SCHEMA_GATE" ]] || die "root-owned schema gate missing"
@@ -105,12 +116,7 @@ case "$mode" in
 
   preflight)
     [[ "$#" -eq 0 ]] || die "preflight takes no arguments"
-    staged_hash="$(cat "$STATE_ROOT/last-functions-sha256" 2>/dev/null || true)"
-    [[ "$staged_hash" =~ ^[a-f0-9]{64}$ ]] || die "no staged source bundle is registered"
-    staged_source="$STAGED/$staged_hash"
-    [[ -d "$staged_source/supabase/functions" ]] || die "staged function source missing"
-    [[ -d "$staged_source/supabase/migrations" ]] || die "staged migration source missing"
-    SOURCE_ROOT="$staged_source" KFAAH_RECOVERY_SCRIPT="$RECOVERY" "$PREFLIGHT"
+    run_preflight
     ;;
 
   backup-key-audit)
@@ -311,6 +317,11 @@ PY
   cutover)
     [[ "$#" -eq 1 ]] || die "usage: cutover CONFIRM-NATIVE-CUTOVER"
     [[ "$1" == "CONFIRM-NATIVE-CUTOVER" ]] || die "explicit confirmation missing"
+
+    # Hard release gate: the exact staged bundle must pass read-only production
+    # preflight before schema acceptance or Nginx can be promoted.
+    run_preflight
+
     [[ -f "$STATE_ROOT/schema-ready" ]] || die "production schema has not been accepted"
     [[ "$(stat -c '%U:%G:%a' "$STATE_ROOT/schema-ready")" == "root:root:600" ]] \
       || die "schema-ready marker must be root-owned mode 600"
