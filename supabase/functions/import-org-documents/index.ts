@@ -75,7 +75,10 @@ Deno.serve(async (req) => {
     const supa = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
     const [{ data: roles, error: roleError }, { data: membership, error: membershipError }] =
       await Promise.all([
-        supa.from("user_roles").select("role").eq("user_id", user.id),
+        supa
+          .from("user_roles")
+          .select("role, organization_id")
+          .eq("user_id", user.id),
         supa
           .from("user_organizations")
           .select("organization_id, approval_status")
@@ -84,8 +87,17 @@ Deno.serve(async (req) => {
           .eq("approval_status", "approved")
           .maybeSingle(),
       ]);
-    const roleNames = new Set((roles || []).map((row: { role: string }) => row.role));
-    const canAccess = roleNames.has("super_admin") || (roleNames.has("admin") && Boolean(membership));
+    const isSuper = (roles ?? []).some(
+      (row: { role: string; organization_id?: string | null }) =>
+        row.role === "super_admin",
+    );
+    const isScopedAdmin = (roles ?? []).some(
+      (row: { role: string; organization_id?: string | null }) =>
+        row.role === "admin" &&
+        row.organization_id === organization_id,
+    );
+    const canAccess =
+      isSuper || (isScopedAdmin && Boolean(membership));
     if (roleError || membershipError || !canAccess) {
       console.warn("import-org-documents authorization denied", {
         user_id: user.id,
