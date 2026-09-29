@@ -12,6 +12,26 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
+
+async function sha256Hex(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function clientAddress(req: Request): string | null {
+  const direct =
+    req.headers.get("cf-connecting-ip") ||
+    req.headers.get("x-real-ip");
+  if (direct?.trim()) return direct.trim();
+
+  const forwarded = req.headers.get("x-forwarded-for");
+  const first = forwarded?.split(",")[0]?.trim();
+  return first || null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -62,6 +82,60 @@ serve(async (req) => {
     if (orgErr) return json({ error: orgErr.message }, 500);
     if (!org || !org.is_active || !org.allow_self_signup) {
       return json({ error: "التسجيل الذاتي غير متاح لهذه الجمعية" }, 400);
+    }
+
+    // Atomic abuse controls. The database stores only SHA-256 digests, never
+    // the raw username or client address.
+    const identityKey = await sha256Hex(`signup:identity:${org.id}:${cleaned}`);
+    const source = clientAddress(req);
+    const sourceKey = source
+      ? await sha256Hex(`signup:source:${org.id}:${source}`)
+      : null;
+
+    const { data: identityAllowed, error: identityLimitError } =
+      await admin.rpc("consume_public_rate_limit", {
+        _scope: "org_self_signup_identity",
+        _key_hash: identityKey,
+        _max_attempts: 8,
+        _window_seconds: 900,
+      });
+
+    if (identityLimitError) {
+      console.error("signup identity rate-limit failed", {
+        code: identityLimitError.code,
+      });
+      return json({ error: "تعذر التحقق من معدل الطلبات" }, 503);
+    }
+
+    if (identityAllowed !== true) {
+      return json(
+        { error: "محاولات كثيرة لهذا الحساب. أعد المحاولة لاحقاً." },
+        429,
+      );
+    }
+
+    if (sourceKey) {
+      const { data: sourceAllowed, error: sourceLimitError } =
+        await admin.rpc("consume_public_rate_limit", {
+          _scope: "org_self_signup_source",
+          _key_hash: sourceKey,
+          _max_attempts: 40,
+          _window_seconds: 900,
+        });
+
+      if (sourceLimitError) {
+        console.error("signup source rate-limit failed", {
+          code: sourceLimitError.code,
+        });
+        return json({ error: "تعذر التحقق من معدل الطلبات" }, 503);
+      }
+
+      if (sourceAllowed !== true) {
+        return json(
+          { error: "طلبات تسجيل كثيرة من هذا المصدر. أعد المحاولة لاحقاً." },
+          429,
+        );
+      }
     }
 
     // Create the auth user (already confirmed: internal @user.local identities)
