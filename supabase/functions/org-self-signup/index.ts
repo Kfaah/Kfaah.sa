@@ -14,11 +14,24 @@ const json = (body: unknown, status = 200) =>
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!supabaseUrl || !serviceRoleKey || !anonKey) {
+      return json({ error: "إعدادات الخادم غير مكتملة" }, 500);
+    }
+
     const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      supabaseUrl,
+      serviceRoleKey,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    );
+    const publicAuth = createClient(
+      supabaseUrl,
+      anonKey,
       { auth: { autoRefreshToken: false, persistSession: false } },
     );
 
@@ -32,8 +45,8 @@ serve(async (req) => {
     const firstName = (body?.first_name || "").trim();
     const lastName = (body?.last_name || "").trim();
 
-    if (!slug || !username || password.length < 6) {
-      return json({ error: "بيانات التسجيل غير مكتملة" }, 400);
+    if (!slug || !username || password.length < 8) {
+      return json({ error: "بيانات التسجيل غير مكتملة أو كلمة المرور قصيرة" }, 400);
     }
 
     const cleaned = username.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
@@ -65,16 +78,25 @@ serve(async (req) => {
     });
 
     let userId = created?.user?.id ?? null;
+    const createdNewUser = !createErr && !!created?.user;
 
     if (createErr) {
       const msg = (createErr.message || "").toLowerCase();
       const alreadyExists = msg.includes("already") || msg.includes("registered") || msg.includes("exists");
       if (!alreadyExists) return json({ error: createErr.message }, 400);
 
-      // Existing account: find it, and only attach a pending request for this org
-      const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-      userId = list?.users?.find((u) => u.email === email)?.id ?? null;
-      if (!userId) return json({ error: "رقم الهوية مستخدم مسبقاً" }, 400);
+      // Existing identities must prove ownership before a new organization
+      // membership request can be attached to their account.
+      const { data: signInData, error: signInError } =
+        await publicAuth.auth.signInWithPassword({ email, password });
+      if (signInError || !signInData?.user?.id) {
+        return json(
+          { error: "الحساب موجود، وكلمة المرور المدخلة غير صحيحة" },
+          401,
+        );
+      }
+
+      userId = signInData.user.id;
 
       const { data: existingMembership } = await admin
         .from("user_organizations")
@@ -99,7 +121,7 @@ serve(async (req) => {
         {
           user_id: userId,
           organization_id: org.id,
-          is_default: true,
+          is_default: false,
           approval_status: "pending",
           requested_at: new Date().toISOString(),
           approved_by: null,
@@ -107,13 +129,20 @@ serve(async (req) => {
         },
         { onConflict: "user_id,organization_id" },
       );
-    if (memberErr) return json({ error: memberErr.message }, 500);
+    if (memberErr) {
+      if (createdNewUser) {
+        await admin.auth.admin.deleteUser(userId).then(() => {}, () => {});
+      }
+      return json({ error: "تعذر إرسال طلب الانضمام" }, 500);
+    }
 
-    await admin.from("user_roles").insert({ user_id: userId, role: "user" });
-
+    // The user role is granted only after an administrator approves the
+    // membership request in review_membership_request.
     return json({ success: true, status: "pending" });
   } catch (e) {
-    console.error(e);
-    return json({ error: (e as Error)?.message || "حدث خطأ غير متوقع" }, 500);
+    console.error("org-self-signup failed", {
+      message: e instanceof Error ? e.message : "unknown",
+    });
+    return json({ error: "حدث خطأ غير متوقع" }, 500);
   }
 });
