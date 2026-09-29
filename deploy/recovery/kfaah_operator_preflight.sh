@@ -5,6 +5,7 @@ set -euo pipefail
 # Makes no changes. It exits non-zero if a hard prerequisite is missing.
 
 SOURCE_ROOT="${SOURCE_ROOT:-$(pwd)}"
+RECOVERY_SCRIPT="${KFAAH_RECOVERY_SCRIPT:-$SOURCE_ROOT/deploy/recovery/kfaah_backend_recovery.sh}"
 SUPABASE_ROOT="${KFAAH_SUPABASE_ROOT:-/opt/kfaah/production/supabase}"
 NGINX_SITE="${KFAAH_NGINX_SITE:-/etc/nginx/sites-enabled/kfaah}"
 FUNCTIONS_DIR="${KFAAH_FUNCTIONS_DIR:-$SUPABASE_ROOT/volumes/functions}"
@@ -27,8 +28,8 @@ echo
 
 [[ -d "$SOURCE_ROOT/supabase/migrations" ]]   && pass "source migrations present"   || fail "source migrations missing: $SOURCE_ROOT/supabase/migrations"
 
-if [[ -r "$SOURCE_ROOT/deploy/recovery/kfaah_backend_recovery.sh" ]]; then
-  if bash -n "$SOURCE_ROOT/deploy/recovery/kfaah_backend_recovery.sh"; then
+if [[ -r "$RECOVERY_SCRIPT" ]]; then
+  if bash -n "$RECOVERY_SCRIPT"; then
     pass "recovery operator shell syntax"
   else
     fail "recovery operator shell syntax"
