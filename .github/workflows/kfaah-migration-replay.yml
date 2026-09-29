@@ -33,7 +33,7 @@ jobs:
         run: supabase db reset
 
       - name: Generate local schema types
-        run: supabase gen types typescript --local > /tmp/kfaah-local-types.ts
+        run: supabase gen types typescript --local --schema public > /tmp/kfaah-local-types.ts
 
       - name: Compare table contract
         run: |
