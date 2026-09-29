@@ -106,9 +106,12 @@ Deno.serve(async (req) => {
     if (rowErr || !row) return json({ error: "not_found" }, 404);
     if (!row.file_path) return json({ error: "no_file", message: "هذا السجل لا يحتوي على ملف محفوظ." }, 400);
 
-    // التحقق من الصلاحية: super_admin أو admin/manager معتمد في نفس الجمعية.
+    // Authorization is scoped to the upload's organization.
     const [{ data: roles }, { data: membership }] = await Promise.all([
-      supa.from("user_roles").select("role").eq("user_id", user.id),
+      supa
+        .from("user_roles")
+        .select("role, organization_id")
+        .eq("user_id", user.id),
       supa
         .from("user_organizations")
         .select("organization_id")
@@ -117,10 +120,17 @@ Deno.serve(async (req) => {
         .eq("approval_status", "approved")
         .maybeSingle(),
     ]);
-    const roleNames = new Set((roles || []).map((r: { role: string }) => r.role));
+    const isSuper = (roles ?? []).some(
+      (r: { role: string; organization_id?: string | null }) =>
+        r.role === "super_admin",
+    );
+    const hasScopedRole = (roles ?? []).some(
+      (r: { role: string; organization_id?: string | null }) =>
+        (r.role === "admin" || r.role === "moderator") &&
+        r.organization_id === row.organization_id,
+    );
     const canAccess =
-      roleNames.has("super_admin") ||
-      ((roleNames.has("admin") || roleNames.has("moderator")) && Boolean(membership));
+      isSuper || (hasScopedRole && Boolean(membership));
     if (!canAccess) return json({ error: "forbidden" }, 403);
 
     const { data: blob, error: dlErr } = await supa.storage
