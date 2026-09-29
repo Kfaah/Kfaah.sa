@@ -1,0 +1,102 @@
+name: Kfaah Migration Replay Current Head
+
+on:
+  push:
+    branches:
+      - audit/kfaah-full-recovery-20260928
+    paths:
+      - '.github/workflows/kfaah-migration-replay-current-head.yml'
+      - 'supabase/migrations/**'
+      - 'supabase/config.toml'
+      - 'src/integrations/supabase/types.ts'
+      - 'scripts/recovery/**'
+
+permissions:
+  contents: read
+
+jobs:
+  replay-current-head:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase database
+        run: supabase db start
+
+      - name: Replay all source migrations from scratch
+        run: supabase db reset
+
+      - name: Query locally replayed public tables
+        run: |
+          set -euo pipefail
+          db_container="$(docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | head -1)"
+          test -n "$db_container"
+          docker exec "$db_container" psql -U postgres -d postgres -X -At \
+            -c "select table_name from information_schema.tables where table_schema='public' and table_type='BASE TABLE' order by table_name;" \
+            > /tmp/kfaah-local-tables.txt
+          test -s /tmp/kfaah-local-tables.txt
+          echo "catalog_tables=$(wc -l < /tmp/kfaah-local-tables.txt)"
+
+      - name: Compare table contract
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          def committed_tables(path: str):
+              lines = Path(path).read_text(encoding="utf-8", errors="replace").splitlines()
+              out = []
+              in_tables = False
+              for line in lines:
+                  if line.strip() == "Tables: {":
+                      in_tables = True
+                      continue
+                  if not in_tables:
+                      continue
+                  if line.startswith("    Views:"):
+                      break
+                  m = re.match(r"^      ([A-Za-z0-9_]+): \{$", line)
+                  if m:
+                      out.append(m.group(1))
+              return sorted(set(out))
+
+          expected = committed_tables("src/integrations/supabase/types.ts")
+          actual = sorted({
+              line.strip()
+              for line in Path("/tmp/kfaah-local-tables.txt").read_text(
+                  encoding="utf-8", errors="replace"
+              ).splitlines()
+              if line.strip()
+          })
+
+          if not expected:
+              raise SystemExit("Could not parse committed table contract")
+          if not actual:
+              raise SystemExit("PostgreSQL catalog returned no public tables")
+
+          missing = sorted(set(expected) - set(actual))
+          extra = sorted(set(actual) - set(expected))
+          print(f"EXPECTED_TABLES={len(expected)}")
+          print(f"LOCAL_REPLAY_TABLES={len(actual)}")
+          print(f"MISSING_AFTER_REPLAY={len(missing)}")
+          for x in missing:
+              print("MISSING|" + x)
+          print(f"EXTRA_AFTER_REPLAY={len(extra)}")
+          for x in extra:
+              print("EXTRA|" + x)
+          if missing:
+              raise SystemExit("Migration replay did not reproduce application table contract")
+          PY
+
+      - name: Static Edge Function authorization audit
+        run: python3 scripts/recovery/audit_edge_function_auth.py
+
+      - name: Stop local Supabase
+        if: always()
+        run: supabase stop --no-backup || true
