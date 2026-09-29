@@ -665,7 +665,8 @@ const Tasks = ({ embedded = false }: TasksProps) => {
       const { data: admins } = await supabase
         .from("user_roles")
         .select("user_id")
-        .eq("role", "admin");
+        .eq("role", "admin")
+        .eq("organization_id", orgId);
       
       if (admins) {
         for (const admin of admins) {
@@ -676,6 +677,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
               message: `قام الموظف بتحديث حالة مهمة "${task.title}" إلى: ${statusLabel}`,
               type: "employee_update",
               related_task_id: taskId,
+              organization_id: orgId,
             });
           }
         }
@@ -2291,6 +2293,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
             onOpenChange={setIsCommunicationDialogOpen}
             taskId={selectedTaskForCommunication.id}
             taskTitle={selectedTaskForCommunication.title}
+            organizationId={orgId ?? ""}
             currentUserId={authUser.id}
             isAdmin={isAdmin}
             taskOwnerId={selectedTaskForCommunication.user_id}
