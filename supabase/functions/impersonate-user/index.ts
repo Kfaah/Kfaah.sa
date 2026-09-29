@@ -65,7 +65,14 @@ Deno.serve(async (req) => {
       return json({ error: "employee_has_no_account" }, 400);
     }
 
-    // Get auth user email
+    const { data: targetIsSuper } = await admin.rpc("is_super_admin", {
+      _user_id: resolvedUserId,
+    });
+    if (targetIsSuper === true) {
+      return json({ error: "cannot_impersonate_super_admin" }, 403);
+    }
+
+    // Get auth user email only to create a one-time magic-link token.
     const { data: targetUser, error: targetErr } =
       await admin.auth.admin.getUserById(resolvedUserId);
     if (targetErr || !targetUser?.user?.email) {
@@ -86,12 +93,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Return the OTP hash so the client can call verifyOtp({ type: 'magiclink', token_hash })
+    // Return only the OTP hash required by verifyOtp. Do not expose the
+    // generated action URL or target email to the browser.
     return json({
-      email,
-      employee_name: emp?.full_name ?? targetUser.user.email,
+      employee_name: emp?.full_name ?? "الموظف",
       token_hash: linkData.properties.hashed_token,
-      action_link: linkData.properties.action_link,
     });
   } catch (e) {
     return json({ error: "internal", details: String(e?.message ?? e) }, 500);
