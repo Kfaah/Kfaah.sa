@@ -500,7 +500,7 @@ export default function OrgAuth() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    minLength={6}
+                    minLength={isLogin ? 6 : 8}
                     placeholder="••••••••"
                     className="h-11 ps-12 text-right"
                     dir="rtl"
