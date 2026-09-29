@@ -448,14 +448,7 @@ function AppRoutes() {
       <Route path="/admin/innovation" element={<SuperAdminRoute><AdminLayout><AdminInnovation /></AdminLayout></SuperAdminRoute>} />
       <Route path="/admin/settings" element={<SuperAdminRoute><AdminLayout><AdminSettings /></AdminLayout></SuperAdminRoute>} />
       {/* Org management (edit form etc) — kept inside an org's dashboard */}
-      <Route
-        path="/organizations"
-        element={
-          <SuperAdminRoute>
-            <Organizations />
-          </SuperAdminRoute>
-        }
-      />
+      <Route path="/organizations" element={<SuperAdminRoute><Organizations /></SuperAdminRoute>} />
 
       {/* Application (per-org workspace) */}
       <Route
