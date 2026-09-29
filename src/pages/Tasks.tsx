@@ -47,6 +47,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { getOrgPrivilegeFlags } from "@/lib/orgAuthorization";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate, formatDateWithHijri, formatNumberPlain, formatPercent, normalizeNumericInput, getAvailableYears, getCurrentYear } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -329,21 +330,28 @@ const Tasks = ({ embedded = false }: TasksProps) => {
     return dueDate <= today;
   };
 
-  // التحقق من صلاحية المدير وتعديل الوقت
+  // التحقق من صلاحية المدير داخل الجمعية الحالية فقط.
   useEffect(() => {
+    let cancelled = false;
     const checkPermissions = async () => {
-      if (!authUser) return;
-      
-      // التحقق من صلاحية المدير أو مدير النظام
-      const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: authUser.id });
-      const hasAdminAccess = roleData === "admin" || roleData === "super_admin";
-      setIsAdmin(hasAdminAccess);
-      
-      // الأدمن فقط يستطيع تعديل الوقت (نظام التقييم لاحقًا)
-      setCanEditTime(hasAdminAccess);
+      if (!authUser?.id || !orgId) {
+        if (!cancelled) {
+          setIsAdmin(false);
+          setCanEditTime(false);
+        }
+        return;
+      }
+
+      const flags = await getOrgPrivilegeFlags(authUser.id, orgId);
+      const hasAdminAccess = flags.isSuperAdmin || flags.isOrgAdmin;
+      if (!cancelled) {
+        setIsAdmin(hasAdminAccess);
+        setCanEditTime(hasAdminAccess);
+      }
     };
     checkPermissions();
-  }, [authUser]);
+    return () => { cancelled = true; };
+  }, [authUser?.id, orgId]);
 
   // تم إزالة التحقق من المهمة النشطة - يتم الآن من خلال أيقونة تسجيل الحضور في الشريط الجانبي
 
