@@ -9,12 +9,19 @@ ROOT = Path(__file__).resolve().parents[2]
 errors: list[str] = []
 
 app = (ROOT / "src/App.tsx").read_text(encoding="utf-8", errors="replace")
+sensitive_routes = {
+    "/inbox",
+    "/platform-mail",
+    "/internal-inbox",
+}
 for line_no, line in enumerate(app.splitlines(), start=1):
-    if 'path="/admin' not in line:
+    is_admin_route = 'path="/admin' in line
+    is_sensitive_route = any(f'path="{route}"' in line for route in sensitive_routes)
+    if not (is_admin_route or is_sensitive_route):
         continue
     if "<SuperAdminRoute>" not in line:
         errors.append(
-            f"src/App.tsx:{line_no}: admin route is not guarded by SuperAdminRoute"
+            f"src/App.tsx:{line_no}: privileged route is not guarded by SuperAdminRoute"
         )
 
 # Browser code may read user_roles, but role writes must go through reviewed
