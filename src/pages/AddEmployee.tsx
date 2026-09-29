@@ -112,7 +112,7 @@ const AddEmployee = () => {
     };
 
     fetchData();
-  }, []);
+  }, [currentOrg?.id]);
 
   const handleImageUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
