@@ -1,0 +1,95 @@
+name: Kfaah Stage Native Functions
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stage-native-functions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Package reviewed Edge Functions
+        id: package
+        run: |
+          set -euo pipefail
+          archive="/tmp/kfaah-functions-${GITHUB_SHA}.tar.gz"
+          tar -czf "$archive" supabase/functions
+          sha="$(sha256sum "$archive" | awk '{print $1}')"
+          echo "archive=$archive" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "FUNCTIONS_ARCHIVE_SHA256=$sha"
+
+      - name: Configure SSH
+        env:
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -d -m 0700 ~/.ssh
+          printf '%s\n' "$HETZNER_SSH_KEY" > ~/.ssh/kfaah
+          chmod 0600 ~/.ssh/kfaah
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 0600 ~/.ssh/known_hosts
+
+      - name: Require limited recovery bootstrap
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/kfaah -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$HETZNER_USER@$HETZNER_HOST" '
+              set -e
+              command -v /usr/local/bin/kfaah-backend-recovery >/dev/null 2>&1 || {
+                echo "BOOTSTRAP_REQUIRED: /usr/local/bin/kfaah-backend-recovery is not installed"
+                exit 42
+              }
+              test -w /var/lib/kfaah-recovery/incoming || {
+                echo "BOOTSTRAP_REQUIRED: incoming recovery directory is not writable"
+                exit 43
+              }
+              sudo -n /usr/local/bin/kfaah-backend-recovery audit
+            '
+
+      - name: Upload reviewed archive
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          ARCHIVE: ${{ steps.package.outputs.archive }}
+          ARCHIVE_SHA: ${{ steps.package.outputs.sha }}
+        run: |
+          set -euo pipefail
+          remote="/var/lib/kfaah-recovery/incoming/${ARCHIVE_SHA}.tar.gz"
+          scp -i ~/.ssh/kfaah -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$ARCHIVE" "$HETZNER_USER@$HETZNER_HOST:$remote"
+
+      - name: Install reviewed functions and run native canary
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          ARCHIVE_SHA: ${{ steps.package.outputs.sha }}
+        run: |
+          set -euo pipefail
+          remote="/var/lib/kfaah-recovery/incoming/${ARCHIVE_SHA}.tar.gz"
+          ssh -i ~/.ssh/kfaah -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$HETZNER_USER@$HETZNER_HOST" \
+            "sudo -n /usr/local/bin/kfaah-backend-recovery install-functions '$remote' '$ARCHIVE_SHA'"
+          ssh -i ~/.ssh/kfaah -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$HETZNER_USER@$HETZNER_HOST" \
+            "sudo -n /usr/local/bin/kfaah-backend-recovery native-canary"
+
+      - name: Remove uploaded archive after success
+        if: success()
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          ARCHIVE_SHA: ${{ steps.package.outputs.sha }}
+        run: |
+          ssh -i ~/.ssh/kfaah -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$HETZNER_USER@$HETZNER_HOST" \
+            "rm -f '/var/lib/kfaah-recovery/incoming/${ARCHIVE_SHA}.tar.gz'"
