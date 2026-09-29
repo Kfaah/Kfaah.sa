@@ -1,0 +1,57 @@
+name: Kfaah PG Meta Audit
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    if: >-
+      github.event.issue.number == 5 &&
+      github.event.comment.user.login == 'gaberalhrese-cloud' &&
+      github.event.comment.body == 'KFAAH_PG_META_AUDIT'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe pg-meta safely
+        env:
+          ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          : > /tmp/pgmeta.txt
+          probe_get() {
+            name="$1"; url="$2"
+            code="$(curl -ksS -o /tmp/body.txt -w '%{http_code}' \
+              -H "apikey: $ANON_KEY" \
+              -H "Authorization: Bearer $ANON_KEY" \
+              -H "Accept: application/json" \
+              "$url" || true)"
+            body="$(tr '\n' ' ' </tmp/body.txt | cut -c1-500)"
+            echo "$name|$code|$body" >> /tmp/pgmeta.txt
+          }
+          probe_post() {
+            name="$1"; url="$2"; data="$3"
+            code="$(curl -ksS -o /tmp/body.txt -w '%{http_code}' \
+              -X POST \
+              -H "apikey: $ANON_KEY" \
+              -H "Authorization: Bearer $ANON_KEY" \
+              -H "Content-Type: application/json" \
+              -H "Accept: application/json" \
+              --data "$data" "$url" || true)"
+            body="$(tr '\n' ' ' </tmp/body.txt | cut -c1-500)"
+            echo "$name|$code|$body" >> /tmp/pgmeta.txt
+          }
+          probe_get root https://kfaah.sa/pg/
+          probe_get tables https://kfaah.sa/pg/tables
+          probe_get schemas https://kfaah.sa/pg/schemas
+          probe_get columns https://kfaah.sa/pg/columns
+          probe_post query https://kfaah.sa/pg/query '{"query":"select 1 as ok"}'
+      - name: Post result
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          { echo 'KFAAH_PG_META_AUDIT_REPORT'; echo; cat /tmp/pgmeta.txt; } > /tmp/comment.txt
+          gh issue comment 5 --repo "$GITHUB_REPOSITORY" --body-file /tmp/comment.txt
