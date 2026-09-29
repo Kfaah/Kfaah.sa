@@ -38,6 +38,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { signTaskAttachments } from "@/lib/taskAttachmentUrl";
 import { useToast } from "@/hooks/use-toast";
 import { cn, formatDateTime } from "@/lib/utils";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface Conversation {
   id: string;
@@ -80,6 +81,7 @@ interface MessagingSectionProps {
 
 export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionProps) {
   const { toast } = useToast();
+  const { currentOrg } = useOrganization();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -184,6 +186,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
       const { data: sendersData } = await supabase
         .from("employees")
         .select("user_id, full_name")
+        .eq("organization_id", currentOrg?.id ?? "")
         .in("user_id", senderIds);
 
       const senderNameMap = new Map(
@@ -267,7 +270,8 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
       const { data: adminRoles } = await supabase
         .from("user_roles")
         .select("user_id")
-        .eq("role", "admin");
+        .eq("role", "admin")
+        .eq("organization_id", currentOrg?.id ?? "");
       
       const adminUserIds = new Set((adminRoles || []).map(r => r.user_id));
 
@@ -300,9 +304,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
   const fetchEmployees = async () => {
     try {
       // التواصل داخل النظام = مع موظفي نفس الجمعية فقط (بدون مدراء المنصة)
-      const { data: myOrgId } = await supabase.rpc("get_user_organization_id", {
-        _user_id: currentUserId,
-      });
+      const myOrgId = currentOrg?.id;
       if (!myOrgId) {
         setEmployees([]);
         return;
@@ -321,6 +323,7 @@ export function MessagingSection({ currentUserId, isAdmin }: MessagingSectionPro
       const { data: rolesData } = await supabase
         .from("user_roles")
         .select("user_id, role")
+        .eq("organization_id", myOrgId)
         .in("user_id", userIds);
       const rolesMap = new Map(
         (rolesData || []).map((r: any) => [r.user_id, r.role])
