@@ -1,0 +1,94 @@
+name: Kfaah Publish Current Main
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: kfaah-frontend-deploy
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.event.issue.number == 5 &&
+      github.event.comment.user.login == 'gaberalhrese-cloud' &&
+      startsWith(github.event.comment.body, 'KFAAH_PUBLISH_CURRENT ')
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: https://kfaah.sa
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      KFAAH_DEPLOY_TARGET: production
+      KFAAH_EXPECTED_API_URL: https://kfaah.sa
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve and validate exact main revision
+        env:
+          REQUEST_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          if [[ "$REQUEST_BODY" =~ ^KFAAH_PUBLISH_CURRENT[[:space:]]([0-9a-f]{40})$ ]]; then
+            target_sha="${BASH_REMATCH[1]}"
+          else
+            echo "Invalid publish request" >&2
+            exit 1
+          fi
+          git fetch origin main
+          current_main="$(git rev-parse origin/main)"
+          test "$current_main" = "$target_sha" || { echo "main changed; refusing stale publish" >&2; exit 1; }
+          git switch --detach "$target_sha"
+          echo "TARGET_SHA=$target_sha" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Build current frontend
+        run: bash deploy/build-frontend.sh
+
+      - name: Upload build to Hetzner staging
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          : "${HETZNER_HOST:?Set HETZNER_HOST}"
+          : "${HETZNER_USER:?Set HETZNER_USER}"
+          : "${HETZNER_SSH_KEY:?Set HETZNER_SSH_KEY}"
+          : "${HETZNER_KNOWN_HOSTS:?Set HETZNER_KNOWN_HOSTS}"
+          test "$HETZNER_USER" = deploy
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_publish"
+          chmod 600 "$HOME/.ssh/id_kfaah_publish"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          rsync -az --delete --delay-updates -e "ssh -i $HOME/.ssh/id_kfaah_publish -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" dist/ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/incoming/"
+          ssh -i "$HOME/.ssh/id_kfaah_publish" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'sudo /usr/local/bin/kfaah-receive-frontend /home/deploy/incoming'
+
+      - name: Promote staging to live and verify
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i "$HOME/.ssh/id_kfaah_publish" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'sudo /usr/local/bin/kfaah-promote-frontend --live'
+          curl -fsS --retry 6 --retry-delay 5 https://kfaah.sa/ -o /tmp/kfaah-home.html
+          test -s /tmp/kfaah-home.html
+          curl -fsS --retry 6 --retry-delay 5 https://kfaah.sa/functions/v1/hello -o /tmp/kfaah-function.txt
+          echo "LIVE_OK https://kfaah.sa sha=$TARGET_SHA"
+
+      - name: Record successful publish
+        if: ${{ success() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue comment 5 --repo "$GITHUB_REPOSITORY" --body "KFAAH_PUBLISH_CURRENT_OK $TARGET_SHA"
