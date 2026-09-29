@@ -278,8 +278,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          UPLOAD_ORG="00000000-0000-0000-0000-0000000000de"
-          OTHER_UPLOAD_ORG="00000000-0000-0000-0000-0000000000e4"
+          UPLOAD_ORG="11111111-1111-4111-8111-111111111111"
+          OTHER_UPLOAD_ORG="22222222-2222-4222-8222-222222222222"
           UPLOAD_EMAIL="kfaah-upload-${GITHUB_RUN_ID}@test.local"
           UPLOAD_PASSWORD="Qa9!UploadAdmin${GITHUB_RUN_NUMBER}"
           UPLOAD_USERNAME="9922222222"
@@ -288,6 +288,15 @@ jobs:
 
           echo "::add-mask::$UPLOAD_EMAIL"
           echo "::add-mask::$UPLOAD_PASSWORD"
+
+          curl --fail-with-body -sS \
+            -X POST "$API_URL/rest/v1/organizations" \
+            -H "apikey: $SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+            -H 'Content-Type: application/json' \
+            --data "$(jq -n --arg id "$UPLOAD_ORG" \
+              '{id:$id,name:"CI Upload Organization",slug:"ci-upload-org",is_active:true}')" \
+            >/dev/null
 
           upload_admin="$(curl --fail-with-body -sS \
             -X POST "$API_URL/auth/v1/admin/users" \
@@ -338,13 +347,21 @@ jobs:
             -H 'Content-Type: text/plain' \
             -H 'x-upsert: false' \
             --data-binary @/tmp/kfaah-upload-test.txt)"
-          test "$upload_code" = "200"
+          echo "UPLOAD_HTTP=$upload_code"
+          if [[ "$upload_code" != "200" && "$upload_code" != "201" ]]; then
+            cat /tmp/upload-ok.out
+            exit 1
+          fi
 
           read_code="$(curl -sS -o /tmp/upload-read.out -w '%{http_code}' \
             "$API_URL/storage/v1/object/authenticated/org-documents/$UPLOAD_PATH" \
             -H "apikey: $ANON_KEY" \
             -H "Authorization: Bearer $UPLOAD_TOKEN")"
-          test "$read_code" = "200"
+          echo "READ_HTTP=$read_code"
+          if [[ "$read_code" != "200" ]]; then
+            cat /tmp/upload-read.out
+            exit 1
+          fi
           grep -q "kfaah upload contract test" /tmp/upload-read.out
 
           log_code="$(curl -sS -o /tmp/upload-log.out -w '%{http_code}' \
@@ -354,7 +371,11 @@ jobs:
             -H 'Content-Type: application/json' \
             -H 'Prefer: return=representation' \
             --data "$(jq -n               --arg uid "$UPLOAD_UID" --arg org "$UPLOAD_ORG" --arg path "$UPLOAD_PATH"               '{uploaded_by:$uid,organization_id:$org,file_name:"ci-upload.txt",file_type:"text/plain",file_size_bytes:27,file_path:$path,storage_bucket:"org-documents",detected_schema:"reports",total_rows:0,inserted_rows:1,duplicate_rows:0,failed_rows:0,status:"completed"}')")"
-          test "$log_code" = "201"
+          echo "LOG_HTTP=$log_code"
+          if [[ "$log_code" != "200" && "$log_code" != "201" ]]; then
+            cat /tmp/upload-log.out
+            exit 1
+          fi
 
           curl --fail-with-body -sS \
             -X POST "$API_URL/rest/v1/organizations" \
@@ -370,7 +391,11 @@ jobs:
             -H 'Content-Type: text/plain' \
             -H 'x-upsert: false' \
             --data-binary @/tmp/kfaah-upload-test.txt)"
-          test "$cross_code" = "403" -o "$cross_code" = "400"
+          echo "CROSS_UPLOAD_HTTP=$cross_code"
+          if [[ "$cross_code" != "403" && "$cross_code" != "400" ]]; then
+            cat /tmp/upload-cross.out
+            exit 1
+          fi
 
           echo "NATIVE_ORG_DOCUMENT_UPLOAD_OK"
           echo "NATIVE_CROSS_ORG_DOCUMENT_UPLOAD_BLOCKED"
