@@ -13,6 +13,7 @@ sensitive_routes = {
     "/inbox",
     "/platform-mail",
     "/internal-inbox",
+    "/organizations",
 }
 for line_no, line in enumerate(app.splitlines(), start=1):
     is_admin_route = 'path="/admin' in line
