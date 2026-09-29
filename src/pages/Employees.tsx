@@ -220,6 +220,11 @@ const Employees = () => {
   };
 
   const handleAddEmployee = async () => {
+    if (!currentOrg?.id) {
+      toast.error("تعذر تحديد الجمعية الحالية");
+      return;
+    }
+
     const nextErrors: Partial<Record<AddEmployeeField, string>> = {};
 
     if (!newEmployee.name.trim()) nextErrors.name = "الاسم مطلوب";
@@ -229,8 +234,8 @@ const Employees = () => {
       nextErrors.username = "رقم الهوية يجب أن يتكون من 10 أرقام فقط";
     }
     if (!newEmployee.password) nextErrors.password = "كلمة المرور مطلوبة";
-    if (newEmployee.password && newEmployee.password.length < 6)
-      nextErrors.password = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
+    if (newEmployee.password && newEmployee.password.length < 8)
+      nextErrors.password = "كلمة المرور يجب أن تكون 8 أحرف على الأقل";
     if (!newEmployee.email.trim()) nextErrors.email = "البريد الإلكتروني مطلوب";
     if (!newEmployee.phone.trim()) nextErrors.phone = "رقم الجوال مطلوب";
     if (!newEmployee.department) nextErrors.department = "القسم مطلوب";
@@ -263,6 +268,7 @@ const Employees = () => {
 
       const response = await supabase.functions.invoke("create-employee", {
         body: {
+          organizationId: currentOrg.id,
           fullName: newEmployee.name,
           username: newEmployee.username,
           password: newEmployee.password,
@@ -355,7 +361,8 @@ const Employees = () => {
         .insert({ 
           name: newRole.name, 
           color: newRole.color,
-          department_id: newRole.department_id || null,\n          organization_id: currentOrg?.id 
+          department_id: newRole.department_id || null,
+          organization_id: currentOrg.id
         })
         .select()
         .single();
