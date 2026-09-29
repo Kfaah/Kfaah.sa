@@ -60,6 +60,7 @@ interface TaskCommunicationDialogProps {
   onOpenChange: (open: boolean) => void;
   taskId: string;
   taskTitle: string;
+  organizationId: string;
   currentUserId: string;
   isAdmin: boolean;
   taskOwnerId: string;
@@ -70,6 +71,7 @@ export function TaskCommunicationDialog({
   onOpenChange,
   taskId,
   taskTitle,
+  organizationId,
   currentUserId,
   isAdmin,
   taskOwnerId,
@@ -109,7 +111,7 @@ export function TaskCommunicationDialog({
 
   // جلب قائمة المدراء للموظفين
   useEffect(() => {
-    if (!open || isAdmin) return;
+    if (!open || isAdmin || !organizationId) return;
 
     const fetchAdmins = async () => {
       try {
@@ -117,7 +119,8 @@ export function TaskCommunicationDialog({
         const { data: adminRoles } = await supabase
           .from("user_roles")
           .select("user_id")
-          .eq("role", "admin");
+          .eq("role", "admin")
+          .eq("organization_id", organizationId);
 
         if (adminRoles && adminRoles.length > 0) {
           const adminIds = adminRoles.map((r) => r.user_id);
@@ -126,6 +129,7 @@ export function TaskCommunicationDialog({
           const { data: adminEmployees } = await supabase
             .from("employees")
             .select("user_id, full_name")
+            .eq("organization_id", organizationId)
             .in("user_id", adminIds);
 
           const nameById = new Map(
@@ -155,7 +159,7 @@ export function TaskCommunicationDialog({
     };
 
     fetchAdmins();
-  }, [open, isAdmin]);
+  }, [open, isAdmin, organizationId]);
 
   // جلب الرسائل
   useEffect(() => {
@@ -178,13 +182,15 @@ export function TaskCommunicationDialog({
         const { data: employeesData } = await supabase
           .from("employees")
           .select("user_id, full_name")
+          .eq("organization_id", organizationId)
           .in("user_id", userIds);
 
         // جلب المستخدمين المدراء
         const { data: adminRoles } = await supabase
           .from("user_roles")
           .select("user_id")
-          .eq("role", "admin");
+          .eq("role", "admin")
+          .eq("organization_id", organizationId);
         
         const adminUserIds = new Set((adminRoles || []).map(r => r.user_id));
 
@@ -255,7 +261,7 @@ export function TaskCommunicationDialog({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [open, taskId]);
+  }, [open, taskId, organizationId]);
 
   // هل هذه أول رسالة من الموظف؟
   const isFirstEmployeeMessage = !isAdmin && messages.length === 0;
