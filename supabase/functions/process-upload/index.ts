@@ -237,6 +237,35 @@ Deno.serve(async (req) => {
 
     let organizationId = orgRow?.organization_id;
 
+    const { data: callerIsSuper } = await admin.rpc("is_super_admin", {
+      _user_id: userId,
+    });
+
+    const canAdministerOrg = async (orgId: string | null | undefined) => {
+      if (!orgId) return false;
+      if (callerIsSuper === true) return true;
+
+      const [{ data: membership }, { data: scopedAdmin }] =
+        await Promise.all([
+          admin
+            .from("user_organizations")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("organization_id", orgId)
+            .eq("approval_status", "approved")
+            .maybeSingle(),
+          admin
+            .from("user_roles")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("organization_id", orgId)
+            .eq("role", "admin")
+            .maybeSingle(),
+        ]);
+
+      return !!membership && !!scopedAdmin;
+    };
+
     const form = await req.formData();
     const file = form.get("file") as File | null;
     const forDate = form.get("for_date") as string | null;
@@ -252,31 +281,7 @@ Deno.serve(async (req) => {
     // Cross-organization targeting is allowed only for a platform
     // super admin or an admin explicitly scoped to the target organization.
     if (targetOrgId && targetOrgId !== organizationId) {
-      const [{ data: roleRows }, { data: targetMembership }] =
-        await Promise.all([
-          admin
-            .from("user_roles")
-            .select("role, organization_id")
-            .eq("user_id", userId),
-          admin
-            .from("user_organizations")
-            .select("id")
-            .eq("user_id", userId)
-            .eq("organization_id", targetOrgId)
-            .eq("approval_status", "approved")
-            .maybeSingle(),
-        ]);
-
-      const isSuper = (roleRows ?? []).some(
-        (r) => r.role === "super_admin",
-      );
-      const isTargetAdmin = (roleRows ?? []).some(
-        (r) =>
-          r.role === "admin" &&
-          r.organization_id === targetOrgId,
-      );
-
-      if (isSuper || (isTargetAdmin && targetMembership)) {
+      if (await canAdministerOrg(targetOrgId)) {
         organizationId = targetOrgId;
       } else {
         return new Response(JSON.stringify({ error: "forbidden" }), {
@@ -291,6 +296,16 @@ Deno.serve(async (req) => {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    if (!(await canAdministerOrg(organizationId))) {
+      return new Response(
+        JSON.stringify({ error: "صلاحية مدير الجمعية مطلوبة لرفع البيانات" }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     const buf = new Uint8Array(await file.arrayBuffer());
