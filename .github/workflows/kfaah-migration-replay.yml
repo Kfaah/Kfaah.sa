@@ -42,29 +42,63 @@ jobs:
           import re
 
           def tables(path: str):
-              text=Path(path).read_text(encoding='utf-8', errors='replace')
-              lines=text.splitlines()
-              out=[]
-              in_tables=False
-              depth=0
+              lines = Path(path).read_text(encoding="utf-8", errors="replace").splitlines()
+              out = []
+              in_tables = False
+              tables_indent = None
+              child_indent = None
+
               for line in lines:
-                  if line.strip()=="Tables: {":
-                      in_tables=True
-                      depth=1
+                  stripped = line.strip()
+                  indent = len(line) - len(line.lstrip())
+
+                  if stripped == "Tables: {":
+                      in_tables = True
+                      tables_indent = indent
+                      child_indent = None
                       continue
+
                   if not in_tables:
                       continue
-                  if line.startswith("    Views:"):
-                      break
-                  m=re.match(r"^      ([A-Za-z0-9_]+): {$", line)
-                  if m:
+
+                  # The generated format/indentation can vary between Supabase CLI
+                  # versions. Stop only when leaving the Tables block.
+                  if tables_indent is not None and indent <= tables_indent:
+                      in_tables = False
+                      continue
+
+                  # Capture only direct children of Tables, not Row/Insert/etc.
+                  m = re.match(r'^(?:"|\')?([A-Za-z0-9_]+)(?:"|\')?:\s*\{$', stripped)
+                  if not m:
+                      continue
+
+                  if child_indent is None:
+                      child_indent = indent
+                  if indent == child_indent:
                       out.append(m.group(1))
+
               return sorted(set(out))
 
-          expected=tables("src/integrations/supabase/types.ts")
-          actual=tables("/tmp/kfaah-local-types.ts")
-          missing=sorted(set(expected)-set(actual))
-          extra=sorted(set(actual)-set(expected))
+          expected = tables("src/integrations/supabase/types.ts")
+          actual = tables("/tmp/kfaah-local-types.ts")
+
+          if not expected:
+              raise SystemExit("Could not parse the committed application table contract")
+          if not actual:
+              print("Generated types excerpt around Tables:")
+              generated = Path("/tmp/kfaah-local-types.ts").read_text(
+                  encoding="utf-8", errors="replace"
+              ).splitlines()
+              for i, line in enumerate(generated):
+                  if "Tables:" in line:
+                      for sample in generated[max(0, i - 2): i + 18]:
+                          print(sample)
+                      break
+              raise SystemExit("Could not parse any tables from the locally replayed schema")
+
+          missing = sorted(set(expected) - set(actual))
+          extra = sorted(set(actual) - set(expected))
+
           print(f"EXPECTED_TABLES={len(expected)}")
           print(f"LOCAL_REPLAY_TABLES={len(actual)}")
           print(f"MISSING_AFTER_REPLAY={len(missing)}")
@@ -73,6 +107,7 @@ jobs:
           print(f"EXTRA_AFTER_REPLAY={len(extra)}")
           for x in extra:
               print("EXTRA|" + x)
+
           if missing:
               raise SystemExit("Migration replay did not reproduce the application table contract")
           PY
