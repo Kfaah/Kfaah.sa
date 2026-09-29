@@ -78,6 +78,8 @@ CONSTRAINED_PUBLIC_CONTRACTS = {
         "password.length < 8",
         "consume_public_rate_limit",
         "_max_attempts: 8",
+        "_scope: \"org_self_signup_org\"",
+        "_max_attempts: 100",
         "_window_seconds: 900",
     ),
     "handle-email-unsubscribe": (
