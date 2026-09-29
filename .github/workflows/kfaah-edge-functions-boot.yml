@@ -56,8 +56,10 @@ jobs:
           for name in sorted(found):
               print(name)
           PY
+          printf '%s\n' link-employees-accounts >> /tmp/kfaah-functions.txt
+          sort -u /tmp/kfaah-functions.txt -o /tmp/kfaah-functions.txt
           test -s /tmp/kfaah-functions.txt
-          echo "frontend_functions=$(wc -l < /tmp/kfaah-functions.txt)"
+          echo "boot_functions=$(wc -l < /tmp/kfaah-functions.txt)"
 
       - name: Boot every frontend Edge Function
         run: |
