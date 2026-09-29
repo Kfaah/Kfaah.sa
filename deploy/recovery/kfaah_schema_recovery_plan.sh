@@ -11,10 +11,10 @@ set -euo pipefail
 
 [[ "$EUID" -eq 0 ]] || { echo "ERROR: root required" >&2; exit 1; }
 
-SUPABASE_ROOT="\${KFAAH_SUPABASE_ROOT:-/opt/kfaah/production/supabase}"
-STATE_ROOT="\${KFAAH_RECOVERY_STATE_ROOT:-/var/lib/kfaah-recovery}"
-CONTRACT="\${KFAAH_SCHEMA_TYPES:-$STATE_ROOT/current-contract/types.ts}"
-MIGRATIONS="\${KFAAH_SCHEMA_MIGRATIONS:-$STATE_ROOT/current-contract/migrations}"
+SUPABASE_ROOT="${KFAAH_SUPABASE_ROOT:-/opt/kfaah/production/supabase}"
+STATE_ROOT="${KFAAH_RECOVERY_STATE_ROOT:-/var/lib/kfaah-recovery}"
+CONTRACT="${KFAAH_SCHEMA_TYPES:-$STATE_ROOT/current-contract/types.ts}"
+MIGRATIONS="${KFAAH_SCHEMA_MIGRATIONS:-$STATE_ROOT/current-contract/migrations}"
 PLAN_ROOT="$STATE_ROOT/schema-plans"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 PLAN_DIR="$PLAN_ROOT/$STAMP"
@@ -43,7 +43,7 @@ else
   die "Docker Compose unavailable"
 fi
 
-db_container="$("\${COMPOSE[@]}" ps -q db)"
+db_container="$("${COMPOSE[@]}" ps -q db)"
 [[ -n "$db_container" ]] || die "live DB container not found"
 db_image="$(docker inspect -f '{{.Config.Image}}' "$db_container")"
 [[ -n "$db_image" ]] || die "could not determine live DB image"
@@ -56,18 +56,18 @@ cleanup() {
 }
 trap cleanup EXIT
 
-live_db="$("\${COMPOSE[@]}" exec -T db sh -lc 'printf %s "\${POSTGRES_DB:-postgres}"')"
+live_db="$("${COMPOSE[@]}" exec -T db sh -lc 'printf %s "${POSTGRES_DB:-postgres}"')"
 [[ -n "$live_db" ]] || live_db=postgres
 
 note "Creating live logical dump and schema fingerprint (read-only)"
-"\${COMPOSE[@]}" exec -T db sh -lc '
-  export PGPASSWORD="\${POSTGRES_PASSWORD:-}"
-  exec pg_dump -U "\${POSTGRES_USER:-postgres}" -d "\${POSTGRES_DB:-postgres}" -Fc
+"${COMPOSE[@]}" exec -T db sh -lc '
+  export PGPASSWORD="${POSTGRES_PASSWORD:-}"
+  exec pg_dump -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-postgres}" -Fc
 ' > "$PLAN_DIR/live.dump"
 
-"\${COMPOSE[@]}" exec -T db sh -lc '
-  export PGPASSWORD="\${POSTGRES_PASSWORD:-}"
-  exec pg_dump -U "\${POSTGRES_USER:-postgres}" -d "\${POSTGRES_DB:-postgres}" --schema-only
+"${COMPOSE[@]}" exec -T db sh -lc '
+  export PGPASSWORD="${POSTGRES_PASSWORD:-}"
+  exec pg_dump -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-postgres}" --schema-only
 ' > "$PLAN_DIR/live-schema.sql"
 
 [[ "$(wc -c < "$PLAN_DIR/live.dump")" -gt 1024 ]] || die "live dump unexpectedly small"
@@ -76,14 +76,14 @@ sha256sum "$PLAN_DIR/live-schema.sql" | awk '{print $1}' > "$PLAN_DIR/live-schem
 sha256sum "$CONTRACT" | awk '{print $1}' > "$PLAN_DIR/contract.sha256"
 
 note "Reading live migration ledger"
-if "\${COMPOSE[@]}" exec -T db sh -lc '
-  export PGPASSWORD="\${POSTGRES_PASSWORD:-}"
-  psql -U "\${POSTGRES_USER:-postgres}" -d "\${POSTGRES_DB:-postgres}" -X -At \
+if "${COMPOSE[@]}" exec -T db sh -lc '
+  export PGPASSWORD="${POSTGRES_PASSWORD:-}"
+  psql -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-postgres}" -X -At \
     -c "select to_regclass('\''supabase_migrations.schema_migrations'\'') is not null"
 ' | grep -qx t; then
-  "\${COMPOSE[@]}" exec -T db sh -lc '
-    export PGPASSWORD="\${POSTGRES_PASSWORD:-}"
-    exec psql -U "\${POSTGRES_USER:-postgres}" -d "\${POSTGRES_DB:-postgres}" -X -At \
+  "${COMPOSE[@]}" exec -T db sh -lc '
+    export PGPASSWORD="${POSTGRES_PASSWORD:-}"
+    exec psql -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-postgres}" -X -At \
       -c "select version from supabase_migrations.schema_migrations order by version"
   ' > "$PLAN_DIR/live-versions.txt"
 else
@@ -126,7 +126,7 @@ cat "$PLAN_DIR/live.dump" | docker exec -i \
 note "Applying source migrations absent from the live ledger to the clone only"
 while IFS= read -r file; do
   base="$(basename "$file")"
-  version="\${base%%_*}"
+  version="${base%%_*}"
   [[ "$version" =~ ^[0-9]{14}$ ]] || continue
 
   if grep -qx "$version" "$PLAN_DIR/live-versions.txt"; then
