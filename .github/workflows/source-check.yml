@@ -31,6 +31,7 @@ jobs:
           bash -n deploy/recovery/kfaah_backend_recovery.sh
           bash -n deploy/recovery/install_limited_recovery_sudo.sh
           bash -n deploy/recovery/kfaah_production_schema_gate.sh
+          bash -n deploy/recovery/kfaah_schema_recovery_plan.sh
 
       - name: Audit system-admin authorization guardrails
         run: python3 scripts/recovery/audit_admin_security.py
