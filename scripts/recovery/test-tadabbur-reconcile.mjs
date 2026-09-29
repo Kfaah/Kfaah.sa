@@ -225,5 +225,47 @@ assert(
   "existing auth user should not be planned as missing"
 );
 
+const rehearsalPath = path.join(root, "tadabbur-rehearsal.sql");
+const generator = path.resolve(
+  "scripts/recovery/generate-tadabbur-rehearsal-sql.mjs"
+);
+const generated = spawnSync(process.execPath, [generator], {
+  cwd: process.cwd(),
+  env: {
+    ...process.env,
+    TADABBUR_RECONCILE_PLAN: path.join(
+      outDir,
+      "tadabbur-reconcile-plan.json"
+    ),
+    OUTPUT_SQL: rehearsalPath
+  },
+  encoding: "utf8"
+});
+
+if (generated.status !== 0) {
+  console.error(generated.stdout);
+  console.error(generated.stderr);
+  process.exit(generated.status || 1);
+}
+
+const rehearsal = fs.readFileSync(rehearsalPath, "utf8");
+assert(
+  /\bROLLBACK;\s*$/.test(rehearsal.trim()),
+  "rehearsal SQL must end in ROLLBACK"
+);
+assert(
+  !/\bCOMMIT\b/i.test(rehearsal),
+  "rehearsal SQL must never contain COMMIT"
+);
+assert(
+  !rehearsal.includes('"role":"super_admin"'),
+  "rehearsal SQL must not contain a super_admin role"
+);
+assert(
+  rehearsal.includes('INSERT INTO public."tasks"'),
+  "rehearsal SQL did not include the missing Tadabbur task"
+);
+
 console.log("TADABBUR_RECONCILE_SELF_TEST=PASS");
+console.log("TADABBUR_REHEARSAL_SELF_TEST=PASS");
 fs.rmSync(root, { recursive: true, force: true });
