@@ -230,6 +230,7 @@ Deno.serve(async (req) => {
       .from("user_organizations")
       .select("organization_id")
       .eq("user_id", userId)
+      .eq("approval_status", "approved")
       .order("is_default", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -248,15 +249,40 @@ Deno.serve(async (req) => {
       });
     }
 
-    // If admin/super_admin passes target_organization_id, use it instead.
-    if (targetOrgId) {
-      const { data: roleRows } = await admin
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId);
-      const isAdmin = (roleRows ?? []).some((r) => r.role === "admin" || r.role === "super_admin");
-      if (isAdmin) {
+    // Cross-organization targeting is allowed only for a platform
+    // super admin or an admin explicitly scoped to the target organization.
+    if (targetOrgId && targetOrgId !== organizationId) {
+      const [{ data: roleRows }, { data: targetMembership }] =
+        await Promise.all([
+          admin
+            .from("user_roles")
+            .select("role, organization_id")
+            .eq("user_id", userId),
+          admin
+            .from("user_organizations")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("organization_id", targetOrgId)
+            .eq("approval_status", "approved")
+            .maybeSingle(),
+        ]);
+
+      const isSuper = (roleRows ?? []).some(
+        (r) => r.role === "super_admin",
+      );
+      const isTargetAdmin = (roleRows ?? []).some(
+        (r) =>
+          r.role === "admin" &&
+          r.organization_id === targetOrgId,
+      );
+
+      if (isSuper || (isTargetAdmin && targetMembership)) {
         organizationId = targetOrgId;
+      } else {
+        return new Response(JSON.stringify({ error: "forbidden" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
     }
 
