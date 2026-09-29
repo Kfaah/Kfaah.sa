@@ -283,6 +283,55 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function SuperAdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const { isPreviewMode } = usePreviewMode();
+  const [access, setAccess] = useState<"checking" | "allowed" | "denied">("checking");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const check = async () => {
+      if (loading) return;
+      if (!user?.id || isPreviewMode) {
+        if (!cancelled) setAccess("denied");
+        return;
+      }
+
+      setAccess("checking");
+      const { data, error } = await supabase.rpc("is_super_admin", {
+        _user_id: user.id,
+      });
+
+      if (cancelled) return;
+      setAccess(!error && data === true ? "allowed" : "denied");
+    };
+
+    check();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, loading, isPreviewMode]);
+
+  if (loading || access === "checking") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (access !== "allowed") {
+    return <Navigate to="/app" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const { isPreviewMode } = usePreviewMode();
@@ -347,18 +396,18 @@ function AppRoutes() {
       />
 
       {/* Super-admin hub: لوحة تحكم متكاملة بـ sidebar */}
-      <Route path="/admin" element={<ProtectedRoute><AdminLayout><AdminOverview /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/organizations" element={<ProtectedRoute><AdminLayout><AdminOrganizations /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/organizations/:orgId/profile" element={<ProtectedRoute><AdminLayout><OrganizationProfile /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/organizations/:orgId/dashboard" element={<ProtectedRoute><AdminLayout><OrgInternalDashboard /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/test/sources-rtl" element={<ProtectedRoute><AdminLayout><SourcesRtlTest /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/compare" element={<ProtectedRoute><AdminLayout><AdminCompare /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/analytics" element={<ProtectedRoute><AdminLayout><AdminAnalytics /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/action-plans" element={<ProtectedRoute><AdminLayout><AdminActionPlans /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/action-plans/:planId" element={<ProtectedRoute><AdminLayout><AdminActionPlanDetails /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/reports" element={<ProtectedRoute><AdminLayout><AdminReports /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/innovation" element={<ProtectedRoute><AdminLayout><AdminInnovation /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/settings" element={<ProtectedRoute><AdminLayout><AdminSettings /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin" element={<SuperAdminRoute><AdminLayout><AdminOverview /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/organizations" element={<SuperAdminRoute><AdminLayout><AdminOrganizations /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/organizations/:orgId/profile" element={<SuperAdminRoute><AdminLayout><OrganizationProfile /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/organizations/:orgId/dashboard" element={<SuperAdminRoute><AdminLayout><OrgInternalDashboard /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/test/sources-rtl" element={<SuperAdminRoute><AdminLayout><SourcesRtlTest /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/compare" element={<SuperAdminRoute><AdminLayout><AdminCompare /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/analytics" element={<SuperAdminRoute><AdminLayout><AdminAnalytics /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/action-plans" element={<SuperAdminRoute><AdminLayout><AdminActionPlans /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/action-plans/:planId" element={<SuperAdminRoute><AdminLayout><AdminActionPlanDetails /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/reports" element={<SuperAdminRoute><AdminLayout><AdminReports /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/innovation" element={<SuperAdminRoute><AdminLayout><AdminInnovation /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/settings" element={<SuperAdminRoute><AdminLayout><AdminSettings /></AdminLayout></SuperAdminRoute>} />
       {/* Org management (edit form etc) — kept inside an org's dashboard */}
       <Route
         path="/organizations"
