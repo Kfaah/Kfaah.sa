@@ -124,7 +124,7 @@ if [[ -r "$NGINX_SITE" ]]; then
   storage_limit="$(awk '
     /location \/storage\/v1\// {in_storage=1}
     in_storage && /client_max_body_size/ {print $2; exit}
-    in_storage && /^\s*}/ {in_storage=0}
+    in_storage && /^[[:space:]]*}/ {in_storage=0}
   ' "$NGINX_SITE" | tr -d ';')"
   if [[ -n "$storage_limit" ]]; then
     echo "INFO|nginx_storage_client_max_body_size=$storage_limit"
