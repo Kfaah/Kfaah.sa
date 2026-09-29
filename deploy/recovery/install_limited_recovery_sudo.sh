@@ -12,6 +12,7 @@ set -euo pipefail
 OPERATOR="\${RECOVERY_OPERATOR:-}"
 SOURCE_ROOT="\${SOURCE_ROOT:-$(pwd)}"
 LIBEXEC="/usr/local/libexec/kfaah-backend-recovery"
+SCHEMA_GATE="/usr/local/libexec/kfaah-production-schema-gate"
 WRAPPER="/usr/local/bin/kfaah-backend-recovery"
 STATE_ROOT="/var/lib/kfaah-recovery"
 INCOMING="$STATE_ROOT/incoming"
@@ -22,6 +23,10 @@ SUDOERS="/etc/sudoers.d/kfaah-backend-recovery"
 id "$OPERATOR" >/dev/null 2>&1 || { echo "ERROR: unknown operator: $OPERATOR" >&2; exit 1; }
 [[ -r "$SOURCE_ROOT/deploy/recovery/kfaah_backend_recovery.sh" ]] || {
   echo "ERROR: reviewed recovery script missing under SOURCE_ROOT" >&2
+  exit 1
+}
+[[ -r "$SOURCE_ROOT/deploy/recovery/kfaah_production_schema_gate.sh" ]] || {
+  echo "ERROR: production schema gate missing under SOURCE_ROOT" >&2
   exit 1
 }
 command -v visudo >/dev/null 2>&1 || { echo "ERROR: visudo unavailable" >&2; exit 1; }
@@ -38,6 +43,7 @@ cat > "$WRAPPER" <<'WRAP'
 set -euo pipefail
 
 RECOVERY="/usr/local/libexec/kfaah-backend-recovery"
+SCHEMA_GATE="/usr/local/libexec/kfaah-production-schema-gate"
 STATE_ROOT="/var/lib/kfaah-recovery"
 INCOMING="$STATE_ROOT/incoming"
 STAGED="$STATE_ROOT/staged"
@@ -124,11 +130,21 @@ PY
     SOURCE_ROOT="$target" run_mutation install-functions
     printf '%s\n' "$expected" > "$STATE_ROOT/last-functions-sha256"
     ;;
+  schema-gate)
+    [[ "$#" -eq 0 ]] || die "schema-gate takes no arguments"
+    [[ -x "$SCHEMA_GATE" ]] || die "production schema gate is missing"
+    [[ -r "$STATE_ROOT/current-contract/types.ts" ]] || die "current schema contract is missing"
+    KFAAH_SCHEMA_GATE_MARK_READY=yes "$SCHEMA_GATE"
+    ;;
+
   cutover)
     [[ "$#" -eq 1 ]] || die "usage: cutover CONFIRM-NATIVE-CUTOVER"
     [[ "$1" == "CONFIRM-NATIVE-CUTOVER" ]] || die "explicit confirmation missing"
     [[ -f "$STATE_ROOT/schema-ready" ]] || die "production schema has not been accepted"
     [[ "$(stat -c '%U:%G:%a' "$STATE_ROOT/schema-ready")" == "root:root:600" ]] ||       die "schema-ready marker must be root-owned mode 600"
+    expected_contract="$(cat "$STATE_ROOT/current-contract/types.sha256" 2>/dev/null || true)"
+    accepted_contract="$(sed -n 's/^contract_sha256=//p' "$STATE_ROOT/schema-ready" | head -1)"
+    [[ -n "$expected_contract" && "$accepted_contract" == "$expected_contract" ]] ||       die "schema acceptance does not match the current source contract"
     KFAAH_RECOVERY_MODE=native-canary "$RECOVERY"
     run_mutation cutover
     ;;
