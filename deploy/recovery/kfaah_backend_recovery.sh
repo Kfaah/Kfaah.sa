@@ -219,7 +219,8 @@ native_canary() {
     die "Protected native function must reject anonymous caller (got HTTP $protected_code)."
 
   unset anon_key
-  note "Read-only native entrypoint + Auth health + authorization canaries passed."}
+  note "Read-only native entrypoint + Auth health + authorization canaries passed."
+}
 
 cutover() {
   require_mutation_approval
