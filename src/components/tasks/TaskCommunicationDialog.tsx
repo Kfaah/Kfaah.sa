@@ -60,6 +60,7 @@ interface TaskCommunicationDialogProps {
   onOpenChange: (open: boolean) => void;
   taskId: string;
   taskTitle: string;
+  organizationId: string;
   currentUserId: string;
   isAdmin: boolean;
   taskOwnerId: string;
@@ -70,6 +71,7 @@ export function TaskCommunicationDialog({
   onOpenChange,
   taskId,
   taskTitle,
+  organizationId,
   currentUserId,
   isAdmin,
   taskOwnerId,
@@ -109,7 +111,7 @@ export function TaskCommunicationDialog({
 
   // جلب قائمة المدراء للموظفين
   useEffect(() => {
-    if (!open || isAdmin) return;
+    if (!open || isAdmin || !organizationId) return;
 
     const fetchAdmins = async () => {
       try {
@@ -117,7 +119,8 @@ export function TaskCommunicationDialog({
         const { data: adminRoles } = await supabase
           .from("user_roles")
           .select("user_id")
-          .eq("role", "admin");
+          .eq("role", "admin")
+          .eq("organization_id", organizationId);
 
         if (adminRoles && adminRoles.length > 0) {
           const adminIds = adminRoles.map((r) => r.user_id);
@@ -126,6 +129,7 @@ export function TaskCommunicationDialog({
           const { data: adminEmployees } = await supabase
             .from("employees")
             .select("user_id, full_name")
+            .eq("organization_id", organizationId)
             .in("user_id", adminIds);
 
           const nameById = new Map(
@@ -155,7 +159,7 @@ export function TaskCommunicationDialog({
     };
 
     fetchAdmins();
-  }, [open, isAdmin]);
+  }, [open, isAdmin, organizationId]);
 
   // جلب الرسائل
   useEffect(() => {
@@ -178,13 +182,15 @@ export function TaskCommunicationDialog({
         const { data: employeesData } = await supabase
           .from("employees")
           .select("user_id, full_name")
+          .eq("organization_id", organizationId)
           .in("user_id", userIds);
 
         // جلب المستخدمين المدراء
         const { data: adminRoles } = await supabase
           .from("user_roles")
           .select("user_id")
-          .eq("role", "admin");
+          .eq("role", "admin")
+          .eq("organization_id", organizationId);
         
         const adminUserIds = new Set((adminRoles || []).map(r => r.user_id));
 
@@ -234,9 +240,7 @@ export function TaskCommunicationDialog({
           table: "task_messages",
           filter: `task_id=eq.${taskId}`,
         },
-        (payload) => {
-          setMessages((prev) => [...prev, payload.new as TaskMessage]);
-        }
+        () => { void fetchMessages(); }
       )
       .on(
         "postgres_changes",
@@ -255,7 +259,7 @@ export function TaskCommunicationDialog({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [open, taskId]);
+  }, [open, taskId, organizationId, currentUserId]);
 
   // هل هذه أول رسالة من الموظف؟
   const isFirstEmployeeMessage = !isAdmin && messages.length === 0;
@@ -267,9 +271,22 @@ export function TaskCommunicationDialog({
     }
   }, [messages]);
 
+  const downloadAttachment = async (url: string, name: string) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("تعذر تنزيل المرفق");
+      const blobUrl = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a"); link.href = blobUrl; link.download = name;
+      document.body.appendChild(link); link.click(); link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+    } catch (error: any) {
+      toast({ title: "تعذر تنزيل المرفق", description: error.message, variant: "destructive" });
+    }
+  };
+
   // إرسال رسالة
   const sendMessage = async (attachmentData?: { url: string; name: string; type: string }) => {
-    if (!newMessage.trim() && !attachmentData) return;
+    if (!newMessage.trim() && !attachmentData) return false;
 
     setSending(true);
     try {
@@ -312,8 +329,10 @@ export function TaskCommunicationDialog({
       }
 
       setNewMessage("");
+      return true;
     } catch (error: any) {
       toast({ title: "خطأ", description: error.message, variant: "destructive" });
+      return false;
     } finally {
       setSending(false);
     }
@@ -349,11 +368,16 @@ export function TaskCommunicationDialog({
       else if (file.type.startsWith("video/")) attachmentType = "video";
       else if (file.type === "application/pdf") attachmentType = "pdf";
 
-      await sendMessage({
+      const sent = await sendMessage({
         url: storedPath,
         name: file.name,
         type: attachmentType,
       });
+
+      if (!sent) {
+        await supabase.storage.from("task-attachments").remove([fileName]);
+        return;
+      }
 
       toast({ title: "تم رفع الملف بنجاح" });
     } catch (error: any) {
@@ -562,8 +586,8 @@ export function TaskCommunicationDialog({
                             ) : (
                               <a
                                 href={attUrl(msg.attachment_url)}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                download={msg.attachment_name || "attachment"}
+                                onClick={(event) => { event.preventDefault(); void downloadAttachment(attUrl(msg.attachment_url), msg.attachment_name || "attachment"); }}
                                 className={cn(
                                   "flex items-center gap-3 p-3 rounded-xl transition-colors",
                                   isOwn 

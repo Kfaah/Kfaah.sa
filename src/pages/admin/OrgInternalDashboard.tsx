@@ -492,7 +492,7 @@ export default function OrgInternalDashboard({
     }
   };
 
-  useEffect(() => { loadAll(); /* eslint-disable-next-line */ }, [orgId]);
+  useEffect(() => { loadAll(); /* eslint-disable-next-line */ }, [orgId, activeTab, standaloneTab]);
 
   const runDeepAnalysis = async () => {
     if (!orgId) return;
@@ -951,7 +951,7 @@ export default function OrgInternalDashboard({
           dir="rtl"
         >
           <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}>
-            {visitedTabs.has("operational-plans") ? <AdminActionPlans /> : <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}
+            {visitedTabs.has("operational-plans") ? <AdminActionPlans orgIdProp={orgId} /> : <div className="p-6 text-sm text-muted-foreground">جارٍ التحميل…</div>}
           </Suspense>
         </TabsContent>
         <TabsContent value="operational-plans-main" forceMount className={standaloneTab ? "mt-0 data-[state=inactive]:hidden" : "mt-6 data-[state=inactive]:hidden"} dir="rtl">
@@ -1192,7 +1192,7 @@ function SourceBreakdownSection({ analysis }: { analysis: DeepAnalysis }) {
           </CardTitle>
         </CardHeader>
         <CardContent className="text-right text-sm text-muted-foreground">
-          هذا التحليل أُنشئ قبل إضافة الشرح التفصيلي لكل مصدر. اضغط «إعادة تشغيل التحليل» لعرض شرح مفصّل للموقع الرسمي والمتجر وكل حساب.
+          لا تتوفر تفاصيل لمصادر رقمية في هذا التحليل. راجع روابط الموقع والمتجر والحسابات المسجلة، ثم أعد تشغيل التحليل. عدم توفر المصدر هنا لا يعني عدم وجوده لدى الجمعية.
         </CardContent>
       </Card>
     );
@@ -1775,28 +1775,48 @@ function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: st
         pf.category === "other" ||
         pf.category === "staff_duties"
       ) {
-        // أرشفة الملف في تخزين الجمعية + تسجيله في سجل الرفع
-        const path = `${orgId}/archive/${pf.category}/${Date.now()}_${pf.file.name}`;
+        // Arbitrary archive documents belong in org-documents. data-uploads
+        // is intentionally restricted to structured Excel/CSV imports.
+        const extension = pf.file.name
+          .split(".")
+          .pop()
+          ?.toLowerCase()
+          .replace(/[^a-z0-9]/g, "")
+          .slice(0, 10);
+        const safeName = `${crypto.randomUUID()}${extension ? `.${extension}` : ""}`;
+        const path = `${orgId}/archive/${pf.category}/${Date.now()}_${safeName}`;
         const { error: upErr } = await supabase.storage
-          .from("data-uploads")
-          .upload(path, pf.file, { upsert: false });
+          .from("org-documents")
+          .upload(path, pf.file, {
+            upsert: false,
+            contentType: pf.file.type || "application/octet-stream",
+          });
         if (upErr) throw upErr;
 
         const { data: authData } = await supabase.auth.getUser();
-        await supabase.from("data_uploads_log").insert({
-          uploaded_by: authData.user?.id ?? "",
-          organization_id: orgId,
-          file_name: pf.file.name,
-          file_type: pf.file.type || "application/octet-stream",
-          detected_schema: pf.category,
-          total_rows: 0,
-          inserted_rows: 1,
-          duplicate_rows: 0,
-          failed_rows: 0,
-          for_date: forDate || null,
-          status: "completed",
-          completed_at: new Date().toISOString(),
-        });
+        const { error: logErr } = await supabase
+          .from("data_uploads_log")
+          .insert({
+            uploaded_by: authData.user?.id ?? "",
+            organization_id: orgId,
+            file_name: pf.file.name,
+            file_type: pf.file.type || "application/octet-stream",
+            file_size_bytes: pf.file.size,
+            file_path: path,
+            storage_bucket: "org-documents",
+            detected_schema: pf.category,
+            total_rows: 0,
+            inserted_rows: 1,
+            duplicate_rows: 0,
+            failed_rows: 0,
+            for_date: forDate || null,
+            status: "completed",
+            completed_at: new Date().toISOString(),
+          });
+        if (logErr) {
+          await supabase.storage.from("org-documents").remove([path]);
+          throw logErr;
+        }
         result = { detected: pf.category, inserted: 1, duplicates: 0, failed: 0 };
       } else {
         const formData = new FormData();
@@ -1834,13 +1854,13 @@ function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: st
       category === "store_daily";
     const arr = Array.from(files).filter((f) => {
       if (isDataCategory) return /\.(xlsx|xls|csv)$/i.test(f.name);
-      return f.size <= 50 * 1024 * 1024;
+      return f.size <= 200 * 1024 * 1024;
     });
     if (arr.length === 0) {
       toast.error(
         isDataCategory
           ? "الرجاء اختيار ملفات Excel أو CSV فقط"
-          : "تعذر قبول الملفات (الحد الأقصى 50MB)",
+          : "تعذر قبول الملفات (الحد الأقصى 200MB)",
       );
       return;
     }
@@ -1957,7 +1977,7 @@ function OrgUploadsTab({ orgId, orgName, onRunAnalysis, analyzing }: { orgId: st
               <p className="text-sm text-muted-foreground mt-1">
                 {isDataCategory
                   ? <>اختر ملفات Excel/CSV ثم اضغط <span className="font-semibold text-foreground">بدء الرفع</span>. ثم انتقل إلى تبويب <span className="font-semibold text-foreground">التحليل الذكي</span> لتشغيل التحليل.</>
-                  : "أو انقر للاختيار — يقبل أي صيغة (PDF, Word, Excel, صور…) حتى 50MB"}
+                  : "أو انقر للاختيار — يقبل أي صيغة (PDF, Word, Excel, صور…) حتى 200MB"}
               </p>
             </div>
             <Button variant="outline" type="button">
@@ -2191,7 +2211,7 @@ function EmployeesShowcase({
         body: { employee_id: employeeId },
       });
       if (error) throw error;
-      if (!data?.token_hash || !data?.email) throw new Error("استجابة غير صالحة");
+      if (!data?.token_hash) throw new Error("استجابة غير صالحة");
       // Sign out current session, then verify the magic link to sign in as the employee.
       await supabase.auth.signOut();
       const { error: vErr } = await supabase.auth.verifyOtp({

@@ -55,6 +55,7 @@ export default function RolesPermissionsSettings() {
   const { slug } = useParams<{ slug?: string }>();
   const { user } = useAuth();
   const [orgId, setOrgId] = useState<string | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [matrix, setMatrix] = useState<Record<string, PermRow>>({});
   const [saving, setSaving] = useState(false);
   const [viewerAccounts, setViewerAccounts] = useState<
@@ -68,9 +69,11 @@ export default function RolesPermissionsSettings() {
   useEffect(() => {
     const load = async () => {
       if (!user) return;
-      const { data: oid } = await supabase.rpc("get_user_organization_id", {
-        _user_id: user.id,
-      });
+      const [{ data: oid }, { data: superAdmin }] = await Promise.all([
+        supabase.rpc("get_user_organization_id", { _user_id: user.id }),
+        supabase.rpc("is_super_admin", { _user_id: user.id }),
+      ]);
+      setIsSuperAdmin(Boolean(superAdmin));
       if (!oid) return;
       setOrgId(oid as unknown as string);
       const { data: rows } = await supabase
@@ -283,7 +286,8 @@ export default function RolesPermissionsSettings() {
           صلاحية كاملة دائماً ولا يتأثر بهذه المصفوفة.
         </p>
 
-        {/* === حسابات عرض الجمعيات === */}
+        {/* === حسابات عرض الجمعيات — مدير النظام فقط === */}
+        {isSuperAdmin && (
         <Card>
           <CardContent className="p-6 space-y-4">
             <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -335,7 +339,7 @@ export default function RolesPermissionsSettings() {
                   ))}
                 </ul>
                 <p className="text-[11px] text-muted-foreground">
-                  كلمة المرور الافتراضية موحّدة. يمكنك تغييرها لاحقاً من شاشة تعديل الموظف.
+                  كلمة المرور المؤقتة فريدة لكل حساب جديد. انسخها واحفظها بأمان ثم غيّرها من شاشة تعديل الموظف.
                 </p>
               </div>
             )}
@@ -379,6 +383,7 @@ export default function RolesPermissionsSettings() {
             )}
           </CardContent>
         </Card>
+        )}
       </div>
     </DashboardLayout>
   );

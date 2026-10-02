@@ -141,6 +141,30 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     load();
   }, [load]);
 
+  // Recheck suspension for an already-open session without reloading branding
+  // or resetting the rest of the application. RLS rejects access immediately.
+  useEffect(() => {
+    if (!authUser || !currentOrg?.id || isSuperAdmin) return;
+    const orgId = currentOrg.id;
+    let cancelled = false;
+    let checking = false;
+    const checkStatus = async () => {
+      if (checking || document.visibilityState === "hidden") return;
+      checking = true;
+      try {
+        const { data, error } = await supabase.from("organizations").select("is_active").eq("id", orgId).maybeSingle();
+        if (cancelled || error || !data) return;
+        setCurrentOrg(prev => prev?.id === orgId && prev.is_active !== data.is_active ? { ...prev, is_active: data.is_active } : prev);
+        setAvailableOrgs(prev => prev.map(o => o.id === orgId && o.is_active !== data.is_active ? { ...o, is_active: data.is_active } : o));
+      } finally { checking = false; }
+    };
+    void checkStatus();
+    const timer = window.setInterval(checkStatus, 15000);
+    window.addEventListener("focus", checkStatus);
+    document.addEventListener("visibilitychange", checkStatus);
+    return () => { cancelled = true; window.clearInterval(timer); window.removeEventListener("focus", checkStatus); document.removeEventListener("visibilitychange", checkStatus); };
+  }, [authUser?.id, currentOrg?.id, isSuperAdmin, location.pathname]);
+
   useEffect(() => {
     if (!availableOrgs.length) return;
 

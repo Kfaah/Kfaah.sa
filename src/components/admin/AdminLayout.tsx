@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useState, type CSSProperties } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, GitCompareArrows, Sparkles,
@@ -11,6 +11,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { ADMIN_BRAND_EVENT, DEFAULT_ADMIN_BRAND, adminHexToHsl, loadAdminBrand } from "@/lib/adminBrand";
 
 
 // Distinctive icon colors per nav item — vibrant gradients
@@ -45,6 +46,17 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [brand, setBrand] = useState({ ...DEFAULT_ADMIN_BRAND });
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (!user?.id) return;
+      try { const saved = await loadAdminBrand(user.id); if (!cancelled) setBrand(saved); }
+      catch { /* Keep the usable default shell; settings show actionable load errors. */ }
+    };
+    void load(); window.addEventListener(ADMIN_BRAND_EVENT,load);
+    return () => { cancelled=true; window.removeEventListener(ADMIN_BRAND_EVENT,load); };
+  }, [user?.id]);
 
   // Close drawer on route change
   useEffect(() => { setMobileOpen(false); }, [location.pathname, location.search]);
@@ -171,16 +183,18 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       className="min-h-screen relative overflow-hidden"
       dir="rtl"
       style={{
+        "--primary": adminHexToHsl(brand.primary),
+        "--accent": adminHexToHsl(brand.accent),
         background:
           "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(192 55% 24%) 50%, hsl(195 60% 20%) 100%)",
-      }}
+      } as CSSProperties}
     >
       {/* Mobile top bar — visible only on mobile */}
       <header
         className="lg:hidden sticky top-0 z-40 flex items-center justify-between gap-3 px-4 py-3 shadow-md"
         style={{
           background:
-            "linear-gradient(135deg, hsl(190 50% 28%) 0%, hsl(195 60% 20%) 100%)",
+            `linear-gradient(135deg, ${brand.sidebarFrom}, ${brand.sidebarTo})`,
         }}
       >
         <button
@@ -247,7 +261,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         )}
         style={{
           background:
-            "linear-gradient(180deg, #2f8e8c 0%, #2f8e8c 50%, #2f8e8c 100%)",
+            `linear-gradient(180deg, ${brand.sidebarFrom}, ${brand.sidebarTo})`,
         }}
       >
         {/* Subtle radial vignette + noise overlay */}
@@ -283,7 +297,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             {/* Avatar with double ring */}
             <div className="relative">
               <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-300 to-amber-500 blur-sm opacity-60" />
-              <Avatar className="relative w-28 h-28 ring-2 ring-amber-300/80 ring-offset-2 ring-offset-transparent shadow-2xl">
+              <Avatar className="relative w-28 h-28 ring-2 ring-amber-300/80 ring-offset-2 ring-offset-transparent shadow-2xl" style={{boxShadow:`0 0 0 2px ${brand.goldAccent}`}}>
                 {profile.avatar && (
                   <AvatarImage
                     src={profile.avatar}
@@ -298,7 +312,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                   className="text-white font-bold text-2xl"
                   style={{
                     background:
-                      "linear-gradient(135deg, hsl(190 50% 35%) 0%, hsl(195 60% 25%) 100%)",
+                      brand.primary,
                   }}
                 >
                   {initials}

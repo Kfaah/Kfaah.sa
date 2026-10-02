@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import {
   Building2, Plus, Edit3, Power, PowerOff, Mail, Phone, Crown,
@@ -18,6 +18,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOrganization, type Organization } from "@/contexts/OrganizationContext";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+
+import { validateOrganizationForm, organizationSaveError } from "@/lib/organization-form";
 
 type OrgWithCounts = Organization & { member_count?: number };
 
@@ -56,6 +58,9 @@ export default function AdminHub() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const saveInFlight = useRef(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [changingOrg, setChangingOrg] = useState<string | null>(null);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
 
   const fetchOrgs = async () => {
@@ -92,8 +97,9 @@ export default function AdminHub() {
     return <Navigate to="/app" replace />;
   }
 
-  const openCreate = () => { setForm(emptyForm); setDialogOpen(true); };
+  const openCreate = () => { setSaveError(null); setForm(emptyForm); setDialogOpen(true); };
   const openEdit = (o: OrgWithCounts) => {
+    setSaveError(null);
     setForm({
       id: o.id,
       name: o.name,
@@ -107,45 +113,58 @@ export default function AdminHub() {
   };
 
   const handleSave = async () => {
-    if (!form.name.trim()) { toast.error("اسم الجمعية مطلوب"); return; }
-    setSaving(true);
-    const payload = {
-      name: form.name.trim(),
-      slug: form.slug.trim() || null,
-      contact_email: form.contact_email.trim() || null,
-      contact_phone: form.contact_phone.trim() || null,
-      subscription_tier: form.subscription_tier,
-      is_active: form.is_active,
-    };
-    const { error } = form.id
-      ? await supabase.from("organizations").update(payload).eq("id", form.id)
-      : await supabase.from("organizations").insert(payload);
-    setSaving(false);
-    if (error) { toast.error(error.message || "حدث خطأ أثناء الحفظ"); return; }
-    toast.success(form.id ? "تم تحديث الجمعية" : "تم إنشاء الجمعية");
-    setDialogOpen(false);
-    await fetchOrgs();
-    await refresh();
+    if (saveInFlight.current) return;
+    const validation = validateOrganizationForm(form, orgs.find(o => o.id === form.id)?.slug);
+    if (validation) { setSaveError(validation); return; }
+    saveInFlight.current = true;
+    setSaving(true); setSaveError(null);
+    try {
+      const payload = {
+        name: form.name.trim(), slug: form.slug.trim().toLowerCase(),
+        contact_email: form.contact_email.trim() || null,
+        contact_phone: form.contact_phone.trim() || null,
+        subscription_tier: form.subscription_tier, is_active: form.is_active,
+      };
+      const { error } = form.id
+        ? await supabase.from("organizations").update(payload).eq("id", form.id).select("id").single()
+        : await supabase.from("organizations").insert(payload).select("id").single();
+      if (error) throw error;
+      toast.success(form.id ? "تم تحديث الجمعية" : "تم إنشاء الجمعية");
+      setDialogOpen(false);
+      await fetchOrgs(); await refresh();
+    } catch (error) { setSaveError(organizationSaveError(error)); }
+    finally { setSaving(false); saveInFlight.current = false; }
   };
 
   const toggleActive = async (o: OrgWithCounts) => {
-    const { error } = await supabase
-      .from("organizations").update({ is_active: !o.is_active }).eq("id", o.id);
-    if (error) { toast.error("تعذّر تحديث الحالة"); return; }
-    toast.success(o.is_active ? "تم إيقاف الجمعية" : "تم تفعيل الجمعية");
-    fetchOrgs(); refresh();
+    if (changingOrg) return;
+    setChangingOrg(o.id);
+    try {
+      const { error } = await supabase.from("organizations")
+        .update({ is_active: !o.is_active }).eq("id", o.id).eq("is_active", o.is_active)
+        .select("id, is_active").single();
+      if (error) throw error;
+      toast.success(o.is_active ? "تم إيقاف الجمعية ومنع وصول أعضائها" : "تم تفعيل الجمعية");
+      await Promise.all([fetchOrgs(), refresh()]);
+    } catch {
+      toast.error("تعذّر تحديث الحالة. حدّث القائمة ثم حاول مرة أخرى.");
+      await fetchOrgs();
+    } finally { setChangingOrg(null); }
   };
 
   const enterOrg = (o: OrgWithCounts) => {
     if (!o.is_active) { toast.error("هذه الجمعية موقوفة حالياً"); return; }
     switchOrg(o.id);
     toast.success(`الدخول إلى ${o.name}`);
-    // وجّه إلى رابط الجمعية القصير إن وُجد، وإلا fallback إلى /app
-    if (o.slug) {
-      navigate(`/${o.slug}/app`);
-    } else {
-      navigate("/app");
-    }
+
+    // الانتقال من لوحة مدير النظام إلى مساحة جمعية يغيّر شجرة
+    // providers والـ lazy chunks بالكامل. نستخدم انتقالاً كاملاً بدل SPA
+    // حتى لا تبقى نسخة JavaScript قديمة في الذاكرة بعد أي نشر، وهو ما
+    // كان قد ينتج شاشة فارغة عند فتح أي جمعية.
+    const target = o.slug ? `/${o.slug}/app` : "/app";
+    const url = new URL(target, window.location.origin);
+    url.searchParams.set("v", Date.now().toString(36));
+    window.location.assign(url.toString());
   };
 
   const copyOrgLink = async (slug: string) => {
@@ -172,7 +191,7 @@ export default function AdminHub() {
             </div>
             <div>
               <h1 className="text-white font-bold text-lg leading-tight">لوحة مدير النظام</h1>
-              <p className="text-white/70 text-xs">نظام إدارة التسويق الإلكتروني للجمعيات</p>
+              <p className="text-white/70 text-xs">نظام إدارة التسويق الإلكتروني وتنمية الموارد المالية للجمعيات</p>
             </div>
           </div>
           <Button onClick={handleSignOut} variant="ghost" size="sm" className="gap-2 text-white hover:bg-white/10">
@@ -316,6 +335,9 @@ export default function AdminHub() {
                       variant={o.is_active ? "secondary" : "default"}
                       className="gap-1.5"
                       onClick={() => toggleActive(o)}
+                      disabled={changingOrg !== null}
+                      aria-label={`${o.is_active ? "إيقاف" : "تفعيل"} ${o.name}`}
+                      title={o.is_active ? "إيقاف الجمعية" : "تفعيل الجمعية"}
                     >
                       {o.is_active ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
                     </Button>
@@ -328,8 +350,8 @@ export default function AdminHub() {
       </main>
 
       {/* Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg" dir="rtl">
+      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!saving) setDialogOpen(open); }}>
+        <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto" dir="rtl">
           <DialogHeader>
             <DialogTitle>{form.id ? "تعديل الجمعية" : "إضافة جمعية جديدة"}</DialogTitle>
             <DialogDescription>
@@ -343,12 +365,13 @@ export default function AdminHub() {
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="جمعية ..." />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>المعرف (Slug)</Label>
+                <Label>رابط الجمعية *</Label>
                 <Input
                   value={form.slug}
                   onChange={(e) => setForm({ ...form, slug: e.target.value.replace(/\s/g, "-").toLowerCase() })}
+                  aria-label="رابط الجمعية"
                   placeholder="example-org"
                   dir="ltr"
                 />
@@ -358,6 +381,8 @@ export default function AdminHub() {
                 <Select value={form.subscription_tier} onValueChange={(v) => setForm({ ...form, subscription_tier: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="free">مجانية</SelectItem>
+                    <SelectItem value="demo">تجريبية</SelectItem>
                     <SelectItem value="standard">قياسية</SelectItem>
                     <SelectItem value="premium">متقدمة</SelectItem>
                     <SelectItem value="enterprise">مؤسسية</SelectItem>
@@ -385,6 +410,7 @@ export default function AdminHub() {
             </div>
           </div>
 
+          {saveError && <p role="alert" className="text-sm text-destructive">{saveError}</p>}
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>إلغاء</Button>
             <Button onClick={handleSave} disabled={saving}>

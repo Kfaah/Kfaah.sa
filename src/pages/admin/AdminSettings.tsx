@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +16,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { WelcomeContentManager } from "@/components/welcome/WelcomeContentManager";
+import MemberRolesSettings from "@/pages/settings/MemberRolesSettings";
+import { fetchAllReportRows } from "@/lib/fetchAllReportRows";
+import { DEFAULT_ADMIN_BRAND, loadAdminBrand, saveAdminBrand, validAdminBrand, type AdminBrand } from "@/lib/adminBrand";
 
 type ProfileForm = {
   first_name: string;
@@ -24,41 +29,34 @@ type ProfileForm = {
   avatar_url: string | null;
 };
 
-const BRAND_KEY = "admin_brand_settings";
-
-type BrandSettings = {
-  primary: string;
-  accent: string;
-  sidebarFrom: string;
-  sidebarTo: string;
-  goldAccent: string;
-};
-
-const DEFAULT_BRAND: BrandSettings = {
-  primary: "#0e7490",
-  accent: "#fbbf24",
-  sidebarFrom: "#164e63",
-  sidebarTo: "#082f49",
-  goldAccent: "#fcd34d",
-};
-
 export default function AdminSettings() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<ProfileForm>({
     first_name: "", last_name: "", email: "", phone: "", job_role: "مدير النظام", avatar_url: null,
   });
-  const [brand, setBrand] = useState<BrandSettings>(DEFAULT_BRAND);
+  const [brand, setBrand] = useState<AdminBrand>({ ...DEFAULT_ADMIN_BRAND });
   const [savingProfile, setSavingProfile] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [savingBrand, setSavingBrand] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [orgs, setOrgs] = useState<Array<{id: string; name: string; slug: string | null}>>([]);
+  const [selectedOrg, setSelectedOrg] = useState("");
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!user?.id) return;
-    (async () => {
-      const { data } = await supabase
+    setLoading(true); setLoadError(false);
+    try {
+      const [profileResult, savedBrand, organizations] = await Promise.all([supabase
         .from("profiles")
         .select("first_name, last_name, email, phone, job_role, avatar_url")
         .eq("user_id", user.id)
-        .maybeSingle();
+        .maybeSingle(), loadAdminBrand(user.id),
+        fetchAllReportRows(supabase.from("organizations").select("id,name,slug").order("name").order("id"))]);
+      if (profileResult.error) throw profileResult.error;
+      const data = profileResult.data;
+      setBrand(savedBrand); setOrgs(organizations);
+      setSelectedOrg(current => organizations.some(org => org.id === current) ? current : organizations[0]?.id || "");
       if (data) {
         setProfile({
           first_name: data.first_name ?? "",
@@ -71,28 +69,30 @@ export default function AdminSettings() {
       } else {
         setProfile((p) => ({ ...p, email: user.email ?? "" }));
       }
-    })();
-
-    try {
-      const stored = localStorage.getItem(BRAND_KEY);
-      if (stored) setBrand({ ...DEFAULT_BRAND, ...JSON.parse(stored) });
-    } catch { /* ignore */ }
+    } catch { setLoadError(true); }
+    finally { setLoading(false); }
   }, [user?.id, user?.email]);
+  useEffect(() => { void load(); }, [load]);
 
   const handleSaveProfile = async () => {
-    if (!user?.id) return;
+    if (!user?.id || savingProfile || uploadingAvatar || loading || loadError) return;
+    if (!profile.first_name.trim() || profile.first_name.trim().length > 80 || profile.last_name.trim().length > 80 || profile.phone.length > 30 || profile.job_role.length > 120) {
+      toast.error("أدخل اسمًا صحيحًا؛ الحد الأقصى للاسم 80 حرفًا، والجوال 30 حرفًا، والمسمى 120 حرفًا"); return;
+    }
     setSavingProfile(true);
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({
-          first_name: profile.first_name,
-          last_name: profile.last_name,
-          phone: profile.phone,
-          job_role: profile.job_role,
-        })
-        .eq("user_id", user.id);
+        .upsert({
+          user_id: user.id,
+          email: user.email,
+          first_name: profile.first_name.trim(),
+          last_name: profile.last_name.trim(),
+          phone: profile.phone.trim(),
+          job_role: profile.job_role.trim(),
+        }, { onConflict: "user_id" }).select("user_id").single();
       if (error) throw error;
+      window.dispatchEvent(new Event("admin-profile-updated"));
       toast.success("تم حفظ الهوية الشخصية");
     } catch (e) {
       toast.error("تعذّر حفظ البيانات");
@@ -102,36 +102,46 @@ export default function AdminSettings() {
   };
 
   const handleAvatarUpload = async (file: File) => {
-    if (!user?.id) return;
+    if (!user?.id || uploadingAvatar || savingProfile || loading || loadError) return;
+    const extensions: Record<string,string> = { "image/png":"png", "image/jpeg":"jpg", "image/webp":"webp" };
+    if (!extensions[file.type] || file.size > 5 * 1024 * 1024) { toast.error("اختر صورة PNG أو JPG أو WebP بحجم لا يتجاوز 5MB"); return; }
     setUploadingAvatar(true);
+    const path = `${user.id}/${crypto.randomUUID()}.${extensions[file.type]}`;
+    let uploaded = false;
     try {
-      const ext = file.name.split(".").pop() || "png";
-      const path = `${user.id}/avatar.${ext}`;
       const { error: upErr } = await supabase.storage
-        .from("avatars").upload(path, file, { upsert: true });
+        .from("avatars").upload(path, file, { upsert: false, contentType: file.type });
       if (upErr) throw upErr;
+      uploaded = true;
       const { data } = supabase.storage.from("avatars").getPublicUrl(path);
       const url = `${data.publicUrl}?t=${Date.now()}`;
       const { error: updErr } = await supabase
-        .from("profiles").update({ avatar_url: url }).eq("user_id", user.id);
+        .from("profiles").upsert({ user_id:user.id, email:user.email, avatar_url: url }, { onConflict:"user_id" }).select("user_id").single();
       if (updErr) throw updErr;
       setProfile((p) => ({ ...p, avatar_url: url }));
       // Notify sidebar/header to refresh immediately
       window.dispatchEvent(new CustomEvent("admin-profile-updated"));
       toast.success("تم تحديث الصورة");
     } catch (e) {
+      if (uploaded) await supabase.storage.from("avatars").remove([path]);
       toast.error("تعذّر رفع الصورة");
     } finally {
       setUploadingAvatar(false);
     }
   };
 
-  const handleSaveBrand = () => {
-    localStorage.setItem(BRAND_KEY, JSON.stringify(brand));
-    toast.success("تم حفظ الهوية المرئية");
+  const handleSaveBrand = async () => {
+    if (!user?.id || savingBrand || loading || loadError) return;
+    if (!validAdminBrand(brand)) { toast.error("أدخل لونًا صحيحًا بصيغة #RRGGBB في كل حقل"); return; }
+    setSavingBrand(true);
+    try { setBrand(await saveAdminBrand(user.id,brand)); toast.success("تم حفظ الألوان وتطبيقها على لوحة المدير"); }
+    catch { toast.error("تعذر حفظ الألوان. لم يتم تأكيد التغيير."); }
+    finally { setSavingBrand(false); }
   };
 
   const initials = `${profile.first_name?.[0] ?? ""}${profile.last_name?.[0] ?? ""}`.toUpperCase() || "م";
+  if (loading) return <div className="p-10 text-white" role="status">جارٍ تحميل إعدادات المدير…</div>;
+  if (loadError) return <div className="p-10 space-y-4 text-white" role="alert"><p>تعذر تحميل إعدادات المدير. أعد المحاولة قبل إجراء التعديلات.</p><Button onClick={load}>إعادة المحاولة</Button></div>;
 
   return (
     <div className="p-6 space-y-6" dir="rtl">
@@ -152,7 +162,7 @@ export default function AdminSettings() {
       </div>
 
       <Tabs defaultValue="identity" dir="rtl" className="bg-white rounded-2xl shadow-card p-4">
-        <TabsList className="grid grid-cols-4 w-full h-12 bg-slate-100 p-1" dir="rtl">
+        <TabsList className="grid grid-cols-2 lg:grid-cols-5 w-full h-auto gap-1 bg-slate-100 p-1" dir="rtl">
           <TabsTrigger value="identity" className="gap-2 h-10 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow font-semibold text-slate-600">
             <UserCog className="w-4 h-4" /> الهوية الشخصية
           </TabsTrigger>
@@ -165,6 +175,7 @@ export default function AdminSettings() {
           <TabsTrigger value="general" className="gap-2 h-10 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow font-semibold text-slate-600">
             <LayoutGrid className="w-4 h-4" /> عام
           </TabsTrigger>
+          <TabsTrigger value="members" className="gap-2 h-10 data-[state=active]:bg-white data-[state=active]:text-primary font-semibold text-slate-600"><UserCog className="w-4 h-4" /> المستخدمون والصلاحيات</TabsTrigger>
         </TabsList>
 
         {/* ===== Identity ===== */}
@@ -187,12 +198,12 @@ export default function AdminSettings() {
                     {uploadingAvatar ? "جارٍ الرفع..." : "اختر صورة جديدة"}
                   </div>
                   <Input
-                    id="avatar-input" type="file" accept="image/*" className="hidden"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); }}
-                    disabled={uploadingAvatar}
+                    id="avatar-input" type="file" accept="image/png,image/jpeg,image/webp" className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleAvatarUpload(f); e.target.value=""; }}
+                    disabled={uploadingAvatar || savingProfile}
                   />
                 </Label>
-                <p className="text-xs text-muted-foreground">PNG/JPG — تظهر مباشرة في القائمة الجانبية.</p>
+                <p className="text-xs text-muted-foreground">PNG/JPG/WebP حتى 5MB — تظهر مباشرة في القائمة الجانبية.</p>
               </div>
             </CardContent>
           </Card>
@@ -223,7 +234,7 @@ export default function AdminSettings() {
                 <Input dir="rtl" className="text-right" value={profile.job_role} onChange={(e) => setProfile({ ...profile, job_role: e.target.value })} placeholder="مدير النظام" />
               </div>
               <div className="md:col-span-2 flex justify-end">
-                <Button onClick={handleSaveProfile} disabled={savingProfile} className="gap-2">
+                <Button onClick={handleSaveProfile} disabled={savingProfile || uploadingAvatar} className="gap-2">
                   <Save className="w-4 h-4" /> {savingProfile ? "جارٍ الحفظ..." : "حفظ التغييرات"}
                 </Button>
               </div>
@@ -245,27 +256,27 @@ export default function AdminSettings() {
                   ["sidebarFrom", "بداية تدرّج الشريط الجانبي"],
                   ["sidebarTo", "نهاية تدرّج الشريط الجانبي"],
                   ["goldAccent", "اللمسة الذهبية"],
-                ] as Array<[keyof BrandSettings, string]>
+                ] as Array<[keyof AdminBrand, string]>
               ).map(([key, label]) => (
                 <div key={key} className="space-y-2">
                   <Label>{label}</Label>
                   <div className="flex items-center gap-3">
                     <input
-                      type="color" value={brand[key]}
+                      aria-label={label} type="color" value={/^#[\da-f]{6}$/i.test(brand[key]) ? brand[key] : DEFAULT_ADMIN_BRAND[key]}
                       onChange={(e) => setBrand({ ...brand, [key]: e.target.value })}
                       className="h-11 w-16 rounded-lg border cursor-pointer"
                     />
-                    <Input value={brand[key]} onChange={(e) => setBrand({ ...brand, [key]: e.target.value })} className="font-mono text-sm" />
+                    <Input aria-label={`${label} رمز اللون`} value={brand[key]} onChange={(e) => setBrand({ ...brand, [key]: e.target.value })} className="font-mono text-sm" dir="ltr" />
                   </div>
                 </div>
               ))}
               <div className="md:col-span-2">
                 <Separator className="my-2" />
-                <div className="flex justify-between items-center">
-                  <p className="text-xs text-muted-foreground">يتم تطبيق الألوان على شارات المعاينة والصفحات المخصّصة.</p>
+                <div className="flex flex-wrap gap-3 justify-between items-center">
+                  <p className="text-xs text-muted-foreground">تُحفظ الألوان لحسابك على الخادم وتُطبّق على لوحة المدير في أجهزتك بعد الحفظ.</p>
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setBrand(DEFAULT_BRAND)}>استعادة الافتراضي</Button>
-                    <Button onClick={handleSaveBrand} className="gap-2"><Save className="w-4 h-4" /> حفظ الهوية</Button>
+                    <Button variant="outline" disabled={savingBrand} onClick={() => setBrand({ ...DEFAULT_ADMIN_BRAND })}>استعادة الافتراضي</Button>
+                    <Button onClick={handleSaveBrand} disabled={savingBrand} className="gap-2"><Save className="w-4 h-4" /> {savingBrand ? "جارٍ الحفظ…" : "حفظ الهوية"}</Button>
                   </div>
                 </div>
               </div>
@@ -314,10 +325,18 @@ export default function AdminSettings() {
             <CardHeader>
               <CardTitle className="text-base">إعدادات عامة</CardTitle>
             </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              ستُضاف هنا إعدادات الإشعارات، النسخ الاحتياطي، والتكاملات تباعًا.
+            <CardContent className="grid gap-3 sm:grid-cols-2">
+              <Button asChild variant="outline"><Link to="/admin/organizations">إدارة الجمعيات والاشتراكات</Link></Button>
+              <Button asChild variant="outline"><Link to="/internal-inbox">مراسلات الجمعيات</Link></Button>
+              <Button asChild variant="outline"><Link to="/platform-mail">بريد منصة كفاءة</Link></Button>
+              <Button asChild variant="outline"><Link to="/admin/reports">التقارير والتصدير</Link></Button>
             </CardContent>
           </Card>
+        </TabsContent>
+        <TabsContent value="members" className="mt-6 space-y-5">
+          <Label>الجمعية التي تريد إدارة أعضائها</Label>
+          <Select value={selectedOrg} onValueChange={setSelectedOrg} dir="rtl"><SelectTrigger aria-label="جمعية إدارة الأعضاء"><SelectValue placeholder="اختر الجمعية" /></SelectTrigger><SelectContent>{orgs.map(org => <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>)}</SelectContent></Select>
+          {selectedOrg ? <MemberRolesSettings key={selectedOrg} orgIdProp={selectedOrg} embedded /> : <p>لا توجد جمعيات متاحة.</p>}
         </TabsContent>
       </Tabs>
     </div>

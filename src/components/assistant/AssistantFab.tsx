@@ -4,6 +4,8 @@ import { Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import { getOrgPrivilegeFlags } from "@/lib/orgAuthorization";
 
 /**
  * Floating Action Button that opens the employee AI assistant.
@@ -13,6 +15,7 @@ export function AssistantFab() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { currentOrg } = useOrganization();
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -41,16 +44,15 @@ export function AssistantFab() {
         if (!cancelled) setShow(false);
         return;
       }
-      // Only employees (non-admins) — keep it personal
-      const { data: isAdmin } = await supabase.rpc("has_role", {
-        _user_id: user.id,
-        _role: "admin",
-      });
-      if (!cancelled) setShow(!isAdmin);
+      // Only employees/non-admins in the active organization.
+      const flags = await getOrgPrivilegeFlags(user.id, currentOrg?.id);
+      if (!cancelled) {
+        setShow(!(flags.isSuperAdmin || flags.isOrgAdmin));
+      }
     };
     check();
     return () => { cancelled = true; };
-  }, [user?.id, location.pathname, location.search]);
+  }, [user?.id, currentOrg?.id, location.pathname, location.search]);
 
   if (!show) return null;
 

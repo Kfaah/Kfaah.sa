@@ -52,6 +52,8 @@ export function WelcomeContentManager() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [featuring, setFeaturing] = useState(false);
   
   // حالات المعاينة المباشرة
   const [previewBg, setPreviewBg] = useState<string | null>(null);
@@ -69,6 +71,7 @@ export function WelcomeContentManager() {
 
   const fetchData = async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const [bgResult, quoteResult] = await Promise.all([
         supabase
@@ -81,19 +84,10 @@ export function WelcomeContentManager() {
           .order("display_order", { ascending: true }),
       ]);
 
-      // جلب جميع السجلات للمدير (مفعلة وغير مفعلة)
-      if (bgResult.error) {
-        console.error("Error fetching backgrounds:", bgResult.error);
-      } else {
-        setBackgrounds(bgResult.data || []);
-      }
-      
-      if (quoteResult.error) {
-        console.error("Error fetching quotes:", quoteResult.error);
-      } else {
-        setQuotes(quoteResult.data || []);
-      }
+      if (bgResult.error || quoteResult.error) throw bgResult.error || quoteResult.error;
+      setBackgrounds(bgResult.data || []); setQuotes(quoteResult.data || []);
     } catch (error) {
+      setLoadError(true);
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
@@ -102,16 +96,21 @@ export function WelcomeContentManager() {
 
   const handleUploadBackground = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || uploading) return;
+    e.target.value = "";
+    const ext: Record<string,string> = {"image/png":"png","image/jpeg":"jpg","image/webp":"webp"};
+    if (!ext[file.type] || file.size > 5 * 1024 * 1024) { toast.error("اختر صورة PNG أو JPG أو WebP بحجم لا يتجاوز 5MB"); return; }
 
     setUploading(true);
+    const fileName = `${crypto.randomUUID()}.${ext[file.type]}`;
+    let uploaded = false;
     try {
-      const fileName = `${Date.now()}-${file.name}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("welcome-backgrounds")
-        .upload(fileName, file);
+        .upload(fileName, file, {contentType:file.type,upsert:false});
 
       if (uploadError) throw uploadError;
+      uploaded = true;
 
       const { data: { publicUrl } } = supabase.storage
         .from("welcome-backgrounds")
@@ -123,13 +122,14 @@ export function WelcomeContentManager() {
           image_url: publicUrl,
           name: file.name,
           display_order: backgrounds.length,
-        });
+        }).select("id").single();
 
       if (insertError) throw insertError;
 
       toast.success("تم رفع الخلفية بنجاح");
       fetchData();
     } catch (error) {
+      if (uploaded) await supabase.storage.from("welcome-backgrounds").remove([fileName]);
       console.error("Error uploading:", error);
       toast.error("حدث خطأ أثناء رفع الخلفية");
     } finally {
@@ -142,7 +142,7 @@ export function WelcomeContentManager() {
       const { error } = await supabase
         .from("welcome_backgrounds")
         .update({ is_active: !isActive })
-        .eq("id", id);
+        .eq("id", id).select("id").single();
 
       if (error) throw error;
       
@@ -156,11 +156,10 @@ export function WelcomeContentManager() {
   };
 
   const setFeaturedBackground = async (id: string) => {
+    if (featuring) return;
+    setFeaturing(true);
     try {
-      const { error } = await supabase
-        .from("welcome_backgrounds")
-        .update({ is_featured: true, is_active: true })
-        .eq("id", id);
+      const { error } = await (supabase.rpc as any)("set_platform_welcome_background", { _id:id });
 
       if (error) throw error;
       
@@ -174,15 +173,14 @@ export function WelcomeContentManager() {
       toast.success("تم تعيين الخلفية الرئيسية لجميع المستخدمين");
     } catch (error) {
       toast.error("حدث خطأ");
-    }
+    } finally { setFeaturing(false); }
   };
 
   const clearFeaturedBackground = async () => {
+    if (featuring) return;
+    setFeaturing(true);
     try {
-      const { error } = await supabase
-        .from("welcome_backgrounds")
-        .update({ is_featured: false })
-        .eq("is_featured", true);
+      const { error } = await (supabase.rpc as any)("set_platform_welcome_background", { _id:null });
 
       if (error) throw error;
       
@@ -192,28 +190,25 @@ export function WelcomeContentManager() {
       toast.success("تم إلغاء الخلفية الرئيسية - سيتم عرض الخلفيات بشكل دوري");
     } catch (error) {
       toast.error("حدث خطأ");
-    }
+    } finally { setFeaturing(false); }
   };
 
   const deleteBackground = async (id: string, imageUrl: string) => {
     try {
-      // Extract file name from URL
-      const fileName = imageUrl.split("/").pop();
-      
-      if (fileName) {
-        await supabase.storage
-          .from("welcome-backgrounds")
-          .remove([fileName]);
-      }
-
       const { error } = await supabase
         .from("welcome_backgrounds")
         .delete()
-        .eq("id", id);
+        .eq("id", id).select("id").single();
 
       if (error) throw error;
-
       setBackgrounds(prev => prev.filter(bg => bg.id !== id));
+      const marker="/storage/v1/object/public/welcome-backgrounds/";
+      const pathname=new URL(imageUrl).pathname;
+      if (pathname.includes(marker)) {
+        const fileName=decodeURIComponent(pathname.slice(pathname.indexOf(marker)+marker.length));
+        const {error: cleanupError}=await supabase.storage.from("welcome-backgrounds").remove([fileName]);
+        if(cleanupError) {toast.error("حُذفت الخلفية من العرض، وتعذر تنظيف ملف الصورة");return;}
+      }
       toast.success("تم حذف الخلفية");
     } catch (error) {
       toast.error("حدث خطأ أثناء الحذف");
@@ -251,7 +246,7 @@ export function WelcomeContentManager() {
       const { error } = await supabase
         .from("welcome_quotes")
         .update({ is_active: !isActive })
-        .eq("id", id);
+        .eq("id", id).select("id").single();
 
       if (error) throw error;
       
@@ -269,7 +264,7 @@ export function WelcomeContentManager() {
       const { error } = await supabase
         .from("welcome_quotes")
         .delete()
-        .eq("id", id);
+        .eq("id", id).select("id").single();
 
       if (error) throw error;
 
@@ -344,7 +339,7 @@ export function WelcomeContentManager() {
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="backgrounds" className="w-full">
+        {loadError ? <div role="alert" className="p-6 space-y-3"><p>تعذر تحميل محتوى الترحيب؛ أعد المحاولة قبل التعديل.</p><Button onClick={fetchData}>إعادة المحاولة</Button></div> : <Tabs defaultValue="backgrounds" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="backgrounds" className="gap-2">
               <Image className="h-4 w-4" />
@@ -375,10 +370,10 @@ export function WelcomeContentManager() {
               <input
                 id="bg-upload"
                 type="file"
-                accept="image/*"
+                accept="image/png,image/jpeg,image/webp"
                 onChange={handleUploadBackground}
                 className="hidden"
-                disabled={uploading}
+                disabled={uploading || loading || loadError}
               />
             </div>
 
@@ -405,6 +400,7 @@ export function WelcomeContentManager() {
                         variant="outline"
                         size="sm"
                         onClick={clearFeaturedBackground}
+                        disabled={featuring}
                         className="text-amber-700 border-amber-300 hover:bg-amber-100"
                       >
                         إلغاء التعيين
@@ -451,7 +447,7 @@ export function WelcomeContentManager() {
                               className={`h-8 w-8 ${bg.is_featured ? "bg-amber-500 hover:bg-amber-600" : ""}`}
                               onClick={() => setFeaturedBackground(bg.id)}
                               title="تعيين كخلفية رئيسية"
-                              disabled={bg.is_featured}
+                              disabled={bg.is_featured || featuring}
                             >
                               <Star className={`h-4 w-4 ${bg.is_featured ? "fill-white" : ""}`} />
                             </Button>
@@ -567,7 +563,7 @@ export function WelcomeContentManager() {
               )}
             </ScrollArea>
           </TabsContent>
-        </Tabs>
+        </Tabs>}
         </DialogContent>
       </Dialog>
     </>

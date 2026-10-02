@@ -979,6 +979,7 @@ export type Database = {
           failed_rows: number
           file_name: string
           file_path: string | null
+          file_size_bytes: number | null
           file_type: string
           for_date: string | null
           id: string
@@ -1001,6 +1002,7 @@ export type Database = {
           failed_rows?: number
           file_name: string
           file_path?: string | null
+          file_size_bytes?: number | null
           file_type: string
           for_date?: string | null
           id?: string
@@ -1023,6 +1025,7 @@ export type Database = {
           failed_rows?: number
           file_name?: string
           file_path?: string | null
+          file_size_bytes?: number | null
           file_type?: string
           for_date?: string | null
           id?: string
@@ -5523,6 +5526,7 @@ export type Database = {
           ai_generated: boolean | null
           assigned_employee_id: string | null
           category: string | null
+          completed_at: string | null
           completion_percentage: number | null
           created_at: string
           dedupe_key: string | null
@@ -5549,6 +5553,7 @@ export type Database = {
           ai_generated?: boolean | null
           assigned_employee_id?: string | null
           category?: string | null
+          completed_at?: string | null
           completion_percentage?: number | null
           created_at?: string
           dedupe_key?: string | null
@@ -5575,6 +5580,7 @@ export type Database = {
           ai_generated?: boolean | null
           assigned_employee_id?: string | null
           category?: string | null
+          completed_at?: string | null
           completion_percentage?: number | null
           created_at?: string
           dedupe_key?: string | null
@@ -5774,6 +5780,54 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      save_manual_operational_plan: {
+        Args: { p_org: string; p_request_id: string; p_payload: Json }
+        Returns: Json
+      }
+      save_manual_executive_plans: {
+        Args: { p_org: string; p_rows: Json }
+        Returns: Json
+      }
+      save_activity_task_batch: {
+        Args: { p_org: string; p_plan: string; p_rows: Json; p_related: Json }
+        Returns: Json
+      }
+      save_generated_executive_batch: {
+        Args: { p_org: string; p_month_ids: string[]; p_plans: Json; p_tasks: Json }
+        Returns: Json
+      }
+      org_admin_dashboard: {
+        Args: { p_org: string; p_week_start: string }
+        Returns: Json
+      }
+      org_donation_chart: {
+        Args: { p_org: string; p_from?: string | null; p_to?: string | null }
+        Returns: Json
+      }
+      save_generated_action_plan: {
+        Args: { p_plan: Json; p_tasks: Json }
+        Returns: string
+      }
+      viewer_may_write_storage: {
+        Args: { _bucket: string; _name: string }
+        Returns: boolean
+      }
+      organization_member_can_write: {
+        Args: { _user: string; _org: string }
+        Returns: boolean
+      }
+      org_reporting_summary: {
+        Args: { p_org: string; p_from?: string | null; p_to?: string | null; p_prev_from?: string | null; p_prev_to?: string | null }
+        Returns: Json
+      }
+      org_smart_financial_context: {
+        Args: { p_org: string }
+        Returns: Json
+      }
+      org_financial_summary: {
+        Args: { p_org: string }
+        Returns: Json
+      }
       _upsert_baseline: {
         Args: { _actual: number; _key: string; _org: string }
         Returns: undefined

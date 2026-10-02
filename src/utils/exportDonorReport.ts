@@ -3,7 +3,7 @@ import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 
 const fmtSAR = (n: number) =>
-  new Intl.NumberFormat("ar-SA", { maximumFractionDigits: 0 }).format(Math.round(n || 0)) + " ر.س";
+  new Intl.NumberFormat("ar-SA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0) + " ر.س";
 
 export interface DonorReportData {
   donor_name: string;

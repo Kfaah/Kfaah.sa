@@ -31,6 +31,10 @@ jobs:
       KFAAH_EXPECTED_API_URL: https://kfaah.sa
       MANAGER_URL: https://kfaah-manager.floot.app
     steps:
+      - name: Mask payload token
+        env:
+          PAYLOAD_TOKEN: ${{ inputs.payload_token }}
+        run: echo "::add-mask::$PAYLOAD_TOKEN"
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -49,6 +53,8 @@ jobs:
             --data-urlencode "token=$PAYLOAD_TOKEN" \
             "$MANAGER_URL/_api/publish-payload" -o /tmp/kfaah-reviewed.json
           test -s /tmp/kfaah-reviewed.json
+          reviewed_base="$(jq -r '.baseSha' /tmp/kfaah-reviewed.json)"
+          test "$reviewed_base" = "$BASE_SHA" || { echo "Preview base differs from checkout; review a new preview" >&2; exit 1; }
 
       - name: Apply reviewed edits
         run: |
@@ -57,7 +63,7 @@ jobs:
           const path = require("path");
           const payload = JSON.parse(fs.readFileSync("/tmp/kfaah-reviewed.json", "utf8"));
           if (!Array.isArray(payload.edits) || payload.edits.length === 0) throw new Error("No reviewed edits");
-          const allowed = (p) => p === "index.html" || p === "vite.config.ts" || p.startsWith("src/") || p.startsWith("public/");
+          const allowed = (p) => typeof p === "string" && !p.includes("\\") && !p.includes("%") && !p.split("/").some(x => !x || x.startsWith(".")) && (p === "index.html" || p === "vite.config.ts" || p.startsWith("src/") || p.startsWith("public/"));
           for (const edit of payload.edits) {
             if (!edit || typeof edit.path !== "string" || !allowed(edit.path)) throw new Error("Protected path: " + String(edit?.path));
             const target = path.resolve(process.cwd(), edit.path);
@@ -70,6 +76,7 @@ jobs:
             }
             const current = fs.readFileSync(target, "utf8");
             const oldText = String(edit.old);
+            if (!oldText) throw new Error("Empty reviewed anchor");
             const first = current.indexOf(oldText);
             const last = current.lastIndexOf(oldText);
             if (first < 0 || first !== last) throw new Error("Reviewed text is not unique in " + edit.path);
@@ -124,6 +131,7 @@ jobs:
         run: |
           set -euo pipefail
           rsync -az --delete --exclude '.git/' --exclude 'node_modules/' --exclude 'vite.fast.config.ts' --exclude '.env.local' -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" ./ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/baseline/"
+          printf '%s\n' "$REVIEW_SHA" | ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'cat > /home/deploy/kfaah-fast/baseline/.manager-base-sha'
 
       - name: Promote staging to live and verify
         env:

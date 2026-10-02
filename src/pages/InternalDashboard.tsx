@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import OrgInternalDashboard from "@/pages/admin/OrgInternalDashboard";
 import { WelcomeScreen } from "@/components/welcome/WelcomeScreen";
 import { useIsDemo } from "@/hooks/useIsDemo";
+import { getOrgPrivilegeFlags } from "@/lib/orgAuthorization";
+import AdminActionPlanDetails from "@/pages/admin/AdminActionPlanDetails";
 
 /**
  * Wrapper around OrgInternalDashboard for org-side access.
@@ -16,10 +18,10 @@ import { useIsDemo } from "@/hooks/useIsDemo";
  * Then injects it into the URL via a client redirect-free render.
  */
 export default function InternalDashboard() {
-  const { slug } = useParams<{ slug?: string }>();
+  const { slug, planId } = useParams<{ slug?: string; planId?: string }>();
   const [searchParams] = useSearchParams();
   const tab = searchParams.get("tab") ?? undefined;
-  const isSectionRoute = Boolean(tab);
+  const isSectionRoute = Boolean(tab || planId);
   const { user } = useAuth();
   const { isDemo, loading: demoLoading } = useIsDemo();
   const [orgId, setOrgId] = useState<string | null>(null);
@@ -63,16 +65,35 @@ export default function InternalDashboard() {
         resolvedOrgId = (data as string | null) ?? null;
       }
 
-      // 2) check role: admin / super_admin / employees.role_level=admin
-      const { data: roleRow } = await supabase.rpc("get_user_role", { _user_id: user.id });
-      let canSee = roleRow === "admin" || roleRow === "super_admin" || roleRow === "viewer";
-      if (!canSee) {
-        const { data: emp } = await supabase
-          .from("employees")
-          .select("role_level")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        canSee = emp?.role_level === "admin";
+      // 2) authorize against the organization being opened.
+      let canSee = false;
+      if (resolvedOrgId) {
+        const flags = await getOrgPrivilegeFlags(user.id, resolvedOrgId);
+        canSee = flags.isSuperAdmin || flags.isOrgAdmin;
+
+        if (!canSee) {
+          const [{ data: viewer }, { data: membership }, { data: emp }] =
+            await Promise.all([
+              supabase.rpc("is_viewer", { _user_id: user.id }),
+              supabase
+                .from("user_organizations")
+                .select("id")
+                .eq("user_id", user.id)
+                .eq("organization_id", resolvedOrgId)
+                .eq("approval_status", "approved")
+                .maybeSingle(),
+              supabase
+                .from("employees")
+                .select("role_level")
+                .eq("user_id", user.id)
+                .eq("organization_id", resolvedOrgId)
+                .maybeSingle(),
+            ]);
+
+          canSee =
+            (!!viewer && !!membership) ||
+            emp?.role_level === "admin";
+        }
       }
 
       if (cancelled) return;
@@ -111,7 +132,8 @@ export default function InternalDashboard() {
   return (
     <DashboardLayout>
       {showWelcome && <WelcomeScreen />}
-      <OrgInternalDashboard orgIdProp={orgId} initialTab={tab} standaloneTab={isSectionRoute} />
+      {planId ? <AdminActionPlanDetails orgIdProp={orgId} /> :
+        <OrgInternalDashboard orgIdProp={orgId} initialTab={tab} standaloneTab={isSectionRoute} />}
     </DashboardLayout>
   );
 }

@@ -461,7 +461,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
             ${logoBox(kafaahLogoData, "منصة كفاءة", 48)}
             <div style="font-size:10px;line-height:1.5">
               <div style="font-weight:800;font-size:12px">منصة كفاءة</div>
-              <div style="opacity:.85">لإدارة التسويق الإلكتروني للجمعيات</div>
+              <div style="opacity:.85">لإدارة التسويق الإلكتروني وتنمية الموارد المالية للجمعيات</div>
             </div>
           </div>
         </div>
@@ -718,7 +718,7 @@ export default function StoreOverviewReport({ orgId, onBack }: { orgId: string; 
                 </div>
                 <div className="leading-tight">
                   <div className="font-bold">منصة كفاءة</div>
-                  <div className="opacity-80">لإدارة التسويق الإلكتروني للجمعيات</div>
+                  <div className="opacity-80">لإدارة التسويق الإلكتروني وتنمية الموارد المالية للجمعيات</div>
                 </div>
               </div>
             </div>

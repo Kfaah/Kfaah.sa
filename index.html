@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>منصة كفاءة لإدارة التسويق الإلكتروني للجمعيات</title>
-    <meta name="description" content="منصة كفاءة: منصة موحدة لإدارة التسويق الإلكتروني للجمعيات، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.">
+    <title>منصة كفاءة لإدارة التسويق الإلكتروني وتنمية الموارد المالية للجمعيات</title>
+    <meta name="description" content="منصة كفاءة: منصة موحدة لإدارة التسويق الإلكتروني وتنمية الموارد المالية للجمعيات، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.">
     <meta name="author" content="منصة كفاءة" />
     <link rel="icon" href="/favicon.png" type="image/png" />
 
@@ -21,8 +21,8 @@
       //      The UI is revealed ONLY after real org branding is applied.
       //      This avoids published-site flicker on empty cache / slow networks.
       (function () {
-        var SUPABASE_URL = "%VITE_SUPABASE_URL%";
-        var SUPABASE_KEY = "%VITE_SUPABASE_PUBLISHABLE_KEY%";
+        var SUPABASE_URL = "%VITE_SUPABASE_URL%".trim();
+        var SUPABASE_KEY = "%VITE_SUPABASE_PUBLISHABLE_KEY%".trim();
 
         function hexToHsl(hex) {
           var m = /^#?([0-9a-f]{6})$/i.exec((hex || "").trim());
@@ -205,10 +205,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-    <meta property="og:title" content="منصة كفاءة لإدارة التسويق الإلكتروني للجمعيات">
-  <meta name="twitter:title" content="منصة كفاءة لإدارة التسويق الإلكتروني للجمعيات">
-  <meta property="og:description" content="منصة كفاءة: منصة موحدة لإدارة التسويق الإلكتروني للجمعيات، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.">
-  <meta name="twitter:description" content="منصة كفاءة: منصة موحدة لإدارة التسويق الإلكتروني للجمعيات، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.">
+    <meta property="og:title" content="منصة كفاءة لإدارة التسويق الإلكتروني وتنمية الموارد المالية للجمعيات">
+  <meta name="twitter:title" content="منصة كفاءة لإدارة التسويق الإلكتروني وتنمية الموارد المالية للجمعيات">
+  <meta property="og:description" content="منصة كفاءة: منصة موحدة لإدارة التسويق الإلكتروني وتنمية الموارد المالية للجمعيات، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.">
+  <meta name="twitter:description" content="منصة كفاءة: منصة موحدة لإدارة التسويق الإلكتروني وتنمية الموارد المالية للجمعيات، متابعة المتبرعين، وقياس الأداء بكفاءة عالية.">
 </head>
 
   <body>

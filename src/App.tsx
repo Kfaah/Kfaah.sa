@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { PreviewModeProvider, usePreviewMode } from "@/contexts/PreviewModeContext";
 import { ConfirmDialogProvider } from "@/components/ui/confirm-dialog";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import { getOrgPrivilegeFlags } from "@/lib/orgAuthorization";
 // Eagerly-loaded shells (small + likely needed immediately)
 import PublicLanding from "./pages/PublicLanding";
 
@@ -60,7 +62,9 @@ const WelcomeSettings = lazyWithRetry(() => import("./pages/settings/WelcomeSett
 const MembersSettings = lazyWithRetry(() => import("./pages/settings/MembersSettings"));
 const MemberRolesSettings = lazyWithRetry(() => import("./pages/settings/MemberRolesSettings"));
 const ExportsSettings = lazyWithRetry(() => import("./pages/settings/ExportsSettings"));
-const ComingSoonSettings = lazyWithRetry(() => import("./pages/settings/ComingSoonSettings"));
+const NotificationSettings = lazyWithRetry(() => import("./pages/settings/NotificationSettings"));
+const SecuritySettings = lazyWithRetry(() => import("./pages/settings/SecuritySettings"));
+import { NotificationListener } from "@/components/NotificationListener";
 const BackupSettings = lazyWithRetry(() => import("./pages/settings/BackupSettings"));
 import SettingsAccessGuard from "./components/settings/SettingsAccessGuard";
 const Uploads = lazyWithRetry(() => import("./pages/Uploads"));
@@ -92,10 +96,10 @@ const LetterPage = lazyWithRetry(() => import("./pages/LetterPage"));
 
 const PROTECTED_ROOTS = new Set([
   "admin", "app", "employees", "roles", "tasks", "plans", "executive-plans",
-  "operational-plans", "profile", "settings", "uploads", "intelligence",
+  "operational-plans", "action-plans", "profile", "settings", "uploads", "intelligence",
   "internal-dashboard", "my-accountability", "my-performance", "employee-onboarding",
   "staff-duties-upload", "my-assistant", "performance", "organizations",
-  "messages",
+  "messages", "inbox", "platform-mail", "internal-inbox",
 ]);
 
 function isPublicEntryPath(pathname: string) {
@@ -129,6 +133,7 @@ function RouteFallback() {
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut } = useAuth();
   const { isPreviewMode } = usePreviewMode();
+  const { currentOrg, availableOrgs, isSuperAdmin, refresh, switchOrg, loading: orgLoading } = useOrganization();
   const location = useLocation();
 
   // Onboarding gate: any non-admin user must complete the intelligence
@@ -203,16 +208,48 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         if (!cancelled) setOnboardingState("ok");
         return;
       }
-      // Admins / super admins / managers / viewers bypass the onboarding requirement.
-      const [{ data: isAdmin }, { data: isSuper }, { data: isMgr }, { data: isViewer }] =
+      if (orgLoading) return;
+      if (currentOrg?.is_active === false && !isSuperAdmin) {
+        if (!cancelled) setOnboardingState("ok");
+        return;
+      }
+
+      // Bypass onboarding only when the privilege belongs to the active org.
+      const flags = await getOrgPrivilegeFlags(user.id, currentOrg?.id);
+      const [{ data: employee }, { data: isViewer }, membershipResult] =
         await Promise.all([
-          supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }),
-          supabase.rpc("is_super_admin", { _user_id: user.id }),
-          supabase.rpc("is_manager", { _user_id: user.id }),
+          currentOrg?.id
+            ? supabase
+                .from("employees")
+                .select("role_level")
+                .eq("user_id", user.id)
+                .eq("organization_id", currentOrg.id)
+                .maybeSingle()
+            : Promise.resolve({ data: null, error: null }),
           supabase.rpc("is_viewer", { _user_id: user.id }),
+          currentOrg?.id
+            ? supabase
+                .from("user_organizations")
+                .select("id")
+                .eq("user_id", user.id)
+                .eq("organization_id", currentOrg.id)
+                .eq("approval_status", "approved")
+                .maybeSingle()
+            : Promise.resolve({ data: null, error: null }),
         ]);
+
       if (cancelled) return;
-      if (isAdmin || isSuper || isMgr || isViewer) {
+      const managerInOrg =
+        employee?.role_level === "manager" ||
+        employee?.role_level === "admin";
+      const viewerInOrg = isViewer === true && !!membershipResult.data;
+
+      if (
+        flags.isSuperAdmin ||
+        flags.isOrgAdmin ||
+        managerInOrg ||
+        viewerInOrg
+      ) {
         setOnboardingState("ok");
         return;
       }
@@ -226,7 +263,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     };
     run();
     return () => { cancelled = true; };
-  }, [user?.id, isPreviewMode, isEmbedded, isOnboardingPath, location.pathname]);
+  }, [
+    user?.id,
+    isPreviewMode,
+    isEmbedded,
+    isOnboardingPath,
+    location.pathname,
+    currentOrg?.id,
+    currentOrg?.is_active,
+    isSuperAdmin,
+    orgLoading,
+  ]);
 
   // في وضع المعاينة، نسمح بالوصول مباشرة
   if (isPreviewMode) {
@@ -248,6 +295,23 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/" replace />;
+  }
+
+  if (!orgLoading && !isSuperAdmin && currentOrg?.is_active === false) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-background p-6" dir="rtl">
+        <div className="max-w-lg text-center space-y-5 rounded-xl border bg-card p-8 shadow-sm">
+          <h1 className="text-2xl font-bold">الجمعية موقوفة مؤقتًا</h1>
+          <p>{currentOrg.name}</p>
+          <p className="text-muted-foreground">تم إيقاف الوصول إلى هذه الجمعية. بياناتها محفوظة، ويمكن لمدير منصة كفاءة إعادة تفعيلها.</p>
+          <button className="rounded-lg bg-primary px-5 py-2 text-primary-foreground" onClick={() => void refresh()}>تحديث الحالة</button>
+          {availableOrgs.filter(o => o.is_active && o.id !== currentOrg.id).map(o => (
+            <button key={o.id} className="block w-full rounded-lg border px-4 py-2" onClick={() => { switchOrg(o.id); window.location.assign(o.slug ? `/${o.slug}/app` : "/app"); }}>الانتقال إلى {o.name}</button>
+          ))}
+          <button className="block w-full text-sm underline" onClick={() => void signOut()}>تسجيل الخروج</button>
+        </div>
+      </main>
+    );
   }
 
   if (routeOrgAccess === "checking") {
@@ -278,6 +342,55 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       : null;
     const target = slug ? `/${slug}/employee-onboarding` : "/employee-onboarding";
     return <Navigate to={target} replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function SuperAdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const { isPreviewMode } = usePreviewMode();
+  const [access, setAccess] = useState<"checking" | "allowed" | "denied">("checking");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const check = async () => {
+      if (loading) return;
+      if (!user?.id || isPreviewMode) {
+        if (!cancelled) setAccess("denied");
+        return;
+      }
+
+      setAccess("checking");
+      const { data, error } = await supabase.rpc("is_super_admin", {
+        _user_id: user.id,
+      });
+
+      if (cancelled) return;
+      setAccess(!error && data === true ? "allowed" : "denied");
+    };
+
+    check();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, loading, isPreviewMode]);
+
+  if (loading || access === "checking") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (access !== "allowed") {
+    return <Navigate to="/app" replace />;
   }
 
   return <>{children}</>;
@@ -329,10 +442,10 @@ function AppRoutes() {
       <Route path="/about/vision-mission" element={<PlatformVisionMission />} />
       <Route path="/about/goals" element={<PlatformGoals />} />
       <Route path="/support" element={<PlatformSupport />} />
-      <Route path="/inbox" element={<SupportInbox />} />
-      <Route path="/platform-mail" element={<PlatformMail />} />
+      <Route path="/inbox" element={<SuperAdminRoute><SupportInbox /></SuperAdminRoute>} />
+      <Route path="/platform-mail" element={<SuperAdminRoute><PlatformMail /></SuperAdminRoute>} />
       <Route path="/messages" element={<Messages />} />
-      <Route path="/internal-inbox" element={<InternalInbox />} />
+      <Route path="/internal-inbox" element={<SuperAdminRoute><InternalInbox /></SuperAdminRoute>} />
       <Route path="/unsubscribe" element={<Unsubscribe />} />
       <Route path="/letter-invitation" element={<LetterPage />} />
 
@@ -347,27 +460,20 @@ function AppRoutes() {
       />
 
       {/* Super-admin hub: لوحة تحكم متكاملة بـ sidebar */}
-      <Route path="/admin" element={<ProtectedRoute><AdminLayout><AdminOverview /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/organizations" element={<ProtectedRoute><AdminLayout><AdminOrganizations /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/organizations/:orgId/profile" element={<ProtectedRoute><AdminLayout><OrganizationProfile /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/organizations/:orgId/dashboard" element={<ProtectedRoute><AdminLayout><OrgInternalDashboard /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/test/sources-rtl" element={<ProtectedRoute><AdminLayout><SourcesRtlTest /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/compare" element={<ProtectedRoute><AdminLayout><AdminCompare /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/analytics" element={<ProtectedRoute><AdminLayout><AdminAnalytics /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/action-plans" element={<ProtectedRoute><AdminLayout><AdminActionPlans /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/action-plans/:planId" element={<ProtectedRoute><AdminLayout><AdminActionPlanDetails /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/reports" element={<ProtectedRoute><AdminLayout><AdminReports /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/innovation" element={<ProtectedRoute><AdminLayout><AdminInnovation /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/settings" element={<ProtectedRoute><AdminLayout><AdminSettings /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin" element={<SuperAdminRoute><AdminLayout><AdminOverview /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/organizations" element={<SuperAdminRoute><AdminLayout><AdminOrganizations /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/organizations/:orgId/profile" element={<SuperAdminRoute><AdminLayout><OrganizationProfile /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/organizations/:orgId/dashboard" element={<SuperAdminRoute><AdminLayout><OrgInternalDashboard /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/test/sources-rtl" element={<SuperAdminRoute><AdminLayout><SourcesRtlTest /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/compare" element={<SuperAdminRoute><AdminLayout><AdminCompare /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/analytics" element={<SuperAdminRoute><AdminLayout><AdminAnalytics /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/action-plans" element={<SuperAdminRoute><AdminLayout><AdminActionPlans /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/action-plans/:planId" element={<SuperAdminRoute><AdminLayout><AdminActionPlanDetails /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/reports" element={<SuperAdminRoute><AdminLayout><AdminReports /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/innovation" element={<SuperAdminRoute><AdminLayout><AdminInnovation /></AdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/settings" element={<SuperAdminRoute><AdminLayout><AdminSettings /></AdminLayout></SuperAdminRoute>} />
       {/* Org management (edit form etc) — kept inside an org's dashboard */}
-      <Route
-        path="/organizations"
-        element={
-          <ProtectedRoute>
-            <Organizations />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/organizations" element={<SuperAdminRoute><Organizations /></SuperAdminRoute>} />
 
       {/* Application (per-org workspace) */}
       <Route
@@ -404,13 +510,15 @@ function AppRoutes() {
       <Route path="/settings/welcome" element={<ProtectedRoute><SettingsAccessGuard><WelcomeSettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/settings/exports" element={<ProtectedRoute><SettingsAccessGuard><ExportsSettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/settings/backup" element={<ProtectedRoute><SettingsAccessGuard><BackupSettings /></SettingsAccessGuard></ProtectedRoute>} />
-      <Route path="/settings/notifications" element={<ProtectedRoute><SettingsAccessGuard><ComingSoonSettings title="الإشعارات" subtitle="تخصيص قواعد التنبيهات" /></SettingsAccessGuard></ProtectedRoute>} />
-      <Route path="/settings/security" element={<ProtectedRoute><SettingsAccessGuard><ComingSoonSettings title="الأمان والخصوصية" /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/settings/notifications" element={<ProtectedRoute><SettingsAccessGuard><NotificationSettings /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/settings/security" element={<ProtectedRoute><SettingsAccessGuard><SecuritySettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/settings/members" element={<ProtectedRoute><SettingsAccessGuard><MembersSettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/settings/member-roles" element={<ProtectedRoute><SettingsAccessGuard><MemberRolesSettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
       <Route path="/intelligence" element={<ProtectedRoute><Intelligence /></ProtectedRoute>} />
       <Route path="/internal-dashboard" element={<ProtectedRoute><InternalDashboard /></ProtectedRoute>} />
+      <Route path="/action-plans/:planId" element={<ProtectedRoute><InternalDashboard /></ProtectedRoute>} />
+      <Route path="/:slug/action-plans/:planId" element={<ProtectedRoute><InternalDashboard /></ProtectedRoute>} />
       <Route path="/my-accountability" element={<ProtectedRoute><MyAccountability /></ProtectedRoute>} />
       <Route path="/my-performance" element={<ProtectedRoute><MyPerformance /></ProtectedRoute>} />
       <Route path="/employee-onboarding" element={<ProtectedRoute><EmployeeOnboarding /></ProtectedRoute>} />
@@ -447,8 +555,8 @@ function AppRoutes() {
       <Route path="/:slug/settings/welcome" element={<ProtectedRoute><SettingsAccessGuard><WelcomeSettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/:slug/settings/exports" element={<ProtectedRoute><SettingsAccessGuard><ExportsSettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/:slug/settings/backup" element={<ProtectedRoute><SettingsAccessGuard><BackupSettings /></SettingsAccessGuard></ProtectedRoute>} />
-      <Route path="/:slug/settings/notifications" element={<ProtectedRoute><SettingsAccessGuard><ComingSoonSettings title="الإشعارات" /></SettingsAccessGuard></ProtectedRoute>} />
-      <Route path="/:slug/settings/security" element={<ProtectedRoute><SettingsAccessGuard><ComingSoonSettings title="الأمان والخصوصية" /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/:slug/settings/notifications" element={<ProtectedRoute><SettingsAccessGuard><NotificationSettings /></SettingsAccessGuard></ProtectedRoute>} />
+      <Route path="/:slug/settings/security" element={<ProtectedRoute><SettingsAccessGuard><SecuritySettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/:slug/settings/members" element={<ProtectedRoute><SettingsAccessGuard><MembersSettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/:slug/settings/member-roles" element={<ProtectedRoute><SettingsAccessGuard><MemberRolesSettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/:slug/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
@@ -495,6 +603,7 @@ function AppContent() {
               <TooltipProvider>
                 <Toaster />
                 <Sonner />
+                <NotificationListener />
                 <DemoModeShell>
                   <AppRoutes />
                   <AssistantFab />

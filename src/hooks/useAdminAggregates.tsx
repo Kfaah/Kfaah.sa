@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export type DateRange = { from: Date | null; to: Date | null; label: string };
 
@@ -70,6 +71,7 @@ function monthsBetween(from: Date, to: Date) {
 export function useAdminAggregates(range?: DateRange) {
   const [metrics, setMetrics] = useState<OrgMetrics[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const fromIso = range?.from ? range.from.toISOString() : null;
@@ -78,126 +80,41 @@ export function useAdminAggregates(range?: DateRange) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      setLoading(true);
-      const { data: orgs } = await supabase
+      setLoading(true); setError(null); setMetrics([]);
+      const { data: orgs, error: orgError } = await supabase
         .from("organizations")
         .select("id, name, slug, is_active")
         .order("created_at", { ascending: true });
 
+      if (orgError) throw orgError;
       if (!orgs) { if (!cancelled) { setMetrics([]); setLoading(false); } return; }
 
       const results = await Promise.all(orgs.map(async (o) => {
         const orgId = o.id;
-        const head = { count: "exact" as const, head: true };
-
-        // Helper to apply date range to a query on a date column
-        const withRange = (q: any, col: string) => {
-          if (fromIso) q = q.gte(col, fromIso);
-          if (toIso) q = q.lte(col, toIso);
-          return q;
-        };
-
-        // Previous full calendar month bounds (independent of filter)
-        const _now = new Date();
-        const prevMonthEnd = new Date(_now.getFullYear(), _now.getMonth(), 0, 23, 59, 59, 999);
-        const prevMonthStart = new Date(prevMonthEnd.getFullYear(), prevMonthEnd.getMonth(), 1, 0, 0, 0, 0);
-        const prevMonthLabel = `${prevMonthStart.getFullYear()}-${String(prevMonthStart.getMonth() + 1).padStart(2, "0")}`;
-
-        const [
-          membersRes, donorsTotalRes, donCountRes, donSumRes, activeDonorsRes,
-          abCartsRes, abRecoveredRes, failedRes,
-          transfersRes, matchedRes,
-          campaignsRes, ideasRes, insightsRes,
-          tasksTotalRes, tasksDoneRes, employeesRes,
-          giftsCountRes, giftsRowsRes, giftsDeliveredRes,
-        ] = await Promise.all([
-          supabase.from("user_organizations").select("*", head).eq("organization_id", orgId),
-          supabase.from("donors").select("*", head).eq("organization_id", orgId),
-          withRange(supabase.from("donations").select("*", head).eq("organization_id", orgId), "donation_date"),
-          withRange(supabase.from("donations").select("amount, donor_id, donor_phone, project_name").eq("organization_id", orgId), "donation_date").limit(20000),
-          // active donors derived from donations result; placeholder
-          Promise.resolve({ data: null, count: null } as any),
-          withRange(supabase.from("abandoned_carts").select("*", head).eq("organization_id", orgId), "abandoned_at"),
-          withRange(supabase.from("abandoned_carts").select("*", head).eq("organization_id", orgId).eq("recovered", true), "abandoned_at"),
-          withRange(supabase.from("failed_donations").select("*", head).eq("organization_id", orgId), "attempted_at"),
-          withRange(supabase.from("bank_transfers").select("*", head).eq("organization_id", orgId), "transfer_date"),
-          withRange(supabase.from("bank_transfers").select("*", head).eq("organization_id", orgId).eq("reconciliation_status", "matched"), "transfer_date"),
-          supabase.from("campaigns").select("*", head).eq("organization_id", orgId),
-          supabase.from("marketing_ideas").select("*", head).eq("organization_id", orgId),
-          supabase.from("donor_insights").select("*", head).eq("organization_id", orgId),
-          withRange(supabase.from("tasks").select("*", head).eq("organization_id", orgId), "created_at"),
-          withRange(supabase.from("tasks").select("*", head).eq("organization_id", orgId).eq("status", "completed"), "created_at"),
-          supabase.from("employees").select("*", head).eq("organization_id", orgId),
-          withRange(supabase.from("gifts").select("*", head).eq("organization_id", orgId), "gift_date"),
-          withRange(supabase.from("gifts").select("amount, giver_donor_id, giver_phone, delivery_status").eq("organization_id", orgId), "gift_date").limit(20000),
-          withRange(supabase.from("gifts").select("*", head).eq("organization_id", orgId).eq("delivery_status", "delivered"), "gift_date"),
-        ]);
-
-        const recurringRes = await supabase
-          .from("donors").select("*", head)
-          .eq("organization_id", orgId).gte("donations_count", 2);
-
-        // Previous full month donations (independent of selected filter)
-        const prevMonthRes = await supabase
-          .from("donations")
-          .select("amount")
-          .eq("organization_id", orgId)
-          .gte("donation_date", prevMonthStart.toISOString())
-          .lte("donation_date", prevMonthEnd.toISOString())
-          .limit(20000);
-        const prev_month_donations = (prevMonthRes.data || []).reduce(
-          (s: number, r: any) => s + Number(r.amount || 0), 0
-        );
-
-        const donRows = (donSumRes.data || []) as any[];
-        const total_donated = donRows.reduce((s, r) => s + Number(r.amount || 0), 0);
-        // active donors in period: distinct donor_id (or phone fallback)
-        const activeSet = new Set<string>();
-        donRows.forEach(r => {
-          const k = r.donor_id || r.donor_phone;
-          if (k) activeSet.add(String(k));
+        const nowForMonth = new Date();
+        const previousStart = new Date(nowForMonth.getFullYear(), nowForMonth.getMonth() - 1, 1);
+        const previousEnd = new Date(nowForMonth.getFullYear(), nowForMonth.getMonth(), 1);
+        const prevMonthLabel = `${previousStart.getFullYear()}-${String(previousStart.getMonth() + 1).padStart(2, "0")}`;
+        const { data, error } = await supabase.rpc("org_reporting_summary", {
+          p_org: orgId, p_from: fromIso, p_to: toIso,
+          p_prev_from: previousStart.toISOString(), p_prev_to: previousEnd.toISOString(),
         });
-        const active_donors = activeSet.size;
-
-        // === Projects breakdown from donations ===
-        const projectMap = new Map<string, number>();
-        donRows.forEach(r => {
-          const name = (r.project_name || "").toString().trim();
-          if (!name) return;
-          projectMap.set(name, (projectMap.get(name) || 0) + Number(r.amount || 0));
-        });
-        const projects_count = projectMap.size;
-        let top_project_name: string | null = null;
-        let top_project_amount = 0;
-        for (const [name, amt] of projectMap) {
-          if (amt > top_project_amount) { top_project_amount = amt; top_project_name = name; }
-        }
-        const top_project_share = total_donated > 0 ? (top_project_amount / total_donated) * 100 : 0;
-
-        // === Gifts ===
-        const giftRows = (giftsRowsRes.data || []) as any[];
-        const gifts_count = giftsCountRes.count || 0;
-        const gifts_amount = giftRows.reduce((s, r) => s + Number(r.amount || 0), 0);
-        const gifts_delivered = giftsDeliveredRes.count || 0;
-        const gifts_delivery_rate = gifts_count ? (gifts_delivered / gifts_count) * 100 : 0;
-        const giverSet = new Set<string>();
-        giftRows.forEach(r => {
-          const k = r.giver_donor_id || r.giver_phone;
-          if (k) giverSet.add(String(k));
-        });
-        const unique_gift_givers = giverSet.size;
-
-        const donations_count = donCountRes.count || 0;
-        const donors_total = donorsTotalRes.count || 0;
-        const donors = active_donors > 0 ? active_donors : (fromIso || toIso ? 0 : donors_total);
-        const recurring = recurringRes.count || 0;
-        const abandoned = abCartsRes.count || 0;
-        const recovered = abRecoveredRes.count || 0;
-        const transfers = transfersRes.count || 0;
-        const matched = matchedRes.count || 0;
-        const tasksTotal = tasksTotalRes.count || 0;
-        const tasksDone = tasksDoneRes.count || 0;
-        const failed = failedRes.count || 0;
+        if (error || !data) throw error || new Error("Reporting aggregate missing");
+        const summary = data as unknown as Record<string, number | string | null>;
+        const n = (key: string) => Number(summary[key] ?? 0);
+        const donations_count = n("donations_count"), total_donated = n("total_donated");
+        const donors_total = n("donors_total");
+        const donors = n("active_donors") || (fromIso || toIso ? 0 : donors_total);
+        const recurring = n("recurring_donors"), abandoned = n("abandoned_carts"), recovered = n("recovered_carts");
+        const transfers = n("bank_transfers"), matched = n("matched_transfers"), failed = n("failed_donations");
+        const tasksTotal = n("tasks_total"), tasksDone = n("tasks_completed");
+        const gifts_count = n("gifts_count"), gifts_amount = n("gifts_amount"), gifts_delivered = n("gifts_delivered");
+        const gifts_delivery_rate = gifts_count ? gifts_delivered / gifts_count * 100 : 0;
+        const unique_gift_givers = n("unique_gift_givers"), projects_count = n("projects_count");
+        const top_project_name = summary.top_project_name as string | null;
+        const top_project_amount = n("top_project_amount");
+        const top_project_share = total_donated ? top_project_amount / total_donated * 100 : 0;
+        const prev_month_donations = n("prev_month_donations");
 
         const avg_donation = donations_count ? total_donated / donations_count : 0;
         const recovery_rate = abandoned ? (recovered / abandoned) * 100 : 0;
@@ -231,7 +148,7 @@ export function useAdminAggregates(range?: DateRange) {
 
         const donor_engagement_score = clamp(recurring_pct * 1.5 + (donors > 0 ? Math.min(40, Math.log10(donors + 1) * 12) : 0));
         const service_score = clamp(recovery_rate * 0.6 + match_rate * 0.4);
-        const team_score = clamp(completion * 0.7 + Math.log10((employeesRes.count || 0) + 1) * 10);
+        const team_score = clamp(completion * 0.7 + Math.log10((n("employees_count")) + 1) * 10);
         const overall_score = clamp(
           (fundraising_score + donor_engagement_score + service_score + team_score) / 4
         );
@@ -241,7 +158,7 @@ export function useAdminAggregates(range?: DateRange) {
           org_name: o.name,
           org_slug: o.slug,
           is_active: o.is_active,
-          members: membersRes.count || 0,
+          members: n("members"),
           donors,
           donors_total,
           donations_count,
@@ -254,13 +171,13 @@ export function useAdminAggregates(range?: DateRange) {
           failed_donations: failed,
           bank_transfers: transfers,
           matched_transfers: matched,
-          campaigns: campaignsRes.count || 0,
-          marketing_ideas: ideasRes.count || 0,
-          insights: insightsRes.count || 0,
+          campaigns: n("campaigns"),
+          marketing_ideas: n("marketing_ideas"),
+          insights: n("insights"),
           tasks_total: tasksTotal,
           tasks_completed: tasksDone,
           task_completion_rate: completion,
-          employees_count: employeesRes.count || 0,
+          employees_count: n("employees_count"),
           gifts_count,
           gifts_amount,
           gifts_delivered,
@@ -304,9 +221,16 @@ export function useAdminAggregates(range?: DateRange) {
         setMetrics(finalized);
         setLoading(false);
       }
-    })();
+    })().catch((error) => {
+      if (!cancelled) {
+        setMetrics([]); setLoading(false);
+        setError("تعذر تحميل البيانات الكاملة. أعد المحاولة قبل استخدام الأرقام أو تصدير التقرير.");
+        toast.error("تعذر تحميل بيانات التقارير. أعد المحاولة.");
+        console.error("Reporting aggregate failed", error?.message);
+      }
+    });
     return () => { cancelled = true; };
   }, [refreshKey, fromIso, toIso]);
 
-  return { metrics, loading, refresh: () => setRefreshKey((k) => k + 1) };
+  return { metrics, loading, error, refresh: () => setRefreshKey((k) => k + 1) };
 }

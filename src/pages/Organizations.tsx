@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Building2, Plus, Edit3, Power, PowerOff, Mail, Phone, Calendar, Crown, Users, Sparkles } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -21,6 +21,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOrganization, type Organization } from "@/contexts/OrganizationContext";
 import { toast } from "sonner";
 import atefLogoIcon from "@/assets/atef-logo-icon-white.png";
+
+import { validateOrganizationForm, organizationSaveError } from "@/lib/organization-form";
 
 type OrgWithCounts = Organization & { member_count?: number };
 
@@ -50,6 +52,8 @@ export default function Organizations() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const saveInFlight = useRef(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const fetchOrgs = async () => {
     setLoading(true);
@@ -88,11 +92,12 @@ export default function Organizations() {
   }
 
   const openCreate = () => {
-    setForm(emptyForm);
+    setSaveError(null); setForm(emptyForm);
     setDialogOpen(true);
   };
 
   const openEdit = (o: OrgWithCounts) => {
+    setSaveError(null);
     setForm({
       id: o.id,
       name: o.name,
@@ -106,36 +111,27 @@ export default function Organizations() {
   };
 
   const handleSave = async () => {
-    if (!form.name.trim()) {
-      toast.error("اسم الجمعية مطلوب");
-      return;
-    }
-
-    setSaving(true);
-    const payload = {
-      name: form.name.trim(),
-      slug: form.slug.trim() || null,
-      contact_email: form.contact_email.trim() || null,
-      contact_phone: form.contact_phone.trim() || null,
-      subscription_tier: form.subscription_tier,
-      is_active: form.is_active,
-    };
-
-    const { error } = form.id
-      ? await supabase.from("organizations").update(payload).eq("id", form.id)
-      : await supabase.from("organizations").insert(payload);
-
-    setSaving(false);
-
-    if (error) {
-      toast.error(error.message || "حدث خطأ أثناء الحفظ");
-      return;
-    }
-
-    toast.success(form.id ? "تم تحديث الجمعية" : "تم إنشاء الجمعية");
-    setDialogOpen(false);
-    await fetchOrgs();
-    await refresh();
+    if (saveInFlight.current) return;
+    const validation = validateOrganizationForm(form, orgs.find(o => o.id === form.id)?.slug);
+    if (validation) { setSaveError(validation); return; }
+    saveInFlight.current = true;
+    setSaving(true); setSaveError(null);
+    try {
+      const payload = {
+        name: form.name.trim(), slug: form.slug.trim().toLowerCase(),
+        contact_email: form.contact_email.trim() || null,
+        contact_phone: form.contact_phone.trim() || null,
+        subscription_tier: form.subscription_tier, is_active: form.is_active,
+      };
+      const { error } = form.id
+        ? await supabase.from("organizations").update(payload).eq("id", form.id).select("id").single()
+        : await supabase.from("organizations").insert(payload).select("id").single();
+      if (error) throw error;
+      toast.success(form.id ? "تم تحديث الجمعية" : "تم إنشاء الجمعية");
+      setDialogOpen(false);
+      await fetchOrgs(); await refresh();
+    } catch (error) { setSaveError(organizationSaveError(error)); }
+    finally { setSaving(false); saveInFlight.current = false; }
   };
 
   const toggleActive = async (o: OrgWithCounts) => {
@@ -282,8 +278,8 @@ export default function Organizations() {
       </div>
 
       {/* Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg" dir="rtl">
+      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!saving) setDialogOpen(open); }}>
+        <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto" dir="rtl">
           <DialogHeader>
             <DialogTitle>{form.id ? "تعديل الجمعية" : "إضافة جمعية جديدة"}</DialogTitle>
             <DialogDescription>
@@ -297,12 +293,13 @@ export default function Organizations() {
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="جمعية ..." />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>المعرف (Slug)</Label>
+                <Label>رابط الجمعية *</Label>
                 <Input
                   value={form.slug}
                   onChange={(e) => setForm({ ...form, slug: e.target.value.replace(/\s/g, "-").toLowerCase() })}
+                  aria-label="رابط الجمعية"
                   placeholder="example-org"
                   dir="ltr"
                 />
@@ -312,6 +309,8 @@ export default function Organizations() {
                 <Select value={form.subscription_tier} onValueChange={(v) => setForm({ ...form, subscription_tier: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="free">مجانية</SelectItem>
+                    <SelectItem value="demo">تجريبية</SelectItem>
                     <SelectItem value="standard">قياسية</SelectItem>
                     <SelectItem value="premium">متقدمة</SelectItem>
                     <SelectItem value="enterprise">مؤسسية</SelectItem>
@@ -339,6 +338,7 @@ export default function Organizations() {
             </div>
           </div>
 
+          {saveError && <p role="alert" className="text-sm text-destructive">{saveError}</p>}
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>إلغاء</Button>
             <Button onClick={handleSave} disabled={saving}>

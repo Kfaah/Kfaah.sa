@@ -1,4 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { employeeTaskStatuses, requireSavedTask } from "@/lib/employeeTaskWorkflow";
+import { fetchAllReportRows } from "@/lib/fetchAllReportRows";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -47,6 +49,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { getOrgPrivilegeFlags } from "@/lib/orgAuthorization";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate, formatDateWithHijri, formatNumberPlain, formatPercent, normalizeNumericInput, getAvailableYears, getCurrentYear } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -134,6 +137,8 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [canEditTime, setCanEditTime] = useState(false);
   
+  const statusWrites = useRef(new Set<string>());
+  const [savingTaskIds, setSavingTaskIds] = useState<Set<string>>(new Set());
   const [tasks, setTasks] = useState<Task[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -144,7 +149,8 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   const [activeTab, setActiveTab] = useState("all");
   
   // الفلاتر
-  const [filterYear, setFilterYear] = useState<string>(String(getCurrentYear()));
+  const [taskPage, setTaskPage] = useState(0);
+  const [filterYear, setFilterYear] = useState<string>("all");
   const [filterMonth, setFilterMonth] = useState<string>("all");
   const [filterDay, setFilterDay] = useState<string>("all");
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
@@ -203,20 +209,17 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   const refreshTasks = useCallback(async () => {
     if (!authUser || !orgId) return;
 
-    const { data, error } = await supabase
+    const data = await fetchAllReportRows<any>(supabase
       .from("tasks")
       .select(TASK_COLUMNS)
       .eq("organization_id", orgId)
-      .order("due_date", { ascending: true })
-      .limit(300);
-
-    if (error) throw error;
+      .order("due_date", { ascending: true }).order("id", { ascending: true }));
     const nextTasks = (data as Task[]) || [];
     setTasks(nextTasks);
 
     if (cacheKey) {
       const cached = JSON.parse(localStorage.getItem(cacheKey) || "{}");
-      localStorage.setItem(cacheKey, JSON.stringify({ ...cached, tasks: nextTasks, cachedAt: Date.now() }));
+      localStorage.setItem(cacheKey, JSON.stringify({ ...cached, tasks: nextTasks.slice(0, 300), cachedAt: Date.now() }));
     }
   }, [authUser, orgId, cacheKey]);
 
@@ -319,31 +322,28 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   };
 
 
-  // التحقق إذا حان وقت المهمة
-  const isTaskDue = (task: Task) => {
-    if (!task.due_date) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const dueDate = new Date(task.due_date);
-    dueDate.setHours(0, 0, 0, 0);
-    return dueDate <= today;
-  };
-
-  // التحقق من صلاحية المدير وتعديل الوقت
+  // التحقق من صلاحية المدير داخل الجمعية الحالية فقط.
   useEffect(() => {
+    let cancelled = false;
     const checkPermissions = async () => {
-      if (!authUser) return;
-      
-      // التحقق من صلاحية المدير أو مدير النظام
-      const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: authUser.id });
-      const hasAdminAccess = roleData === "admin" || roleData === "super_admin";
-      setIsAdmin(hasAdminAccess);
-      
-      // الأدمن فقط يستطيع تعديل الوقت (نظام التقييم لاحقًا)
-      setCanEditTime(hasAdminAccess);
+      if (!authUser?.id || !orgId) {
+        if (!cancelled) {
+          setIsAdmin(false);
+          setCanEditTime(false);
+        }
+        return;
+      }
+
+      const flags = await getOrgPrivilegeFlags(authUser.id, orgId);
+      const hasAdminAccess = flags.isSuperAdmin || flags.isOrgAdmin;
+      if (!cancelled) {
+        setIsAdmin(hasAdminAccess);
+        setCanEditTime(hasAdminAccess);
+      }
     };
     checkPermissions();
-  }, [authUser]);
+    return () => { cancelled = true; };
+  }, [authUser?.id, orgId]);
 
   // تم إزالة التحقق من المهمة النشطة - يتم الآن من خلال أيقونة تسجيل الحضور في الشريط الجانبي
 
@@ -370,18 +370,16 @@ const Tasks = ({ embedded = false }: TasksProps) => {
     const loadFast = async () => {
       try {
         const [tasksRes, employeesRes, departmentsRes] = await Promise.all([
-          supabase
+          fetchAllReportRows<any>(supabase
             .from("tasks")
             .select(TASK_COLUMNS)
             .eq("organization_id", orgId)
-            .order("due_date", { ascending: true })
-            .limit(300),
-          supabase
+            .order("due_date", { ascending: true }).order("id", { ascending: true })).then(data => ({ data, error: null })),
+          fetchAllReportRows<any>(supabase
             .from("employees")
             .select("id, full_name, user_id, department_id")
             .eq("organization_id", orgId)
-            .order("full_name")
-            .limit(500),
+            .order("full_name").order("id", { ascending: true })).then(data => ({ data, error: null })),
           supabase
             .from("departments")
             .select("id, name")
@@ -402,7 +400,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
 
         if (cacheKey) {
           localStorage.setItem(cacheKey, JSON.stringify({
-            tasks: nextTasks,
+            tasks: nextTasks.slice(0, 300),
             employees: nextEmployees,
             departments: nextDepartments,
             activities,
@@ -622,136 +620,35 @@ const Tasks = ({ embedded = false }: TasksProps) => {
     }
   };
 
-  // تحديث حالة المهمة (للموظف: قادمة أو تم التنفيذ فقط) - مع حفظ تلقائي ومؤقت الوقت
-  const updateTaskStatusLocal = async (taskId: string, newStatus: string) => {
+  // Keep the persisted state visible until the server confirms the write.
+  const persistTaskStatus = async (taskId: string, newStatus: string, admin: boolean) => {
     const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
-
-    const now = new Date().toISOString();
-    const updateData: TaskUpdateData = { status: newStatus as Task["status"] };
-    let localUpdate: Partial<Task> = { status: newStatus as Task["status"] };
-
-    // عند بدء التنفيذ، نسجل وقت البدء
-    if (newStatus === "in_progress" && !task.started_at) {
-      updateData.started_at = now;
-      localUpdate.started_at = now;
-    }
-
-    // عند إتمام المهمة، نحسب الوقت الفعلي
-    if ((newStatus === "executed" || newStatus === "completed") && task.started_at) {
-      const startTime = new Date(task.started_at).getTime();
-      const endTime = new Date().getTime();
-      const actualMinutes = Math.round((endTime - startTime) / (1000 * 60));
-      updateData.actual_time_minutes = actualMinutes;
-      localUpdate.actual_time_minutes = actualMinutes;
-    }
-
-    // تحديث محلي للعرض فوراً
-    setTasks(prev =>
-      prev.map(t => (t.id === taskId ? { ...t, ...localUpdate } : t))
-    );
-
+    if (!task || !orgId || statusWrites.current.has(taskId) || task.status === newStatus) return;
+    if (!admin && !employeeTaskStatuses(task).includes(newStatus)) return;
+    statusWrites.current.add(taskId);
+    setSavingTaskIds(new Set(statusWrites.current));
     try {
-      // حفظ تلقائي في قاعدة البيانات
-      const { error } = await supabase
-        .from("tasks")
-        .update(updateData)
-        .eq("id", taskId);
-      
-      if (error) throw error;
-
-      // إرسال إشعار للمدراء
+      const now = new Date().toISOString();
+      const updateData: TaskUpdateData = { status: newStatus as Task["status"] };
+      if (newStatus === "in_progress" && !task.started_at) updateData.started_at = now;
+      if ((newStatus === "executed" || newStatus === "completed") && task.started_at && !["executed", "completed"].includes(task.status)) {
+        updateData.actual_time_minutes = Math.max(0, Math.round((Date.now() - new Date(task.started_at).getTime()) / 60000));
+      }
+      const saved = await requireSavedTask(supabase.from("tasks").update(updateData)
+        .eq("id", taskId).eq("organization_id", orgId).select(TASK_COLUMNS).single());
+      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...saved } as Task : t));
       const statusLabel = getStatusConfig(newStatus).label;
-      const { data: admins } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "admin");
-      
-      if (admins) {
-        for (const admin of admins) {
-          if (admin.user_id !== authUser?.id) {
-            await supabase.from("notifications").insert({
-              user_id: admin.user_id,
-              title: "تحديث من موظف",
-              message: `قام الموظف بتحديث حالة مهمة "${task.title}" إلى: ${statusLabel}`,
-              type: "employee_update",
-              related_task_id: taskId,
-            });
-          }
-        }
-      }
-
-      // إظهار رسالة عند حساب الوقت الفعلي
-      if (localUpdate.actual_time_minutes !== undefined) {
-        toast({ 
-          title: "تم حساب الوقت الفعلي", 
-          description: `استغرقت المهمة ${localUpdate.actual_time_minutes} دقيقة` 
-        });
-      }
+      toast({title: "تم حفظ حالة المهمة", description: statusLabel});
     } catch (error: any) {
-      toast({ title: "خطأ", description: error.message, variant: "destructive" });
+      toast({title: "تعذر إتمام العملية", description: error.message, variant: "destructive"});
+    } finally {
+      statusWrites.current.delete(taskId);
+      setSavingTaskIds(new Set(statusWrites.current));
     }
   };
 
-  // تحديث حالة المهمة (للمدير فقط) مع إرسال إشعار ومؤقت الوقت
-  const updateTaskStatus = async (taskId: string, newStatus: string) => {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
-
-    const now = new Date().toISOString();
-    const updateData: TaskUpdateData = { status: newStatus as Task["status"] };
-    let localUpdate: Partial<Task> = { status: newStatus as Task["status"] };
-
-    // عند بدء التنفيذ، نسجل وقت البدء
-    if (newStatus === "in_progress" && !task.started_at) {
-      updateData.started_at = now;
-      localUpdate.started_at = now;
-    }
-
-    // عند إتمام المهمة، نحسب الوقت الفعلي
-    if ((newStatus === "executed" || newStatus === "completed") && task.started_at) {
-      const startTime = new Date(task.started_at).getTime();
-      const endTime = new Date().getTime();
-      const actualMinutes = Math.round((endTime - startTime) / (1000 * 60));
-      updateData.actual_time_minutes = actualMinutes;
-      localUpdate.actual_time_minutes = actualMinutes;
-    }
-
-    try {
-      const { error } = await supabase
-        .from("tasks")
-        .update(updateData)
-        .eq("id", taskId);
-      
-      if (error) throw error;
-      
-      setTasks(prev =>
-        prev.map(t => (t.id === taskId ? { ...t, ...localUpdate } : t))
-      );
-
-      // إرسال إشعار للموظف صاحب المهمة
-      const statusLabel = getStatusConfig(newStatus).label;
-      await supabase.from("notifications").insert({
-        user_id: task.user_id,
-        title: "تحديث حالة المهمة",
-        message: `تم تغيير حالة مهمة "${task.title}" إلى: ${statusLabel}`,
-        type: "status_update",
-        related_task_id: taskId,
-      });
-
-      // إظهار رسالة عند حساب الوقت الفعلي
-      if (localUpdate.actual_time_minutes !== undefined) {
-        toast({ 
-          title: "تم تحديث الحالة وحساب الوقت الفعلي", 
-          description: `استغرقت المهمة ${localUpdate.actual_time_minutes} دقيقة` 
-        });
-      } else {
-        toast({ title: "تم تحديث الحالة وإرسال الإشعار" });
-      }
-    } catch (error: any) {
-      toast({ title: "خطأ", description: error.message, variant: "destructive" });
-    }
-  };
+  const updateTaskStatusLocal = (taskId: string, status: string) => persistTaskStatus(taskId, status, false);
+  const updateTaskStatus = (taskId: string, status: string) => persistTaskStatus(taskId, status, true);
 
   // حذف مهمة
   const deleteTask = async (taskId: string) => {
@@ -769,34 +666,45 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   // تحديث التقييم (نسبة الإنجاز أو الجودة) مع إرسال إشعار
   const updateTaskRating = async (taskId: string, field: 'completion_percentage' | 'quality_percentage', value: number) => {
     const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
+    if (!task || !orgId || !isAdmin || statusWrites.current.has(taskId)) return task?.[field] || 0;
 
     // التحقق من أن القيمة بين 0 و 100
     const clampedValue = Math.max(0, Math.min(100, value));
+    if (clampedValue === task[field]) return clampedValue;
+    statusWrites.current.add(taskId);
+    setSavingTaskIds(new Set(statusWrites.current));
     
     try {
-      const { error } = await supabase
+      const saved = await requireSavedTask(supabase
         .from("tasks")
         .update(field === "completion_percentage" ? { completion_percentage: clampedValue } : { quality_percentage: clampedValue })
-        .eq("id", taskId);
-      
-      if (error) throw error;
+        .eq("id", taskId).eq("organization_id", orgId).select(TASK_COLUMNS).single());
       
       setTasks(prev =>
-        prev.map(t => (t.id === taskId ? { ...t, [field]: clampedValue } : t))
+        prev.map(t => (t.id === taskId ? { ...t, ...saved } as Task : t))
       );
 
       // إرسال إشعار للموظف صاحب المهمة
       const fieldLabel = field === 'completion_percentage' ? 'نسبة الإنجاز' : 'نسبة الجودة';
-      await supabase.from("notifications").insert({
-        user_id: task.user_id,
-        title: "تحديث التقييم",
-        message: `تم تحديث ${fieldLabel} لمهمة "${task.title}" إلى: ${clampedValue}%`,
-        type: "rating_update",
-        related_task_id: taskId,
-      });
+      const recipient = employees.find(e => e.id === task.assigned_employee_id)?.user_id || task.user_id;
+      const { error: notificationError } = recipient !== authUser?.id
+        ? await supabase.from("notifications").insert({
+            user_id: recipient,
+            organization_id: orgId,
+            title: "تحديث التقييم",
+            message: `تم تحديث ${fieldLabel} لمهمة "${task.title}" إلى: ${clampedValue}%`,
+            type: "rating_update",
+            related_task_id: taskId,
+          })
+        : { error: null };
+      toast({ title: "تم حفظ التقييم", description: notificationError ? "تعذر إرسال إشعار التقييم للموظف." : undefined });
+      return Number(saved[field]);
     } catch (error: any) {
       toast({ title: "خطأ", description: error.message, variant: "destructive" });
+      return task[field] || 0;
+    } finally {
+      statusWrites.current.delete(taskId);
+      setSavingTaskIds(new Set(statusWrites.current));
     }
   };
 
@@ -913,7 +821,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
 
   // إعادة تعيين الفلاتر
   const resetFilters = () => {
-    setFilterYear(String(getCurrentYear()));
+    setFilterYear("all");
     setFilterMonth("all");
     setFilterDay("all");
     setFilterDepartment("all");
@@ -1123,7 +1031,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
     delayed: tasks.filter((t) => t.status === "delayed" && (!isAdmin ? isMyTask(t) : true)).length,
   }), [tasks, isAdmin, authUser?.id, employeeByUser]);
 
-  const hasActiveFilters = filterYear !== String(new Date().getFullYear()) || filterMonth !== "all" || filterDay !== "all" || filterDepartment !== "all" || filterEmployee !== "all" || filterActivity !== "all" || searchQuery;
+  const hasActiveFilters = filterYear !== "all" || filterMonth !== "all" || filterDay !== "all" || filterDepartment !== "all" || filterEmployee !== "all" || filterActivity !== "all" || searchQuery;
 
   // قائمة الأنشطة الفريدة للفلتر - مع التخزين المؤقت
   const uniqueActivities = useMemo(() => Array.from(new Set(
@@ -1131,7 +1039,8 @@ const Tasks = ({ embedded = false }: TasksProps) => {
   )).map(s => JSON.parse(s) as { id: string; name: string }), [activities]);
 
   // تجميع المهام المفلترة - مع التخزين المؤقت
-  const groupedTasks = useMemo(() => groupTasksByActivity(filteredTasks), [filteredTasks, groupTasksByActivity]);
+  useEffect(() => setTaskPage(0), [searchQuery, activeTab, filterYear, filterMonth, filterDay, filterDepartment, filterEmployee, filterActivity, tasks.length]);
+  const groupedTasks = useMemo(() => groupTasksByActivity(filteredTasks.slice(taskPage * 50, (taskPage + 1) * 50)), [filteredTasks, groupTasksByActivity, taskPage]);
 
 
   // تحديث المهام عند إكمال المهمة
@@ -1632,6 +1541,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
                               <Select
                                 value={task.status}
                                 onValueChange={(value) => updateTaskStatus(task.id, value)}
+                                disabled={savingTaskIds.has(task.id)}
                               >
                                 <SelectTrigger className={cn("w-28 h-8", statusConfig.class)}>
                                   <SelectValue />
@@ -1647,20 +1557,19 @@ const Tasks = ({ embedded = false }: TasksProps) => {
                                 </SelectContent>
                               </Select>
                             ) : (
-                              // الموظف: يرى قادمة أو يختار تم التنفيذ فقط إذا حان الوقت
+                              // Keep the current label visible even when only an administrator can choose that status.
                               <Select
                                 value={task.status}
                                 onValueChange={(value) => updateTaskStatusLocal(task.id, value)}
-                                disabled={!isTaskDue(task) && task.status === "upcoming"}
+                                disabled={savingTaskIds.has(task.id) || employeeTaskStatuses(task).length === 0}
                               >
                                 <SelectTrigger className={cn("w-28 h-8", statusConfig.class)}>
-                                  <SelectValue />
+                                  <SelectValue>{getStatusConfig(task.status).label}</SelectValue>
                                 </SelectTrigger>
                                 <SelectContent className="bg-white z-50">
-                                  <SelectItem value="upcoming">قادمة</SelectItem>
-                                  {isTaskDue(task) && (
-                                    <SelectItem value="executed">تم التنفيذ</SelectItem>
-                                  )}
+                                  {employeeTaskStatuses(task).map(status => (
+                                    <SelectItem key={status} value={status}>{getStatusConfig(status).label}</SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                             )}
@@ -1674,17 +1583,22 @@ const Tasks = ({ embedded = false }: TasksProps) => {
                                 <div className="text-[10px] font-semibold text-muted-foreground mb-0.5">الإنجاز</div>
                                 {isAdmin ? (
                                   <input
+                                    key={`${task.id}:${task.completion_percentage}`}
+                                    aria-label={`نسبة إنجاز ${task.title}`}
+                                    disabled={savingTaskIds.has(task.id)}
                                     type="text"
                                     inputMode="numeric"
                                     pattern="[0-9]*"
                                     defaultValue={new Intl.NumberFormat('en-u-nu-latn', { useGrouping: false }).format(
                                       Number(task.completion_percentage || 0)
                                     )}
-                                    onBlur={(e) => {
-                                      const raw = normalizeNumericInput(e.currentTarget.value);
+                                    onBlur={async (e) => {
+                                      const input = e.currentTarget;
+                                      const raw = normalizeNumericInput(input.value);
                                       const value = parseInt(raw, 10) || 0;
                                       if (value !== (task.completion_percentage || 0)) {
-                                        updateTaskRating(task.id, 'completion_percentage', value);
+                                        const saved = await updateTaskRating(task.id, 'completion_percentage', value);
+                                        input.value = String(saved);
                                       }
                                     }}
                                     onKeyDown={(e) => {
@@ -1787,6 +1701,11 @@ const Tasks = ({ embedded = false }: TasksProps) => {
           </Card>
         )}
 
+        {filteredTasks.length > 50 && <div className="flex items-center justify-center gap-3 py-3" dir="rtl">
+          <Button variant="outline" onClick={() => setTaskPage(p => p - 1)} disabled={taskPage === 0}>السابق</Button>
+          <span>عرض {taskPage * 50 + 1}–{Math.min((taskPage + 1) * 50, filteredTasks.length)} من {filteredTasks.length} مهمة</span>
+          <Button variant="outline" onClick={() => setTaskPage(p => p + 1)} disabled={(taskPage + 1) * 50 >= filteredTasks.length}>التالي</Button>
+        </div>}
         {/* نافذة توليد المهام بالذكاء الاصطناعي */}
         <Dialog open={isGenerateDialogOpen} onOpenChange={setIsGenerateDialogOpen}>
           <DialogContent className="max-w-2xl">
@@ -2291,6 +2210,7 @@ const Tasks = ({ embedded = false }: TasksProps) => {
             onOpenChange={setIsCommunicationDialogOpen}
             taskId={selectedTaskForCommunication.id}
             taskTitle={selectedTaskForCommunication.title}
+            organizationId={orgId ?? ""}
             currentUserId={authUser.id}
             isAdmin={isAdmin}
             taskOwnerId={selectedTaskForCommunication.user_id}

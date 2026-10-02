@@ -17,6 +17,8 @@ import { useUser } from "@/contexts/UserContext";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDateTime } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import { getOrgPrivilegeFlags } from "@/lib/orgAuthorization";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
@@ -51,6 +53,7 @@ interface Notification {
 export default function Profile() {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
+  const { currentOrg } = useOrganization();
   const { user, loading, updateUser, updateProfileImage, uploadAvatar } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({ ...user });
@@ -67,18 +70,19 @@ export default function Profile() {
 
   // جلب بيانات الموظف بما فيها التوقيع واللقب
   const { data: employeeData, refetch: refetchEmployee } = useQuery({
-    queryKey: ["employee-data", authUser?.id],
+    queryKey: ["employee-data", authUser?.id, currentOrg?.id],
     queryFn: async () => {
-      if (!authUser?.id) return null;
+      if (!authUser?.id || !currentOrg?.id) return null;
       const { data, error } = await supabase
         .from("employees")
         .select("id, signature_url, title")
         .eq("user_id", authUser.id)
-        .single();
+        .eq("organization_id", currentOrg.id)
+        .maybeSingle();
       if (error && error.code !== "PGRST116") throw error;
       return data as { id: string; signature_url: string | null; title: string | null } | null;
     },
-    enabled: !!authUser?.id,
+    enabled: !!authUser?.id && !!currentOrg?.id,
   });
 
   // عدد الإشعارات غير المقروءة
@@ -94,38 +98,55 @@ export default function Profile() {
   ];
 
   useEffect(() => {
+    let cancelled = false;
     const checkAdminRole = async () => {
-      if (!authUser) return;
-      const { data } = await supabase.rpc("has_role", {
-        _user_id: authUser.id,
-        _role: "admin",
-      });
-      setIsAdmin(data === true);
+      if (!authUser?.id || !currentOrg?.id) {
+        if (!cancelled) setIsAdmin(false);
+        return;
+      }
+      const flags = await getOrgPrivilegeFlags(authUser.id, currentOrg.id);
+      if (!cancelled) {
+        setIsAdmin(flags.isSuperAdmin || flags.isOrgAdmin);
+      }
     };
     checkAdminRole();
-  }, [authUser]);
+    return () => { cancelled = true; };
+  }, [authUser?.id, currentOrg?.id]);
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!currentOrg?.id) {
+        setDepartments([]);
+        setJobRoles([]);
+        return;
+      }
       const [deptRes, rolesRes] = await Promise.all([
-        supabase.from("departments").select("id, name"),
-        supabase.from("job_roles").select("id, name"),
+        supabase
+          .from("departments")
+          .select("id, name")
+          .eq("organization_id", currentOrg.id),
+        supabase
+          .from("job_roles")
+          .select("id, name")
+          .eq("organization_id", currentOrg.id),
       ]);
       if (deptRes.data) setDepartments(deptRes.data);
       if (rolesRes.data) setJobRoles(rolesRes.data);
     };
     fetchData();
-  }, []);
+  }, [currentOrg?.id]);
 
   // جلب الإشعارات
   useEffect(() => {
     const fetchNotifications = async () => {
-      if (!authUser) return;
+      if (!authUser?.id || !currentOrg?.id) return;
       setLoadingNotifications(true);
       try {
         const { data, error } = await supabase
           .from("notifications")
           .select("*")
+          .eq("user_id", authUser.id)
+          .eq("organization_id", currentOrg.id)
           .order("created_at", { ascending: false });
         if (error) throw error;
         setNotifications(data || []);
@@ -139,11 +160,12 @@ export default function Profile() {
 
     const channel = supabase
       .channel('notifications-channel')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload) => {
-        setNotifications(prev => [payload.new as Notification, ...prev]);
-        toast.info("لديك إشعار جديد!");
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${authUser?.id}` }, (payload) => {
+        if (payload.new.user_id !== authUser?.id || payload.new.organization_id !== currentOrg?.id) return;
+        setNotifications(prev => [payload.new as Notification, ...prev.filter(n => n.id !== payload.new.id)]);
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications' }, (payload) => {
+        if (payload.new.user_id !== authUser?.id || payload.new.organization_id !== currentOrg?.id) return;
         setNotifications(prev => prev.map(n => n.id === payload.new.id ? payload.new as Notification : n));
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'notifications' }, (payload) => {
@@ -152,7 +174,7 @@ export default function Profile() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [authUser]);
+  }, [authUser?.id, currentOrg?.id]);
 
 
   useEffect(() => {
@@ -184,7 +206,12 @@ export default function Profile() {
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.is_read) {
       try {
-        await supabase.from("notifications").update({ is_read: true }).eq("id", notification.id);
+        await supabase
+          .from("notifications")
+          .update({ is_read: true })
+          .eq("id", notification.id)
+          .eq("user_id", authUser?.id ?? "")
+          .eq("organization_id", currentOrg?.id ?? "");
         setNotifications(prev => prev.map(n => (n.id === notification.id ? { ...n, is_read: true } : n)));
       } catch (error) {
         console.error("Error marking notification as read:", error);
@@ -203,7 +230,12 @@ export default function Profile() {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      await supabase.from("notifications").update({ is_read: true }).eq("id", notificationId);
+      await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("id", notificationId)
+        .eq("user_id", authUser?.id ?? "")
+        .eq("organization_id", currentOrg?.id ?? "");
       setNotifications(prev => prev.map(n => (n.id === notificationId ? { ...n, is_read: true } : n)));
     } catch (error) {
       console.error("Error marking notification as read:", error);
@@ -212,7 +244,12 @@ export default function Profile() {
 
   const deleteNotification = async (notificationId: string) => {
     try {
-      await supabase.from("notifications").delete().eq("id", notificationId);
+      await supabase
+        .from("notifications")
+        .delete()
+        .eq("id", notificationId)
+        .eq("user_id", authUser?.id ?? "")
+        .eq("organization_id", currentOrg?.id ?? "");
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
       toast.success("تم حذف الإشعار");
     } catch (error) {
@@ -222,7 +259,12 @@ export default function Profile() {
 
   const markAllAsRead = async () => {
     try {
-      await supabase.from("notifications").update({ is_read: true }).eq("is_read", false);
+      await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("user_id", authUser?.id ?? "")
+        .eq("organization_id", currentOrg?.id ?? "")
+        .eq("is_read", false);
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
       toast.success("تم تحديد جميع الإشعارات كمقروءة");
     } catch (error) {

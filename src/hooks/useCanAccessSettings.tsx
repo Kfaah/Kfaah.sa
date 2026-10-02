@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import { canAccessOrgSettings } from "@/lib/orgAuthorization";
 
 /**
  * صلاحية الوصول لصفحة الإعدادات.
@@ -13,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
  */
 export function useCanAccessSettings() {
   const { user } = useAuth();
+  const { currentOrg } = useOrganization();
   const [loading, setLoading] = useState(true);
   const [allowed, setAllowed] = useState(false);
 
@@ -26,12 +28,10 @@ export function useCanAccessSettings() {
         }
         return;
       }
-      const checks = await Promise.all([
-        supabase.rpc("has_role", { _user_id: user.id, _role: "super_admin" }),
-        supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }),
-        supabase.rpc("has_role", { _user_id: user.id, _role: "moderator" }),
-      ]);
-      const ok = checks.some((r) => r.data === true);
+      const ok = await canAccessOrgSettings(
+        user.id,
+        currentOrg?.id,
+      );
       if (!cancelled) {
         setAllowed(ok);
         setLoading(false);
@@ -41,7 +41,7 @@ export function useCanAccessSettings() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, currentOrg?.id]);
 
   return { allowed, loading };
 }

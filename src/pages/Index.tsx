@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatNumber } from "@/lib/utils";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import { useIsDemo } from "@/hooks/useIsDemo";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import { getOrgPrivilegeFlags } from "@/lib/orgAuthorization";
 
 const positiveMessages = [
   (name: string) => `أهلاً بك يا ${name}! يومك سعيد 🌟`,
@@ -44,6 +46,20 @@ interface AdminStats {
   activePlans: number;
 }
 
+interface TopEmployee {
+  id: string;
+  name: string;
+  role: string;
+  completedThisWeek: number;
+  rank: number;
+}
+
+interface RecentActivity {
+  id: string;
+  title: string;
+  employee: string;
+}
+
 const Index = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -53,6 +69,7 @@ const Index = () => {
   const [currentMessage, setCurrentMessage] = useState("");
   const { user, previewAsEmployee, previewingEmployee } = useUser();
   const { user: authUser } = useAuth();
+  const { currentOrg } = useOrganization();
   const branding = useOrgBranding();
   const [isViewer, setIsViewer] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -70,6 +87,8 @@ const Index = () => {
     activePlans: 0,
   });
   const [recentTasks, setRecentTasks] = useState<any[]>([]);
+  const [topEmployees, setTopEmployees] = useState<TopEmployee[]>([]);
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
 
   // تتبع تغيير الصفحة لإخفاء/إظهار شاشة الترحيب
   useEffect(() => {
@@ -130,13 +149,12 @@ const Index = () => {
           return;
         }
 
-        // Otherwise, decide by the actual authenticated user's role.
-        const { data: hasAdminRole } = await supabase.rpc("has_role", {
-          _user_id: authUser.id,
-          _role: "admin",
-        });
-
-        const admin = !!hasAdminRole;
+        // Decide by the user's role inside the active organization.
+        const flags = await getOrgPrivilegeFlags(
+          authUser.id,
+          currentOrg?.id,
+        );
+        const admin = flags.isSuperAdmin || flags.isOrgAdmin;
         setIsAdmin(admin);
 
         // إعادة توجيه الموظف العادي للاستبيان الذكي إذا لم يكمله بعد
@@ -173,50 +191,40 @@ const Index = () => {
     };
 
     checkRoleAndFetchData();
-  }, [authUser?.id, previewAsEmployee, previewingEmployee?.user_id]);
+  }, [authUser?.id, currentOrg?.id, previewAsEmployee, previewingEmployee?.user_id]);
 
   const fetchAdminStats = async () => {
+    if (!currentOrg?.id) return;
+
     try {
-      // Get total employees
-      const { count: employeesCount } = await supabase
-        .from("employees")
-        .select("*", { count: "exact", head: true });
+      const weekStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-      // Get active tasks (pending + in_progress)
-      const { count: activeTasksCount } = await supabase
-        .from("tasks")
-        .select("*", { count: "exact", head: true })
-        .in("status", ["pending", "in_progress"]);
-
-      // Get completed tasks
-      const { count: completedTasksCount } = await supabase
-        .from("tasks")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "completed");
-
-      // Get active operational plans
-      const { count: activePlansCount } = await supabase
-        .from("operational_plans")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "active");
-
-      setAdminStats({
-        totalEmployees: employeesCount || 0,
-        activeTasks: activeTasksCount || 0,
-        completedTasks: completedTasksCount || 0,
-        activePlans: activePlansCount || 0,
-      });
+      const { data, error } = await supabase.rpc("org_admin_dashboard", { p_org: currentOrg.id, p_week_start: weekStart });
+      if (error || !data) throw error || new Error("Dashboard data unavailable");
+      const summary = data as unknown as {
+        totalEmployees: number; activeTasks: number; completedTasks: number; activePlans: number;
+        topEmployees: Array<{ id: string; name: string; role: string; completedThisWeek: number }>;
+        recentActivities: Array<{ id: string; title: string; employee: string }>;
+      };
+      setAdminStats({ totalEmployees: summary.totalEmployees, activeTasks: summary.activeTasks, completedTasks: summary.completedTasks, activePlans: summary.activePlans });
+      setTopEmployees(summary.topEmployees.map((employee, index) => ({ ...employee, rank: index + 1 })));
+      setRecentActivities(summary.recentActivities);
     } catch (error) {
       console.error("Error fetching admin stats:", error);
+      setTopEmployees([]);
+      setRecentActivities([]);
     }
   };
 
   const fetchEmployeeStats = async (userId: string) => {
     try {
-      // Get user's tasks
+      if (!currentOrg?.id) return;
+
+      // Get user's tasks inside the active organization only.
       const { data: tasks } = await supabase
         .from("tasks")
         .select("*")
+        .eq("organization_id", currentOrg.id)
         .eq("user_id", userId);
 
       const totalTasks = tasks?.length || 0;
@@ -228,6 +236,7 @@ const Index = () => {
       const { data: recentTasksData } = await supabase
         .from("tasks")
         .select("*")
+        .eq("organization_id", currentOrg.id)
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(5);
@@ -245,12 +254,6 @@ const Index = () => {
     }
   };
 
-  const topEmployees = [
-    { id: 1, name: "أحمد محمد", role: "مسؤول السلات المتروكة", points: 450, rank: 1 },
-    { id: 2, name: "سارة علي", role: "مسؤول الحملات", points: 420, rank: 2 },
-    { id: 3, name: "محمد خالد", role: "مسؤول الاستقطاع", points: 395, rank: 3 },
-    { id: 4, name: "فاطمة أحمد", role: "مسؤول التطوير", points: 380, rank: 4 },
-  ];
 
   const getRankColor = (rank: number) => {
     switch (rank) {
@@ -417,6 +420,11 @@ const Index = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
+                    {topEmployees.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-6">
+                        لا توجد مهام مكتملة خلال آخر 7 أيام.
+                      </p>
+                    )}
                     {topEmployees.map((employee) => (
                       <div key={employee.id} className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-colors">
                         <div className="flex items-center gap-3">
@@ -430,7 +438,8 @@ const Index = () => {
                         </div>
                         <div className="flex items-center gap-2">
                           <Trophy className="w-5 h-5 text-amber-500" />
-                          <span className="font-bold text-amber-600" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(employee.points)}</span>
+                          <span className="font-bold text-amber-600" style={{ fontFamily: 'Arial, sans-serif' }}>{formatNumber(employee.completedThisWeek)}</span>
+                          <span className="text-xs text-muted-foreground">مهمة مكتملة</span>
                         </div>
                       </div>
                     ))}
@@ -448,11 +457,12 @@ const Index = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {[
-                      { id: 1, type: "task_complete", title: "رصد سلوك", employee: "أ. محمد - السلات المتروكة" },
-                      { id: 2, type: "points_add", title: "إضافة نقاط", employee: "أ. سارة - الحملات" },
-                      { id: 3, type: "evaluation", title: "تقييم مشاركة", employee: "أ. خالد - التطوير" },
-                    ].map((activity) => (
+                    {recentActivities.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-6">
+                        لا توجد نشاطات حديثة.
+                      </p>
+                    )}
+                    {recentActivities.map((activity) => (
                       <div key={activity.id} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-muted/30 transition-colors">
                         <div className="w-2 h-2 rounded-full bg-accent" />
                         <div className="flex-1">

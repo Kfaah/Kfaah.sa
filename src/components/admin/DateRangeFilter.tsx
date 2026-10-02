@@ -69,7 +69,7 @@ export function DateRangeFilter({ value, onChange }: { value: DateRange; onChang
   };
 
   const applyCustom = () => {
-    if (tempFrom && tempTo) {
+    if (tempFrom && tempTo && tempFrom <= tempTo) {
       setActiveKey("custom");
       onChange({
         from: startOfDay(tempFrom),
@@ -115,7 +115,7 @@ export function DateRangeFilter({ value, onChange }: { value: DateRange; onChang
             <ChevronDown className="w-3 h-3" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-3 bg-popover" align="end">
+        <PopoverContent className="w-auto max-w-[calc(100vw-16px)] max-h-[85dvh] overflow-auto p-3 bg-popover" align="end">
           <div className="flex gap-3 flex-wrap">
             <div>
               <div className="text-xs font-semibold mb-1 text-muted-foreground">من</div>
@@ -126,9 +126,10 @@ export function DateRangeFilter({ value, onChange }: { value: DateRange; onChang
               <Calendar mode="single" selected={tempTo} onSelect={setTempTo} className={cn("p-0 pointer-events-auto")} />
             </div>
           </div>
+          {tempFrom && tempTo && tempFrom > tempTo && <p role="alert" className="text-sm text-destructive mt-2">تاريخ البداية يجب ألا يتجاوز تاريخ النهاية</p>}
           <div className="flex justify-end gap-2 mt-3">
             <Button size="sm" variant="ghost" onClick={() => setOpenCustom(false)}>إلغاء</Button>
-            <Button size="sm" onClick={applyCustom} disabled={!tempFrom || !tempTo}>تطبيق</Button>
+            <Button size="sm" onClick={applyCustom} disabled={!tempFrom || !tempTo || tempFrom > tempTo}>تطبيق</Button>
           </div>
         </PopoverContent>
       </Popover>

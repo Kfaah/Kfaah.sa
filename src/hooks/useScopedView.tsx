@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import { getOrgPrivilegeFlags } from "@/lib/orgAuthorization";
 
 export type ViewScope = "personal" | "team";
 
@@ -41,6 +43,7 @@ interface ScopedView {
  */
 export function useScopedView(storageKey = "scope:default"): ScopedView {
   const { user: authUser } = useAuth();
+  const { currentOrg } = useOrganization();
   const [scope, setScopeState] = useState<ViewScope>("personal");
   const [roleLevel, setRoleLevel] = useState<RoleLevel>("employee");
   const [myEmployeeId, setMyEmployeeId] = useState<string | null>(null);
@@ -69,38 +72,66 @@ export function useScopedView(storageKey = "scope:default"): ScopedView {
     }
     setLoading(true);
     try {
-      // 1) Find my employee record + role_level
+      if (!currentOrg?.id) {
+        setRoleLevel("employee");
+        setMyEmployeeId(null);
+        setSubordinateEmployeeIds([]);
+        setSubordinateUserIds([]);
+        return;
+      }
+
+      // 1) Find my employee record inside the active organization.
       const { data: emp } = await supabase
         .from("employees")
         .select("id, role_level")
         .eq("user_id", authUser.id)
+        .eq("organization_id", currentOrg.id)
         .maybeSingle();
 
-      let resolvedRole: RoleLevel = "employee";
-      if (emp?.role_level) {
-        resolvedRole = emp.role_level as RoleLevel;
-      } else {
-        // Fallback to user_roles
-        const { data: roleRow } = await supabase.rpc("get_user_role", {
-          _user_id: authUser.id,
-        });
-        if (roleRow === "admin" || roleRow === "super_admin") resolvedRole = "admin";
-      }
+      const flags = await getOrgPrivilegeFlags(
+        authUser.id,
+        currentOrg.id,
+      );
+
+      let resolvedRole: RoleLevel =
+        flags.isSuperAdmin || flags.isOrgAdmin
+          ? "admin"
+          : emp?.role_level === "manager"
+            ? "manager"
+            : "employee";
+
       setRoleLevel(resolvedRole);
       setMyEmployeeId(emp?.id ?? null);
 
-      // 2) Fetch subordinates if manager/admin
-      if (resolvedRole !== "employee") {
-        const { data: subEmp } = await supabase.rpc("get_subordinate_employee_ids", {
-          _manager_employee_id: emp?.id ?? "00000000-0000-0000-0000-000000000000",
-        });
-        const empIds = ((subEmp as any[]) || []).map((r) => r.employee_id);
-        setSubordinateEmployeeIds(empIds);
+      // 2) Fetch and re-filter subordinates to the active organization.
+      if (resolvedRole !== "employee" && emp?.id) {
+        const { data: subEmp } = await supabase.rpc(
+          "get_subordinate_employee_ids",
+          { _manager_employee_id: emp.id },
+        );
+        const candidateIds = ((subEmp as any[]) || [])
+          .map((row) => row.employee_id)
+          .filter(Boolean);
 
-        const { data: subUsers } = await supabase.rpc("get_subordinate_user_ids", {
-          _manager_user_id: authUser.id,
-        });
-        setSubordinateUserIds(((subUsers as any[]) || []).map((r) => r.user_id));
+        if (candidateIds.length) {
+          const { data: scopedEmployees } = await supabase
+            .from("employees")
+            .select("id, user_id")
+            .eq("organization_id", currentOrg.id)
+            .in("id", candidateIds);
+
+          setSubordinateEmployeeIds(
+            (scopedEmployees ?? []).map((row) => row.id),
+          );
+          setSubordinateUserIds(
+            (scopedEmployees ?? [])
+              .map((row) => row.user_id)
+              .filter(Boolean) as string[],
+          );
+        } else {
+          setSubordinateEmployeeIds([]);
+          setSubordinateUserIds([]);
+        }
       } else {
         setSubordinateEmployeeIds([]);
         setSubordinateUserIds([]);
@@ -108,7 +139,7 @@ export function useScopedView(storageKey = "scope:default"): ScopedView {
     } finally {
       setLoading(false);
     }
-  }, [authUser]);
+  }, [authUser, currentOrg?.id]);
 
   useEffect(() => {
     load();

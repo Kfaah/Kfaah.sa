@@ -1,3 +1,5 @@
+import { fetchAllReportRows } from "@/lib/fetchAllReportRows";
+import { ReportDataState } from "@/components/admin/ReportDataState";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -80,7 +82,7 @@ const STATUS_LABEL: Record<Status, string> = {
 export default function AdminInnovation() {
   const [range, setRange] = useState<DateRange>({ from: null, to: null, label: "منذ البداية" });
   const confirm = useConfirm();
-  const { metrics, loading: metricsLoading } = useAdminAggregates(range);
+  const { metrics, loading: metricsLoading, error: metricsError, refresh: refreshMetrics } = useAdminAggregates(range);
   const [orgId, setOrgId] = useState<string>("");
   // Embedded mode (inside org dashboard iframe) — lock to one org via ?org=slug
   const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
@@ -97,26 +99,46 @@ export default function AdminInnovation() {
   const [filterStatus, setFilterStatus] = useState<"all" | Status>("all");
   const [openSuggestion, setOpenSuggestion] = useState<Suggestion | null>(null);
 
-  useEffect(() => { if (!orgId && visibleMetrics.length > 0) setOrgId(visibleMetrics[0].org_id); }, [visibleMetrics, orgId]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const activeOrg = useRef(orgId);
+  activeOrg.current = orgId;
+  const loadVersion = useRef(0);
+  const generationLock = useRef(false);
+  const mutationLocks = useRef(new Set<string>());
+  useEffect(() => {
+    if (!metricsLoading && !metricsError && !visibleMetrics.some(m => m.org_id === orgId)) {
+      setOrgId(visibleMetrics[0]?.org_id || "");
+    }
+  }, [visibleMetrics, orgId, metricsLoading, metricsError]);
 
   const selected = useMemo(() => visibleMetrics.find((m) => m.org_id === orgId), [visibleMetrics, orgId]);
 
   const loadSuggestions = async (oid: string) => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("innovation_suggestions")
-      .select("*")
-      .eq("organization_id", oid)
-      .order("generated_at", { ascending: false });
-    if (error) toast.error(error.message);
-    setSuggestions((data || []) as any);
-    setLoading(false);
+    if (oid !== activeOrg.current) return;
+    const version = ++loadVersion.current;
+    setLoading(true); setLoadError(null); setSuggestions([]);
+    try {
+      const rows = await fetchAllReportRows(supabase.from("innovation_suggestions").select("*")
+        .eq("organization_id", oid).order("generated_at", { ascending: false }).order("id"));
+      if (version === loadVersion.current && oid === activeOrg.current) setSuggestions(rows as Suggestion[]);
+    } catch {
+      if (version === loadVersion.current && oid === activeOrg.current) setLoadError("تعذّر تحميل الأفكار. أعد المحاولة.");
+    } finally {
+      if (version === loadVersion.current && oid === activeOrg.current) setLoading(false);
+    }
   };
 
-  useEffect(() => { if (orgId) loadSuggestions(orgId); }, [orgId]);
+  useEffect(() => {
+    setOpenSuggestion(null); setSuggestions([]); setLoadError(null);
+    if (orgId) void loadSuggestions(orgId);
+    else setLoading(false);
+    return () => { loadVersion.current++; };
+  }, [orgId]);
 
   const generate = async () => {
-    if (!selected) return;
+    if (!selected || generationLock.current) return;
+    generationLock.current = true;
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke("innovation-suggestions", {
@@ -136,7 +158,7 @@ export default function AdminInnovation() {
         impact: s.impact || null,
         effort: s.effort || null,
         data_basis: typeof s.data_basis === "string" ? { note: s.data_basis } : s.data_basis,
-        ai_model: data?.model || "google/gemini-3-flash-preview",
+        ai_model: data?.model || null,
       }));
       const { error: insErr } = await supabase.from("innovation_suggestions").insert(rows);
       if (insErr) throw insErr;
@@ -145,29 +167,57 @@ export default function AdminInnovation() {
     } catch (e: any) {
       toast.error(e.message || "تعذّر التوليد");
     } finally {
+      generationLock.current = false;
       setGenerating(false);
     }
   };
 
-  const updateStatus = async (id: string, status: Status) => {
-    const { error } = await supabase.from("innovation_suggestions").update({ status }).eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    setSuggestions((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
-    if (openSuggestion?.id === id) setOpenSuggestion({ ...openSuggestion, status });
+  const updateStatus = async (id: string, status: Status): Promise<boolean> => {
+    const oid = orgId;
+    if (mutationLocks.current.has(id)) return false;
+    mutationLocks.current.add(id);
+    try {
+      const { data, error } = await supabase.from("innovation_suggestions").update({ status })
+        .eq("id", id).eq("organization_id", oid).select("*").single();
+      if (error || !data) throw error || new Error("لم يتم الحفظ");
+      if (activeOrg.current === oid) {
+        setSuggestions(prev => prev.map(s => s.id === id ? data as Suggestion : s));
+        setOpenSuggestion(prev => prev?.id === id ? data as Suggestion : prev);
+      }
+      return true;
+    } catch {
+      toast.error("تعذّر حفظ حالة الفكرة. لم يتم تأكيد التغيير.");
+      return false;
+    } finally { mutationLocks.current.delete(id); }
   };
 
   const removeSuggestion = async (id: string) => {
-    const ok = await confirm({
-      title: "حذف الفكرة",
-      description: "سيتم حذف هذه الفكرة الإبداعية نهائياً ولا يمكن التراجع عن هذا الإجراء.",
-      confirmText: "نعم، احذف",
-      variant: "danger",
-    });
-    if (!ok) return;
-    const { error } = await supabase.from("innovation_suggestions").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    setSuggestions((prev) => prev.filter((s) => s.id !== id));
-    if (openSuggestion?.id === id) setOpenSuggestion(null);
+    const oid = orgId;
+    const ok = await confirm({ title: "حذف الفكرة", description: "سيتم حذف هذه الفكرة نهائياً.", confirmText: "نعم، احذف", variant: "danger" });
+    if (!ok || mutationLocks.current.has(id) || activeOrg.current !== oid) return;
+    mutationLocks.current.add(id);
+    try {
+      const { data, error } = await supabase.from("innovation_suggestions").delete()
+        .eq("id", id).eq("organization_id", oid).select("id").single();
+      if (error || !data) throw error || new Error("لم يتم الحذف");
+      if (activeOrg.current === oid) {
+        setSuggestions(prev => prev.filter(s => s.id !== id));
+        setOpenSuggestion(prev => prev?.id === id ? null : prev);
+      }
+    } catch { toast.error("تعذّر حذف الفكرة. أعد المحاولة."); }
+    finally { mutationLocks.current.delete(id); }
+  };
+
+  const exportAccepted = async () => {
+    if (!selected || exporting) return;
+    const accepted = suggestions.filter(s => s.status === "accepted" || s.status === "implemented");
+    if (!accepted.length) return;
+    setExporting(true);
+    try {
+      await exportInnovationPpt(accepted, selected.org_name);
+      toast.success(`تم تصدير ${accepted.length} فكرة كخطة ابتكار`);
+    } catch { toast.error("تعذّر تصدير خطة الابتكار. أعد المحاولة."); }
+    finally { setExporting(false); }
   };
 
   const filtered = useMemo(() => {
@@ -183,6 +233,8 @@ export default function AdminInnovation() {
     discussing: suggestions.filter((s) => s.status === "discussing").length,
     high: suggestions.filter((s) => s.priority === "high").length,
   }), [suggestions]);
+
+  if (metricsLoading || metricsError) return <ReportDataState loading={metricsLoading} error={metricsError} retry={refreshMetrics} />;
 
   return (
     <div className={`${isEmbedded ? "" : "mx-auto max-w-[1280px] p-6"} w-full space-y-6`}>
@@ -204,13 +256,8 @@ export default function AdminInnovation() {
           <Button
             variant="outline"
             className="gap-2"
-            onClick={() => {
-              const accepted = suggestions.filter(
-                (s) => s.status === "accepted" || s.status === "implemented"
-              );
-              exportInnovationPpt(accepted, selected.org_name);
-              toast.success(`تم تصدير ${accepted.length} فكرة كخطة ابتكار`);
-            }}
+            onClick={exportAccepted}
+            disabled={exporting || loading || !!loadError}
           >
             <Download className="w-4 h-4" />
             تصدير الأفكار المقبولة كخطة PowerPoint ({stats.accepted})
@@ -287,7 +334,9 @@ export default function AdminInnovation() {
       </Card>
 
       {/* Grid */}
-      {loading ? (
+      {loadError ? (
+        <ReportDataState error={loadError} retry={() => loadSuggestions(orgId)} />
+      ) : loading ? (
         <div className="text-center py-12 text-white/80"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>
       ) : filtered.length === 0 ? (
         <Card className="p-12 text-center bg-card border-border">
@@ -314,6 +363,7 @@ export default function AdminInnovation() {
       {/* Discussion drawer */}
       {openSuggestion && (
         <DiscussionDrawer
+          key={openSuggestion.id}
           suggestion={openSuggestion}
           onClose={() => setOpenSuggestion(null)}
           onStatus={(st) => updateStatus(openSuggestion.id, st)}
@@ -421,7 +471,7 @@ function SuggestionCard({ s, onOpen, onStatus, onDelete }: {
 }
 
 function DiscussionDrawer({ suggestion, onClose, onStatus }: {
-  suggestion: Suggestion; onClose: () => void; onStatus: (st: Status) => void;
+  suggestion: Suggestion; onClose: () => void; onStatus: (st: Status) => Promise<boolean>;
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -431,15 +481,19 @@ function DiscussionDrawer({ suggestion, onClose, onStatus }: {
 
   const meta = CATEGORY_META[suggestion.category] || CATEGORY_META.feature;
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
+  const sendLock = useRef(false);
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const { data } = await supabase.from("innovation_messages")
-        .select("*").eq("suggestion_id", suggestion.id).order("created_at", { ascending: true });
-      setMessages((data || []) as any);
-      setLoading(false);
-    })();
-  }, [suggestion.id]);
+    let cancelled = false;
+    setLoading(true); setLoadError(null);
+    fetchAllReportRows(supabase.from("innovation_messages").select("*")
+      .eq("suggestion_id", suggestion.id).order("created_at").order("id"))
+      .then(rows => { if (!cancelled) setMessages(rows as Message[]); })
+      .catch(() => { if (!cancelled) setLoadError("تعذّر تحميل سجل النقاش. أعد المحاولة قبل الإرسال."); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [suggestion.id, reload]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -447,49 +501,28 @@ function DiscussionDrawer({ suggestion, onClose, onStatus }: {
 
   const send = async () => {
     const text = input.trim();
-    if (!text || sending) return;
-    setSending(true);
-    setInput("");
-    // Optimistic user msg
-    const userMsg: Message = {
-      id: crypto.randomUUID(), suggestion_id: suggestion.id,
-      role: "user", content: text, created_at: new Date().toISOString(),
-    };
-    setMessages((p) => [...p, userMsg]);
-
+    if (!text || sendLock.current || loading || loadError) return;
+    sendLock.current = true; setSending(true);
+    let userSaved = false;
     try {
-      // Save user message
-      const { data: ins } = await supabase.from("innovation_messages")
-        .insert({ suggestion_id: suggestion.id, role: "user", content: text })
-        .select().single();
-      if (ins) {
-        setMessages((p) => p.map((m) => (m.id === userMsg.id ? (ins as any) : m)));
-      }
-
-      // Mark as discussing if new
-      if (suggestion.status === "new") onStatus("discussing");
-
-      // Call AI
-      const history = messages.map((m) => ({ role: m.role, content: m.content }));
+      const { data: userMessage, error: userError } = await supabase.from("innovation_messages")
+        .insert({ suggestion_id: suggestion.id, role: "user", content: text }).select().single();
+      if (userError || !userMessage) throw userError || new Error("لم تُحفظ الرسالة");
+      userSaved = true; setInput("");
+      setMessages(prev => [...prev, userMessage as Message]);
+      if (suggestion.status === "new") await onStatus("discussing");
+      const history = messages.map(m => ({ role: m.role, content: m.content }));
       const { data, error } = await supabase.functions.invoke("innovation-chat", {
         body: { suggestion, history, user_message: text },
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      const reply: string = data?.reply || "—";
-      const { data: aIns } = await supabase.from("innovation_messages")
-        .insert({ suggestion_id: suggestion.id, role: "assistant", content: reply })
-        .select().single();
-      setMessages((p) => [...p, (aIns as any) || {
-        id: crypto.randomUUID(), suggestion_id: suggestion.id,
-        role: "assistant", content: reply, created_at: new Date().toISOString(),
-      }]);
-    } catch (e: any) {
-      toast.error(e.message || "تعذّر إرسال الرسالة");
-    } finally {
-      setSending(false);
-    }
+      if (error || data?.error || typeof data?.reply !== "string" || !data.reply.trim()) throw error || new Error("تعذّر توليد الرد");
+      const { data: reply, error: replyError } = await supabase.from("innovation_messages")
+        .insert({ suggestion_id: suggestion.id, role: "assistant", content: data.reply }).select().single();
+      if (replyError || !reply) throw replyError || new Error("لم يُحفظ الرد");
+      setMessages(prev => [...prev, reply as Message]);
+    } catch {
+      toast.error(userSaved ? "حُفظت رسالتك، لكن تعذّر إنشاء الرد وحفظه. يمكنك متابعة النقاش لاحقاً." : "تعذّر حفظ الرسالة. بقي النص لإعادة المحاولة.");
+    } finally { sendLock.current = false; setSending(false); }
   };
 
   const Icon = meta.icon;
@@ -532,7 +565,9 @@ function DiscussionDrawer({ suggestion, onClose, onStatus }: {
 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-5 space-y-3 bg-muted/20">
-          {loading ? (
+          {loadError ? (
+            <ReportDataState error={loadError} retry={() => setReload(n => n + 1)} />
+          ) : loading ? (
             <div className="text-center py-8 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
           ) : messages.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-sm">
@@ -566,10 +601,10 @@ function DiscussionDrawer({ suggestion, onClose, onStatus }: {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
             placeholder="اكتب رسالتك..."
-            disabled={sending}
+            disabled={sending || loading || !!loadError}
             className="flex-1"
           />
-          <Button onClick={send} disabled={!input.trim() || sending} className="gap-1.5">
+          <Button onClick={send} disabled={!input.trim() || sending || loading || !!loadError} className="gap-1.5">
             <Send className="w-4 h-4" /> إرسال
           </Button>
         </div>

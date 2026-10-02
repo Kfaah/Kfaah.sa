@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { ReportDataState } from "@/components/admin/ReportDataState";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -70,56 +71,45 @@ export default function AdminAnalytics() {
   const [customOpen, setCustomOpen] = useState(false);
   const [tempFrom, setTempFrom] = useState<Date | undefined>();
   const [tempTo, setTempTo] = useState<Date | undefined>();
-  const { metrics, loading } = useAdminAggregates(range);
+  const { metrics, loading, error: metricsError, refresh: refreshMetrics } = useAdminAggregates(range);
   const [selectedId, setSelectedId] = useState<string>("");
   const [aiLoading, setAiLoading] = useState(false);
   const [insight, setInsight] = useState<AIInsight | null>(null);
+  const aiRequest = useRef(0);
+  const [chartRefresh, setChartRefresh] = useState(0);
+  const [chartError, setChartError] = useState<string | null>(null);
+  const [chartLoading, setChartLoading] = useState(false);
   const [heatmap, setHeatmap] = useState<{ day: number; value: number }[]>([]);
   const [monthly, setMonthly] = useState<{ m: string; donations: number; revenue: number }[]>([]);
 
   useEffect(() => {
-    if (!selectedId && metrics.length > 0) setSelectedId(metrics[0].org_id);
-  }, [metrics, selectedId]);
+    if (!loading && !metricsError && !metrics.some(m => m.org_id === selectedId)) setSelectedId(metrics[0]?.org_id || "");
+  }, [metrics, selectedId, loading, metricsError]);
 
   const selected = useMemo(() => metrics.find(m => m.org_id === selectedId), [metrics, selectedId]);
 
   useEffect(() => {
+    let cancelled = false;
+    aiRequest.current++; setInsight(null); setAiLoading(false);
+    setHeatmap([]); setMonthly([]); setChartError(null);
     if (!selectedId) return;
-    setInsight(null);
+    setChartLoading(true);
     (async () => {
-      let q = supabase
-        .from("donations")
-        .select("donation_date, amount")
-        .eq("organization_id", selectedId);
-      if (range.from) q = q.gte("donation_date", range.from.toISOString());
-      if (range.to) q = q.lte("donation_date", range.to.toISOString());
-      else {
-        const since = new Date(); since.setDate(since.getDate() - 90);
-        q = q.gte("donation_date", since.toISOString());
-      }
-      const { data } = await q.limit(20000);
-
-      const days = [0, 0, 0, 0, 0, 0, 0];
-      const months: Record<string, { donations: number; revenue: number }> = {};
-      (data || []).forEach((r: any) => {
-        const d = new Date(r.donation_date);
-        days[d.getDay()] += 1;
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-        if (!months[key]) months[key] = { donations: 0, revenue: 0 };
-        months[key].donations += 1;
-        months[key].revenue += Number(r.amount || 0);
+      const { data, error } = await supabase.rpc("org_donation_chart", {
+        p_org: selectedId, p_from: range.from?.toISOString() ?? null, p_to: range.to?.toISOString() ?? null,
       });
-
-      setHeatmap(days.map((value, day) => ({ day, value })));
-      setMonthly(
-        Object.entries(months).sort(([a], [b]) => a.localeCompare(b))
-          .map(([m, v]) => ({ m, ...v }))
-      );
-    })();
-  }, [selectedId, range.from, range.to]);
+      if (error) throw error;
+      if (cancelled) return;
+      const chart = data as unknown as { days: { day: number; value: number }[]; months: { m: string; donations: number; revenue: number }[] };
+      setHeatmap(chart.days); setMonthly(chart.months);
+    })().catch(() => { if (!cancelled) setChartError("تعذر تحميل الرسم البياني؛ أعد تحميل البيانات"); })
+      .finally(() => { if (!cancelled) setChartLoading(false); });
+    return () => { cancelled = true; };
+  }, [selectedId, range.from?.getTime(), range.to?.getTime(), chartRefresh]);
 
   const runAI = async (force = false) => {
-    if (!selected) return;
+    if (!selected || loading || aiLoading) return;
+    const requestId = ++aiRequest.current;
     setAiLoading(true);
     setInsight(null);
     try {
@@ -135,17 +125,20 @@ export default function AdminAnalytics() {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+      if (requestId !== aiRequest.current) return;
       setInsight(data.insight);
       toast.success(force ? "تم إعادة توليد التحليل" : "تم توليد التحليل الذكي");
     } catch (e: any) {
-      toast.error(e.message || "تعذّر توليد التحليل");
+      if (requestId === aiRequest.current) toast.error(e.message || "تعذّر توليد التحليل");
     } finally {
-      setAiLoading(false);
+      if (requestId === aiRequest.current) setAiLoading(false);
     }
   };
 
+  if (loading || metricsError) return <ReportDataState loading={loading} error={metricsError} retry={refreshMetrics} />;
+
   return (
-    <div className="p-8 space-y-6" dir="rtl">
+    <div className="p-4 sm:p-8 space-y-6" dir="rtl">
       <div className="flex items-end justify-between flex-wrap gap-4" dir="rtl">
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
@@ -155,9 +148,9 @@ export default function AdminAnalytics() {
           <p className="text-white mt-1">اختر فترة وجمعية لرؤية تحليل تفصيلي وتوصيات ذكية ثابتة لنفس البيانات</p>
         </div>
 
-        <div className="flex items-center gap-3" dir="rtl">
+        <div className="flex w-full sm:w-auto flex-wrap items-center gap-3" dir="rtl">
           <Select value={selectedId} onValueChange={setSelectedId}>
-            <SelectTrigger dir="rtl" className="w-[280px] text-right">
+            <SelectTrigger dir="rtl" className="w-full sm:w-[280px] text-right">
               <SelectValue placeholder="اختر جمعية..." />
             </SelectTrigger>
             <SelectContent dir="rtl">
@@ -177,7 +170,7 @@ export default function AdminAnalytics() {
               else { setRange(buildPreset(k)); }
             }}
           >
-            <SelectTrigger dir="rtl" className="w-[200px] bg-accent text-accent-foreground border-accent hover:bg-accent/90 font-semibold gap-2 text-right">
+            <SelectTrigger dir="rtl" className="w-full sm:w-[200px] bg-accent text-accent-foreground border-accent hover:bg-accent/90 font-semibold gap-2 text-right">
               <CalendarDays className="w-4 h-4" />
               <SelectValue placeholder="الفترة">
                 {periodKey === "custom" ? range.label : undefined}
@@ -204,8 +197,8 @@ export default function AdminAnalytics() {
               </div>
               <div className="flex justify-end gap-2 mt-3">
                 <Button size="sm" variant="ghost" onClick={() => setCustomOpen(false)}>إلغاء</Button>
-                <Button size="sm" disabled={!tempFrom || !tempTo} onClick={() => {
-                  if (!tempFrom || !tempTo) return;
+                <Button size="sm" disabled={!tempFrom || !tempTo || tempFrom > tempTo} onClick={() => {
+                  if (!tempFrom || !tempTo || tempFrom > tempTo) return;
                   setRange({
                     from: startOfDay(tempFrom),
                     to: endOfDay(tempTo),
@@ -218,7 +211,7 @@ export default function AdminAnalytics() {
           </Popover>
           <Button
             onClick={() => runAI(false)}
-            disabled={!selected || aiLoading}
+            disabled={!selected || loading || aiLoading}
             className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
           >
             {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
@@ -226,7 +219,7 @@ export default function AdminAnalytics() {
           </Button>
           <Button
             onClick={() => runAI(true)}
-            disabled={!selected || aiLoading}
+            disabled={!selected || loading || aiLoading}
             variant="outline"
             className="gap-2"
             title="تجاهل النسخة المحفوظة وأعد توليد التحليل من جديد"
@@ -256,10 +249,12 @@ export default function AdminAnalytics() {
               sub={`${fmt(selected.campaigns)} حملة`} />
           </div>
 
+          {chartError && <p role="alert" className="text-destructive">{chartError} <Button variant="outline" onClick={() => setChartRefresh(v => v + 1)}>إعادة المحاولة</Button></p>}
+          {chartLoading && <p role="status">جاري تحميل الرسوم البيانية…</p>}
           {/* Charts */}
           <div className="grid lg:grid-cols-2 gap-4">
             <Card className="bg-card border-border p-5 shadow-sm">
-              <h3 className="text-foreground font-bold mb-1">الإيرادات الشهرية (آخر فترة)</h3>
+              <h3 className="text-foreground font-bold mb-1">الإيرادات الشهرية للفترة المختارة</h3>
               <p className="text-muted-foreground text-xs mb-3">
                 {monthly.length > 0 ? `${monthly.length} شهر` : "لا توجد بيانات بعد"}
               </p>
@@ -282,7 +277,7 @@ export default function AdminAnalytics() {
 
             <Card className="bg-card border-border p-5 shadow-sm">
               <h3 className="text-foreground font-bold mb-1">خريطة حرارة الأيام</h3>
-              <p className="text-muted-foreground text-xs mb-3">عدد التبرعات بحسب يوم الأسبوع — آخر 90 يومًا</p>
+              <p className="text-muted-foreground text-xs mb-3">عدد التبرعات بحسب يوم الأسبوع — {range.label}</p>
               <Heatmap data={heatmap} />
             </Card>
           </div>
@@ -343,7 +338,7 @@ function AIInsightView({ insight }: { insight: AIInsight }) {
       <div className="flex items-center gap-2 mb-2">
         <Sparkles className="w-5 h-5 text-white" />
         <h3 className="text-white font-bold text-lg">التحليل الذكي</h3>
-        <Badge className="bg-white/15 text-white border-white/40 mr-auto">Gemini</Badge>
+        <Badge className="bg-white/15 text-white border-white/40 mr-auto">تحليل ذكي</Badge>
       </div>
 
       <div className="bg-white/10 rounded-xl p-4 border border-white/20">
