@@ -31,10 +31,14 @@ jobs:
       KFAAH_EXPECTED_API_URL: https://kfaah.sa
       MANAGER_URL: https://kfaah-manager.floot.app
     steps:
-      - name: Mask payload token
-        env:
-          PAYLOAD_TOKEN: ${{ inputs.payload_token }}
-        run: echo "::add-mask::$PAYLOAD_TOKEN"
+      - name: Mask payload token before step environments are logged
+        run: |
+          python3 - <<'PYMASK'
+          import json, os
+          with open(os.environ["GITHUB_EVENT_PATH"]) as event:
+              token = json.load(event)["inputs"]["payload_token"]
+          print("::add-mask::" + token)
+          PYMASK
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -151,4 +155,4 @@ jobs:
           HETZNER_USER: ${{ secrets.HETZNER_USER }}
         run: |
           set -euo pipefail
-          rsync -az --delete --exclude node_modules --exclude .git --exclude .env.local -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" ./ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/workspace/"
+          rsync -az --delete --exclude node_modules --exclude .git --exclude .env.local --exclude vite.fast.config.ts -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" ./ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/workspace/"
