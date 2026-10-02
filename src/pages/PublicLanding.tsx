@@ -182,6 +182,8 @@ export default function PublicLanding() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-600 hover:text-cyan-800 p-1"
                     aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+                    aria-pressed={showPassword}
+                    aria-controls="password"
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
