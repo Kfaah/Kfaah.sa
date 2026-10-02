@@ -36,6 +36,7 @@ export interface ActionPlanSubTask {
 
 export interface ActionPlanTask {
   id: string;
+  organization_id?: string | null;
   title: string;
   description: string | null;
   impact: string;
@@ -85,6 +86,7 @@ export function ActionPlanTaskCard({
   task,
   employees,
   saving,
+  readOnly = false,
   onUpdateTask,
   onToggleSubtask,
   onCompletionNotesChange,
@@ -93,6 +95,7 @@ export function ActionPlanTaskCard({
   task: ActionPlanTask;
   employees: ActionPlanEmployee[];
   saving: boolean;
+  readOnly?: boolean;
   onUpdateTask: (id: string, patch: Partial<ActionPlanTask>) => Promise<void>;
   onToggleSubtask: (task: ActionPlanTask, idx: number) => Promise<void>;
   onCompletionNotesChange: (taskId: string, value: string) => void;
@@ -105,17 +108,7 @@ export function ActionPlanTaskCard({
     await onUpdateTask(task.id, { subtasks: next });
   };
 
-  // Auto-assign any unassigned subtask using round-robin over employees (one-time, idempotent)
-  useEffect(() => {
-    if (!employees.length || !subtasks.length) return;
-    const needsAssign = subtasks.some((s) => !s.assigned_employee_id);
-    if (!needsAssign) return;
-    const next = subtasks.map((s, i) =>
-      s.assigned_employee_id ? s : { ...s, assigned_employee_id: employees[(index + i) % employees.length].id },
-    );
-    onUpdateTask(task.id, { subtasks: next });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [task.id, employees.length]);
+  // Assignment is explicit; opening a plan must not mutate its tasks.
 
   const impactTheme = IMPACT_THEME[task.impact] || IMPACT_THEME.medium;
 
@@ -183,6 +176,8 @@ export function ActionPlanTaskCard({
                     key={idx}
                     idx={idx}
                     subtask={subtask}
+                    organizationId={task.organization_id}
+                    readOnly={readOnly || saving}
                     employees={employees}
                     onUpdate={(patch) => updateSubtask(idx, patch)}
                   />
@@ -196,6 +191,7 @@ export function ActionPlanTaskCard({
       {/* Notes */}
       <div className="px-4 pb-4">
         <Textarea
+          disabled={readOnly || saving}
           placeholder="ملاحظات الإنجاز / التقدّم على الهدف..."
           value={task.completion_notes || ""}
           onChange={(event) => onCompletionNotesChange(task.id, event.target.value)}
@@ -210,11 +206,15 @@ export function ActionPlanTaskCard({
 }
 
 function SubtaskRow({
+  organizationId,
+  readOnly,
   idx,
   subtask,
   employees,
   onUpdate,
 }: {
+  organizationId?: string | null;
+  readOnly: boolean;
   idx: number;
   subtask: ActionPlanSubTask;
   employees: ActionPlanEmployee[];
@@ -240,6 +240,7 @@ function SubtaskRow({
           <TableCell>
             <Select
               value={assignedId}
+              disabled={readOnly}
               onValueChange={(value) => onUpdate({ assigned_employee_id: value === "unassigned" ? null : value })}
               dir="rtl"
             >
@@ -260,6 +261,7 @@ function SubtaskRow({
           <TableCell>
             <Select
               value={status}
+              disabled={readOnly}
               onValueChange={(value) => onUpdate({ status: value, done: value === "completed" })}
               dir="rtl"
             >
@@ -309,6 +311,8 @@ function SubtaskRow({
             )}
 
             <ReportAndRating
+              readOnly={readOnly}
+              organizationId={organizationId}
               subtask={subtask}
               dueDate={subtask.due_date || null}
               status={status}
@@ -438,11 +442,15 @@ function computeAutoRating(args: {
 }
 
 function ReportAndRating({
+  organizationId,
+  readOnly,
   subtask,
   status,
   dueDate,
   onSave,
 }: {
+  organizationId?: string | null;
+  readOnly: boolean;
   subtask: ActionPlanSubTask;
   status: string;
   dueDate: string | null;
@@ -463,12 +471,14 @@ function ReportAndRating({
   );
 
   const handleUpload = async (file: File) => {
-    if (!file) return;
+    if (!file || readOnly) return;
+    if (!organizationId) { toast.error("تعذّر تحديد الجمعية التابعة للخطة"); return; }
     if (file.size > 20 * 1024 * 1024) { toast.error("حجم الملف يجب أن يكون أقل من 20MB"); return; }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "bin";
-      const path = `reports/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const candidateExtension = file.name.split(".").pop() || "";
+      const ext = /^[a-z0-9]{1,12}$/i.test(candidateExtension) ? candidateExtension.toLowerCase() : "bin";
+      const path = `${organizationId}/reports/${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("action-plan-files")
         .upload(path, file, { upsert: false, contentType: file.type || undefined });
@@ -489,6 +499,7 @@ function ReportAndRating({
   };
 
   const handleReportBlur = async () => {
+    if (readOnly) return;
     if (localReport === (subtask.employee_report || "")) return;
     const newAuto = computeAutoRating({
       report: localReport,
@@ -511,6 +522,7 @@ function ReportAndRating({
           <FileText className="h-4 w-4" /> تقرير الموظف
         </div>
         <Textarea
+          disabled={readOnly || uploading}
           value={localReport}
           onChange={(e) => setLocalReport(e.target.value)}
           onBlur={handleReportBlur}
@@ -532,7 +544,7 @@ function ReportAndRating({
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            disabled={uploading}
+            disabled={uploading || readOnly}
             className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-50"
           >
             <Upload className="h-3.5 w-3.5" />

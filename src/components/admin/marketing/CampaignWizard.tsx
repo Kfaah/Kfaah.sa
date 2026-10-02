@@ -59,7 +59,7 @@ export default function CampaignWizard({
     (async () => {
       const sb = supabase as any;
       const donorsQ = await sb.from("donors").select("id", { count: "exact", head: true }).eq("organization_id", orgId);
-      const projectsQ = await sb.from("projects").select("id", { count: "exact", head: true }).eq("organization_id", orgId);
+      const projectsQ = await sb.from("projects_catalog").select("id", { count: "exact", head: true }).eq("organization_id", orgId);
       const campaignsQ = await sb.from("marketing_campaigns").select("id", { count: "exact", head: true }).eq("organization_id", orgId);
       const profQ = await sb.from("organization_profiles").select("website_url, store_url").eq("organization_id", orgId).maybeSingle();
       if (cancelled) return;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef, Fragment } from "react";
 import { Link, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { UserCog, ArrowRight, Search, Loader2, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -43,6 +44,24 @@ const ROLE_OPTIONS: { key: AppRole; label: string; hint: string; superOnly?: boo
 
 const roleLabel = (r: string) => ROLE_OPTIONS.find((o) => o.key === r)?.label ?? r;
 
+const ROLE_PRIORITY: AppRole[] = [
+  "super_admin",
+  "admin",
+  "moderator",
+  "hr_manager",
+  "finance_manager",
+  "accountant",
+  "time_editor",
+  "viewer",
+  "user",
+];
+
+const effectiveRole = (roles: AppRole[] | null | undefined): AppRole => {
+  const current = new Set(roles ?? []);
+  return ROLE_PRIORITY.find((role) => current.has(role)) ?? "user";
+};
+
+
 interface MemberRow {
   user_id: string;
   employee_id: string;
@@ -59,10 +78,15 @@ type RpcClient = {
 };
 const rpc = supabase as unknown as RpcClient;
 
-export default function MemberRolesSettings() {
+export default function MemberRolesSettings({ orgIdProp, embedded = false }: { orgIdProp?: string; embedded?: boolean } = {}) {
   const { slug } = useParams<{ slug?: string }>();
   const base = slug ? `/${slug}/settings` : "/settings";
   const { user } = useAuth();
+  const { currentOrg } = useOrganization();
+  const orgId = orgIdProp || currentOrg?.id;
+  const loadVersion = useRef(0);
+  const Layout = embedded ? Fragment : DashboardLayout;
+  const [loadError, setLoadError] = useState(false);
   const [rows, setRows] = useState<MemberRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -70,48 +94,56 @@ export default function MemberRolesSettings() {
   const [q, setQ] = useState("");
 
   const load = useCallback(async () => {
-    if (!user?.id) return;
-    setLoading(true);
+    const version = ++loadVersion.current;
+    if (!user?.id || !orgId) { setLoading(false); setRows([]); return; }
+    setLoading(true); setLoadError(false); setRows([]);
     try {
       const { data: superFlag } = await rpc.rpc<boolean>("is_super_admin", { _user_id: user.id });
       setIsSuper(superFlag === true);
 
-      let orgId: string | null = null;
-      if (slug) {
-        const { data: org } = await rpc.rpc<Array<{ id: string }>>("get_organization_by_slug", { _slug: slug });
-        orgId = org?.[0]?.id ?? null;
-      }
-
       const { data, error } = await rpc.rpc<MemberRow[]>("get_org_member_roles", { _org_id: orgId });
       if (error) throw error;
+      if (version !== loadVersion.current) return;
       setRows((data ?? []) as MemberRow[]);
     } catch {
+      if (version !== loadVersion.current) return;
+      setLoadError(true);
       toast.error("تعذر تحميل قائمة الأعضاء");
     } finally {
-      setLoading(false);
+      if (version === loadVersion.current) setLoading(false);
     }
-  }, [user?.id, slug]);
+  }, [user?.id, orgId]);
 
   useEffect(() => {
     load();
+    return () => { loadVersion.current++; };
   }, [load]);
 
   const changeRole = async (row: MemberRow, role: AppRole) => {
+    if (savingId) return;
     setSavingId(row.user_id);
     try {
+      if (!row.organization_id) {
+        throw new Error("member_not_found");
+      }
       const { error } = await rpc.rpc<void>("set_org_member_role", {
         _user_id: row.user_id,
         _role: role,
+        _org_id: row.organization_id,
       });
       if (error) throw error;
-      setRows((prev) =>
-        prev.map((r) => (r.user_id === row.user_id ? { ...r, app_roles: [role] } : r))
-      );
+      await load();
       toast.success(`${row.full_name}: ${roleLabel(role)}`);
     } catch (e: unknown) {
       const msg = (e as { message?: string })?.message ?? "";
-      if (msg.includes("insufficient_privileges")) {
+      if (msg.includes("protected_platform_admin") || msg.includes("last_platform_admin")) {
+        toast.error("لا يمكن خفض صلاحيتك أو إزالة آخر مدير للمنصة");
+      } else if (msg.includes("global_role_multiple_organizations")) {
+        toast.error("هذا الحساب عضو في أكثر من جمعية؛ تغيير هذا الدور العام يحتاج معالجة ارتباطاته أولاً");
+      } else if (msg.includes("insufficient_privileges")) {
         toast.error("هذا التغيير يحتاج صلاحية مدير النظام");
+      } else if (msg.includes("role_scoped_elsewhere")) {
+        toast.error("هذا الدور مرتبط للمستخدم بجمعية أخرى حالياً؛ غيّره من حساب مدير النظام.");
       } else if (msg.includes("demo_readonly")) {
         toast.error("الحساب التجريبي للعرض فقط");
       } else {
@@ -134,7 +166,7 @@ export default function MemberRolesSettings() {
   }, [rows, q]);
 
   return (
-    <DashboardLayout>
+    <Layout>
       <div className="space-y-6 max-w-5xl mx-auto" dir="rtl">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <PageHeader
@@ -142,11 +174,11 @@ export default function MemberRolesSettings() {
             title="صلاحيات الأعضاء"
             subtitle="عيّن لكل موظف صلاحيته: مدير نظام، مدير جمعية، مدير قسم أو موظف"
           />
-          <Button asChild variant="ghost">
+          {!embedded && <Button asChild variant="ghost">
             <Link to={base}>
               <ArrowRight className="w-4 h-4 ml-2" /> عودة
             </Link>
-          </Button>
+          </Button>}
         </div>
 
         <Card>
@@ -161,7 +193,7 @@ export default function MemberRolesSettings() {
               />
             </div>
 
-            {loading ? (
+            {loadError ? <p role="alert" className="text-destructive">تعذر تحميل الصلاحيات. <Button variant="outline" onClick={load}>إعادة المحاولة</Button></p> : loading ? (
               <p className="text-sm text-muted-foreground flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" /> جاري التحميل...
               </p>
@@ -172,9 +204,9 @@ export default function MemberRolesSettings() {
             ) : (
               <div className="space-y-2">
                 {filtered.map((row) => {
-                  const current = (row.app_roles?.[0] ?? "user") as AppRole;
+                  const current = effectiveRole(row.app_roles);
                   const locked =
-                    !isSuper && (current === "admin" || current === "super_admin");
+                    row.user_id === user?.id || (!isSuper && (current === "admin" || current === "super_admin"));
                   return (
                     <div
                       key={row.user_id}
@@ -202,7 +234,7 @@ export default function MemberRolesSettings() {
                         <Select
                           dir="rtl"
                           value={current}
-                          disabled={locked || savingId === row.user_id}
+                          disabled={locked || savingId !== null}
                           onValueChange={(v) => changeRole(row, v as AppRole)}
                         >
                           <SelectTrigger className="w-[220px] text-right">
@@ -230,9 +262,9 @@ export default function MemberRolesSettings() {
           {isSuper
             ? "بصفتك مدير النظام يمكنك منح أي صلاحية بما فيها مدير النظام ومدير الجمعية."
             : "منح صلاحية مدير النظام أو مدير الجمعية متاح لمدير النظام فقط، ولا يمكن تعديل صلاحية من يملكها."}
-          {" "}تفاصيل ما يستطيع كل دور فعله تُضبط من صفحة «الأدوار والصلاحيات».
+          {" "}تُطبّق الصلاحية على الجمعية المحددة؛ دور مدير النظام يشمل المنصة كلها، ولا يمكنك خفض صلاحيتك من هذه الصفحة.
         </p>
       </div>
-    </DashboardLayout>
+    </Layout>
   );
 }

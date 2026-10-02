@@ -92,7 +92,7 @@ export default function LetterPage() {
                 منصة كفاءة
               </h1>
               <p className="text-sm text-[hsl(210,50%,40%)] mt-1">
-                لإدارة التسويق الإلكتروني للجمعيات
+                لإدارة التسويق الإلكتروني وتنمية الموارد المالية للجمعيات
               </p>
               <p className="text-xs text-[hsl(210,15%,50%)] mt-0.5">
                 www.kfaah.sa
@@ -260,7 +260,7 @@ export default function LetterPage() {
           />
           <div className="flex justify-between items-center text-[10px] text-[hsl(210,30%,50%)]">
             <span>منصة كفاءة — www.kfaah.sa</span>
-            <span>لإدارة التسويق الإلكتروني للجمعيات</span>
+            <span>لإدارة التسويق الإلكتروني وتنمية الموارد المالية للجمعيات</span>
             <span>KF-INV-1447-06</span>
           </div>
         </footer>

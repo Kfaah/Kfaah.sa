@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -92,6 +92,8 @@ export default function AddExecutivePlan() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const activityRequests = useRef<Record<string, { key: string; id: string }>>({});
+  useEffect(() => { setSelectedDays([]); setSelectedActivities({}); }, [year, month]);
   // Inline-add new activity per employee: empId -> { name, monthlyTarget, saving }
   const [newActivityByEmp, setNewActivityByEmp] = useState<Record<string, { name: string; monthlyTarget: number | ""; saving: boolean }>>({});
   // إظهار الأنشطة المقترحة لكل موظف عند الطلب فقط
@@ -120,36 +122,15 @@ export default function AddExecutivePlan() {
     }
     setNewActField(employee.id, { saving: true });
     try {
-      // 1) Insert operational_plan
-      const planPayload: any = {
-        activity_name: name,
-        annual_target: monthlyTarget,
-        year,
-        responsible_employee_id: employee.id,
-        // ملاحظة: user_id هو "منشئ الخطة" (مطلوب لسياسات RLS)، أما المسؤول الفعلي فهو responsible_employee_id
-        user_id: authUser?.id ?? employee.user_id ?? null,
-        organization_id: activeOrgId,
-        status: "active",
-      };
-      const { data: planRow, error: planErr } = await supabase
-        .from("operational_plans")
-        .insert(planPayload)
-        .select("id")
-        .single();
-      if (planErr) throw planErr;
-
-      // 2) Insert operational_plan_months for the chosen month
-      const { data: monthRow, error: monthErr } = await supabase
-        .from("operational_plan_months")
-        .insert({
-          operational_plan_id: planRow.id,
-          month,
-          monthly_target: monthlyTarget,
-          organization_id: activeOrgId,
-        } as any)
-        .select("id")
-        .single();
-      if (monthErr) throw monthErr;
+      if (!activeOrgId) throw new Error("لم يتم تحديد الجمعية");
+      const payload = { name: "أنشطة يدوية", year, month, goals: [{ name: null, initiatives: [{ name: null, activities: [{ name, annualTarget: monthlyTarget, responsibleEmployeeId: employee.id }] }] }] };
+      const key = JSON.stringify(payload);
+      if (activityRequests.current[employee.id]?.key !== key) activityRequests.current[employee.id] = { key, id: crypto.randomUUID() };
+      const { data, error } = await supabase.rpc("save_manual_operational_plan", { p_org: activeOrgId, p_request_id: activityRequests.current[employee.id].id, p_payload: payload });
+      if (error) throw error;
+      const result = data as { plan_ids: string[]; month_ids: string[] };
+      if (!result?.plan_ids?.[0] || !result?.month_ids?.[0]) throw new Error("تعذر حفظ النشاط");
+      const planRow = { id: result.plan_ids[0] }, monthRow = { id: result.month_ids[0] };
 
       // 3) Update local state: add to activities and auto-select with sane daily target
       const newAct: Activity = {
@@ -365,7 +346,7 @@ export default function AddExecutivePlan() {
 
   const totalSelectedActs = Object.keys(selectedActivities).length;
   const canSubmit =
-    selectedDays.length > 0 && selectedEmployeeIds.length > 0 && totalSelectedActs > 0 && !submitting;
+    !!activeOrgId && selectedDays.length > 0 && selectedEmployeeIds.length > 0 && totalSelectedActs > 0 && !loadingActivities && !submitting;
 
   const handleSubmit = async () => {
     if (!canSubmit) {
@@ -380,7 +361,8 @@ export default function AddExecutivePlan() {
     try {
       const inserts: any[] = [];
       for (const planMonthId of Object.keys(selectedActivities)) {
-        const target = Number(selectedActivities[planMonthId]) || 1;
+        const target = Number(selectedActivities[planMonthId]);
+        if (!Number.isInteger(target) || target < 0 || selectedActivities[planMonthId] === "") throw new Error("أدخل مستهدفًا يوميًا صحيحًا");
         for (const day of selectedDays) {
           inserts.push({
             operational_plan_month_id: planMonthId,
@@ -392,34 +374,18 @@ export default function AddExecutivePlan() {
         }
       }
 
-      // Remove conflicting existing rows for the same plan_month + day combinations
-      // (so re-adding overrides cleanly)
-      const planMonthIds = Object.keys(selectedActivities);
-      await supabase
-        .from("executive_plans")
-        .delete()
-        .in("operational_plan_month_id", planMonthIds)
-        .in("day", selectedDays);
-
-      const { data: insertedPlans, error } = await supabase
-        .from("executive_plans")
-        .insert(inserts)
-        .select("id");
+      const { data, error } = await supabase.rpc("save_manual_executive_plans", { p_org: activeOrgId!, p_rows: inserts });
       if (error) throw error;
-
-      // توليد المراحل (تحضير/تنفيذ/ختام) تلقائياً لكل خطة تنفيذية جديدة
-      // بشكل متوازٍ في الخلفية دون انتظار النتيجة (fire-and-forget)
-      if (insertedPlans && insertedPlans.length > 0) {
-        for (const plan of insertedPlans) {
-          supabase.functions
-            .invoke("generate-related-tasks", { body: { executive_plan_id: plan.id } })
-            .catch((e) => console.error("phases gen failed:", e?.message));
-        }
+      const result = data as { created_ids: string[]; saved_ids: string[]; kept_count: number };
+      let failedPhases = 0;
+      for (const id of [...new Set(result.saved_ids)]) {
+        const { data: phases, error: phaseError } = await supabase.functions.invoke("generate-related-tasks", { body: { executive_plan_id: id } });
+        if (phaseError || !phases?.ok || phases?.skipped_no_user?.length) failedPhases++;
       }
-
       toast({
-        title: "تم بنجاح",
-        description: `أضيفت ${inserts.length} خطة تنفيذية لـ ${selectedEmployeeIds.length} موظف.`,
+        title: failedPhases ? "حُفظت الخطط وتحتاج بعض المهام إلى متابعة" : "تم حفظ الخطط والمهام",
+        description: 'أضيفت ' + result.created_ids.length + ' خطة، وحُفظت ' + result.kept_count + ' خطة سابقة دون تغيير.' + (failedPhases ? ' افتح مراحل النشاط لإكمال توليد المهام أو ربط حساب الموظف.' : ''),
+        variant: failedPhases ? "destructive" : undefined,
       });
       navigate(makeOrgUrl("/executive-plans"));
     } catch (e: any) {

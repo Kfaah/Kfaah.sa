@@ -1,3 +1,4 @@
+import { fetchAllReportRows } from "@/lib/fetchAllReportRows";
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -15,69 +16,77 @@ export default function MyPerformance() {
   const { user } = useAuth();
   const { isPreviewMode } = usePreviewMode();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
   const [employee, setEmployee] = useState<any>(null);
   const [stats, setStats] = useState({
     qTotal: 0, qOpen: 0, qAnswered: 0, qValidated: 0, qRejected: 0,
-    avgScore: 0,
+    avgScore: null as number | null,
     tasksTotal: 0, tasksDone: 0, tasksPending: 0,
     accTasksTotal: 0, accTasksDone: 0,
   });
   const [recentChecks, setRecentChecks] = useState<any[]>([]);
 
   useEffect(() => {
+    let cancelled = false;
     if (isPreviewMode) {
-      setEmployee({ full_name: "معاينة", job_role: "وضع المعاينة" });
+      setEmployee({full_name: "معاينة", job_role: "وضع المعاينة"});
       setLoading(false);
       return;
     }
     if (!user) return;
+    setLoading(true);
+    setLoadError(null);
     (async () => {
-      const { data: emp } = await supabase
-        .from("employees")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      setEmployee(emp);
-      if (!emp) { setLoading(false); return; }
-
-      const sb = supabase as any;
-      const qRes: any = await sb.from("accountability_questions")
-        .select("status,evidence_score,evidence_verdict")
-        .eq("target_employee_id", emp.id);
-      const tRes: any = await sb.from("tasks")
-        .select("status,id")
-        .eq("assigned_employee_id", emp.id);
-      const accTRes: any = await sb.from("accountability_tasks")
-        .select("status")
-        .eq("assigned_employee_id", emp.id);
-      const evRes: any = await sb.from("evidence_checks")
-        .select("id,verdict,score,created_at,accountability_question_id")
-        .order("created_at", { ascending: false }).limit(10);
-
-      const qs = (qRes.data ?? []) as any[];
-      const scores = qs.filter((q) => q.evidence_score != null).map((q) => Number(q.evidence_score));
-      const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
-
-      const tasks = (tRes.data ?? []) as any[];
-      const accTasks = (accTRes.data ?? []) as any[];
-
-      setStats({
-        qTotal: qs.length,
-        qOpen: qs.filter((q) => q.status === "open").length,
-        qAnswered: qs.filter((q) => q.status === "answered").length,
-        qValidated: qs.filter((q) => q.status === "validated").length,
-        qRejected: qs.filter((q) => q.status === "rejected").length,
-        avgScore: avg,
-        tasksTotal: tasks.length,
-        tasksDone: tasks.filter((t) => t.status === "completed" || t.status === "executed").length,
-        tasksPending: tasks.filter((t) => t.status !== "completed" && t.status !== "executed").length,
-        accTasksTotal: accTasks.length,
-        accTasksDone: accTasks.filter((t) => t.status === "completed").length,
-      });
-      setRecentChecks((evRes.data ?? []) as any[]);
-      setLoading(false);
+      try {
+        const {data: emp, error} = await supabase.from("employees").select("id,user_id,organization_id,full_name,job_role").eq("user_id", user.id).maybeSingle();
+        if (error) throw error;
+        if (!emp) throw new Error("لم يتم العثور على ملف الموظف.");
+        const sb = supabase as any;
+        const [qs, tasks, accTasks] = await Promise.all([
+          fetchAllReportRows<any>(sb.from("accountability_questions").select("id,status,evidence_score,evidence_verdict")
+            .eq("organization_id", emp.organization_id).eq("target_employee_id", emp.id).order("id")),
+          fetchAllReportRows<any>(sb.from("tasks").select("status,id")
+            .eq("organization_id", emp.organization_id)
+            .or(`assigned_employee_id.eq.${emp.id},and(assigned_employee_id.is.null,user_id.eq.${user.id})`).order("id")),
+          fetchAllReportRows<any>(sb.from("accountability_tasks").select("id,status")
+            .eq("organization_id", emp.organization_id).eq("assigned_employee_id", emp.id).order("id")),
+        ]);
+        const checks: any[] = [];
+        // Restrict evidence to this employee's questions, with bounded URL sizes.
+        for (let i = 0; i < qs.length; i += 100) {
+          const {data, error: evidenceError} = await sb.from("evidence_checks")
+            .select("id,verdict,score,created_at,accountability_question_id")
+            .eq("organization_id", emp.organization_id).in("accountability_question_id", qs.slice(i, i + 100).map(q => q.id))
+            .order("created_at", {ascending: false}).order("id").limit(10);
+          if (evidenceError) throw evidenceError;
+          checks.push(...(data || []));
+        }
+        if (cancelled) return;
+        const scores = qs.filter(q => q.evidence_score != null).map(q => Number(q.evidence_score));
+        setEmployee(emp);
+        setStats({
+          qTotal: qs.length, qOpen: qs.filter(q => q.status === "open").length,
+          qAnswered: qs.filter(q => q.status === "answered").length,
+          qValidated: qs.filter(q => q.status === "validated").length,
+          qRejected: qs.filter(q => q.status === "rejected").length,
+          avgScore: scores.length ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : null,
+          tasksTotal: tasks.length,
+          tasksDone: tasks.filter(t => t.status === "completed" || t.status === "executed").length,
+          tasksPending: tasks.filter(t => t.status !== "completed" && t.status !== "executed").length,
+          accTasksTotal: accTasks.length, accTasksDone: accTasks.filter(t => t.status === "completed").length,
+        });
+        setRecentChecks(checks.sort((a,b) => b.created_at.localeCompare(a.created_at) || a.id.localeCompare(b.id)).slice(0,10));
+      } catch (error: any) {
+        if (!cancelled) setLoadError(error.message || "تعذر تحميل بيانات الأداء.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
-  }, [user, isPreviewMode]);
+    return () => {cancelled = true;};
+  }, [user, isPreviewMode, retry]);
+
+  if (loadError) return <DashboardLayout><div role="alert" className="p-6 space-y-4"><p>تعذر تحميل بيانات الأداء: {loadError}</p><button className="underline" onClick={() => setRetry(value => value + 1)}>إعادة المحاولة</button></div></DashboardLayout>;
 
   if (loading) return <DashboardLayout><div className="flex items-center justify-center py-24"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></DashboardLayout>;
 
@@ -106,7 +115,7 @@ export default function MyPerformance() {
 
         {/* Top KPIs */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <BigKpi title="متوسط درجة إثباتاتي" value={`${stats.avgScore}/100`} hint="من فحص النظام التلقائي" tone="primary" icon={<TrendingUp />} />
+          <BigKpi title="متوسط درجة إثباتاتي" value={stats.avgScore === null ? "لم يُقيّم بعد" : `${stats.avgScore}/100`} hint={stats.avgScore === null ? "لا توجد إثباتات مقيّمة" : "من فحص النظام التلقائي"} tone="primary" icon={<TrendingUp />} />
           <BigKpi title="نسبة المساءلات المعتمدة" value={`${validationRate}%`} hint={`${stats.qValidated} من ${stats.qTotal}`} tone="emerald" icon={<ShieldCheck />} />
           <BigKpi title="نسبة إنجاز مهامي" value={`${taskRate}%`} hint={`${stats.tasksDone} من ${stats.tasksTotal}`} tone="blue" icon={<ListChecks />} />
           <BigKpi title="إنجاز مهام المساءلة" value={`${accRate}%`} hint={`${stats.accTasksDone} من ${stats.accTasksTotal}`} tone="amber" icon={<Target />} />

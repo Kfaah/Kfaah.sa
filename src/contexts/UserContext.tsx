@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import { getOrgPrivilegeFlags } from "@/lib/orgAuthorization";
 
 type EmployeeUpdateData = {
   full_name?: string;
@@ -76,6 +78,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const { user: authUser } = useAuth();
+  const { currentOrg } = useOrganization();
   const [user, setUser] = useState<UserData>(defaultUser);
   const [loading, setLoading] = useState(true);
   const [previewAsEmployee, setPreviewAsEmployee] = useState(false);
@@ -88,7 +91,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, [previewingEmployee]);
 
-  // Fetch profile when auth user changes
+  // Fetch the profile again when either the authenticated user or active
+  // organization changes, because one auth identity may belong to many orgs.
   useEffect(() => {
     if (authUser) {
       fetchProfile();
@@ -96,7 +100,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       setUser(defaultUser);
       setLoading(false);
     }
-  }, [authUser]);
+  }, [authUser, currentOrg?.id]);
 
   const fetchProfile = async () => {
     if (!authUser) return;
@@ -104,17 +108,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       
-      // First check if user is an employee
-      const { data: employeeData } = await supabase
+      // Resolve employee/profile data inside the active organization.
+      let employeeQuery = supabase
         .from("employees")
         .select("*")
-        .eq("user_id", authUser.id)
-        .maybeSingle();
+        .eq("user_id", authUser.id);
+      if (currentOrg?.id) {
+        employeeQuery = employeeQuery.eq("organization_id", currentOrg.id);
+      }
+      const { data: employeeData } = await employeeQuery.maybeSingle();
 
-      // Check user role
-      const { data: userRole } = await supabase.rpc("get_user_role", {
-        _user_id: authUser.id,
-      });
+      const flags = await getOrgPrivilegeFlags(
+        authUser.id,
+        currentOrg?.id,
+      );
 
       if (employeeData) {
         // User is an employee - use employee data
@@ -125,20 +132,25 @@ export function UserProvider({ children }: { children: ReactNode }) {
         // جلب القسم من خلال job_roles -> departments
         let departmentName = "";
         if (employeeData.job_role) {
-          const { data: jobRoleData } = await supabase
+          let jobRoleQuery = supabase
             .from("job_roles")
             .select("department_id, departments(name)")
-            .eq("name", employeeData.job_role)
-            .maybeSingle();
+            .eq("name", employeeData.job_role);
+          if (currentOrg?.id) {
+            jobRoleQuery = jobRoleQuery.eq("organization_id", currentOrg.id);
+          }
+          const { data: jobRoleData } = await jobRoleQuery.maybeSingle();
           
           if (jobRoleData?.departments) {
             departmentName = (jobRoleData.departments as any).name || "";
           }
         }
         
-        // استخدام الدور في النظام (admin/super_admin/user) وليس job_role
-        const isAdminRole = userRole === "admin" || userRole === "super_admin";
-        const displayRole = isAdminRole ? "مدير النظام" : (employeeData.job_role || "موظف");
+        const displayRole = flags.isSuperAdmin
+          ? "مدير النظام"
+          : flags.isOrgAdmin
+            ? "مدير الجمعية"
+            : (employeeData.job_role || "موظف");
         
         setUser({
           firstName,
@@ -174,7 +186,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
             department: data.department || "",
             location: data.location || "",
             profileImage: data.avatar_url,
-            role: (userRole === "admin" || userRole === "super_admin") ? "مدير النظام" : "مستخدم",
+            role: flags.isSuperAdmin
+              ? "مدير النظام"
+              : flags.isOrgAdmin
+                ? "مدير الجمعية"
+                : "مستخدم",
             jobRole: (data as any).job_role || "",
             username: authUser.user_metadata?.username || "",
             isEmployee: false,
@@ -200,7 +216,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
             firstName,
             lastName,
             email: authUser.email || "",
-            role: (userRole === "admin" || userRole === "super_admin") ? "مدير النظام" : "مستخدم",
+            role: flags.isSuperAdmin
+              ? "مدير النظام"
+              : flags.isOrgAdmin
+                ? "مدير الجمعية"
+                : "مستخدم",
           });
         }
       }
@@ -215,12 +235,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (!authUser) return;
 
     try {
-      // Check if user is an employee
-      const { data: employeeData } = await supabase
+      let employeeLookup = supabase
         .from("employees")
         .select("id")
-        .eq("user_id", authUser.id)
-        .maybeSingle();
+        .eq("user_id", authUser.id);
+      if (currentOrg?.id) {
+        employeeLookup = employeeLookup.eq("organization_id", currentOrg.id);
+      }
+      const { data: employeeData } = await employeeLookup.maybeSingle();
 
       if (employeeData) {
         // Update employee record
@@ -235,10 +257,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
         if (data.department !== undefined) employeeUpdateData.job_role = data.department;
 
         if (Object.keys(employeeUpdateData).length > 0) {
-          const { error } = await supabase
+          let updateQuery = supabase
             .from("employees")
             .update(employeeUpdateData)
             .eq("user_id", authUser.id);
+          if (currentOrg?.id) {
+            updateQuery = updateQuery.eq("organization_id", currentOrg.id);
+          }
+          const { error } = await updateQuery;
 
           if (error) {
             console.error("Error updating employee:", error);
@@ -308,19 +334,25 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (!authUser) return;
 
     try {
-      // Check if user is an employee
-      const { data: employeeData } = await supabase
+      let employeeLookup = supabase
         .from("employees")
         .select("id")
-        .eq("user_id", authUser.id)
-        .maybeSingle();
+        .eq("user_id", authUser.id);
+      if (currentOrg?.id) {
+        employeeLookup = employeeLookup.eq("organization_id", currentOrg.id);
+      }
+      const { data: employeeData } = await employeeLookup.maybeSingle();
 
       if (employeeData) {
         // Update employee avatar
-        const { error } = await supabase
+        let updateQuery = supabase
           .from("employees")
           .update({ avatar_url: image })
           .eq("user_id", authUser.id);
+        if (currentOrg?.id) {
+          updateQuery = updateQuery.eq("organization_id", currentOrg.id);
+        }
+        const { error } = await updateQuery;
 
         if (error) {
           console.error("Error updating employee avatar:", error);

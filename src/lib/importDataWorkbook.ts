@@ -284,7 +284,7 @@ export async function importDataWorkbook({
   onProgress,
 }: ImportOptions): Promise<ImportResult> {
   const buffer = await blob.arrayBuffer();
-  const wb = XLSX.read(buffer, { type: "array" });
+  const wb = XLSX.read(buffer, { type: "array", raw: true });
   const ws = wb.Sheets[wb.SheetNames[0]];
   if (!ws) throw new Error("لا تحتوي الورقة الأولى على بيانات");
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: null });
@@ -340,31 +340,31 @@ export async function importDataWorkbook({
 
   const pushRows = async (batch: Record<string, unknown>[]) => {
     const table = supabase.from(detected as never);
-    const { error } = conflict
-      ? await table.upsert(batch as never, { onConflict: conflict, ignoreDuplicates: true })
-      : await table.insert(batch as never);
-    return error?.message ?? null;
+    const { error, count } = conflict
+      ? await table.upsert(batch as never, { onConflict: conflict, ignoreDuplicates: true, count: "exact" })
+      : await table.insert(batch as never, { count: "exact" });
+    return { error: error?.message ?? null, inserted: count ?? 0 };
   };
 
   const runBatch = async (batch: Record<string, unknown>[]) => {
-    let err = await pushRows(batch);
-    if (err && batch.length > 1) {
+    let outcome = await pushRows(batch);
+    if (outcome.error && batch.length > 1) {
       // إعادة المحاولة بدفعات أصغر حتى لا تسقط كل الصفوف بسبب صف واحد
       const half = Math.ceil(batch.length / 2);
       const first = await pushRows(batch.slice(0, half));
       const second = await pushRows(batch.slice(half));
-      if (!first) inserted += half;
+      if (!first.error) inserted += first.inserted;
       else failed += half;
-      if (!second) inserted += batch.length - half;
+      if (!second.error) inserted += second.inserted;
       else failed += batch.length - half;
-      err = first ?? second;
+      const err = first.error ?? second.error;
       if (err) lastError = err;
-    } else if (err) {
+    } else if (outcome.error) {
       failed += batch.length;
-      lastError = err;
-      console.warn("batch import failed", err);
+      lastError = outcome.error;
+      console.warn("batch import failed", outcome.error);
     } else {
-      inserted += batch.length;
+      inserted += outcome.inserted;
     }
     done += batch.length;
     onProgress?.(Math.min(done, mapped.length), mapped.length);
@@ -391,6 +391,7 @@ export async function importDataWorkbook({
       detected_schema: detected,
       total_rows: rows.length,
       inserted_rows: inserted,
+      duplicate_rows: Math.max(0, rows.length - inserted - failed),
       failed_rows: failed,
       status: failed > 0 ? "completed_with_errors" : "completed",
       error_log: lastError ? { reason: lastError } : null,

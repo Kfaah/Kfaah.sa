@@ -1,11 +1,13 @@
+import { ReportDataState } from "@/components/admin/ReportDataState";
 import { useMemo } from "react";
 import {
   Building2, Users, HandCoins, TrendingUp, Sparkles,
-  ShoppingCart, Target, Trophy,
+  ShoppingCart, Target, Trophy, RefreshCw,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { useAdminAggregates } from "@/hooks/useAdminAggregates";
 
 const fmt = (n: number) =>
@@ -23,7 +25,7 @@ const PIE_COLORS = [
 ];
 
 export default function AdminOverview() {
-  const { metrics, loading } = useAdminAggregates();
+  const { metrics, loading, error: metricsError, refresh: refreshMetrics } = useAdminAggregates();
 
   const totals = useMemo(() => {
     return metrics.reduce((acc, m) => ({
@@ -50,10 +52,13 @@ export default function AdminOverview() {
       donors: m.donors,
     })), [metrics]);
 
-  const donorsDist = useMemo(() =>
-    metrics.filter(m => m.donors > 0).slice(0, 8).map(m => ({
-      name: m.org_name, value: m.donors,
-    })), [metrics]);
+  const donorsDist = useMemo(() => {
+    const sorted = metrics.filter(m => m.donors > 0).sort((a,b) => b.donors-a.donors);
+    const rows = sorted.slice(0,7).map(m => ({name:m.org_name,value:m.donors}));
+    const remaining = sorted.slice(7).reduce((sum,m) => sum+m.donors,0);
+    if (remaining) rows.push({name:"بقية الجمعيات",value:remaining});
+    return rows;
+  }, [metrics]);
 
   const recoveryRate = totals.abandoned ? (totals.recovered / totals.abandoned) * 100 : 0;
   const completionRate = totals.tasks ? (totals.done / totals.tasks) * 100 : 0;
@@ -61,16 +66,19 @@ export default function AdminOverview() {
   const topOrg = useMemo(() =>
     [...metrics].sort((a, b) => b.overall_score - a.overall_score)[0], [metrics]);
 
+  if (loading || metricsError) return <ReportDataState loading={loading} error={metricsError} retry={refreshMetrics} />;
+
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 sm:p-8 space-y-6">
       {/* Hero */}
       <div className="flex items-end justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white">نظرة عامة موحّدة</h1>
           <p className="text-white/80 mt-1">
-            مجموع البيانات من جميع الجمعيات في مكان واحد · لحظة بلحظة
+            مجموع البيانات من جميع الجمعيات في مكان واحد
           </p>
         </div>
+        <Button variant="secondary" onClick={refreshMetrics} className="gap-2"><RefreshCw className="h-4 w-4" /> تحديث البيانات</Button>
         {topOrg && (
           <Card className="bg-white border-0 px-4 py-3 flex items-center gap-3 shadow-xl">
             <div className="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center">
@@ -88,11 +96,11 @@ export default function AdminOverview() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-6 gap-4">
         <KpiCard icon={Building2} label="الجمعيات" value={fmt(totals.orgs)} sub={`${totals.active} نشطة`} />
         <KpiCard icon={Users} label="المتبرعون" value={fmt(totals.donors)} sub="إجمالي" />
         <KpiCard icon={HandCoins} label="التبرعات" value={fmt(totals.donations)} sub="عملية" />
-        <KpiCard icon={TrendingUp} label="الإيرادات" value={fmtSAR(totals.revenue)} sub="إجمالي" />
+        <KpiCard icon={TrendingUp} label="الإيرادات" value={fmt(totals.revenue)} sub="ريال سعودي" />
         <KpiCard icon={Users} label="الموظفون" value={fmt(totals.employees)} sub="عبر كل الجمعيات" />
         <KpiCard icon={Sparkles} label="رؤى ذكية" value={fmt(totals.insights)} sub={`${totals.ideas} فكرة تسويق`} />
       </div>
@@ -110,8 +118,8 @@ export default function AdminOverview() {
       </div>
 
       {/* Charts */}
-      <div className="grid lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2 bg-card border-border p-5 shadow-sm">
+      <div className="grid 2xl:grid-cols-3 gap-4">
+        <Card className="min-w-0 2xl:col-span-2 bg-card border-border p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-foreground font-bold">إيرادات الجمعيات</h3>
@@ -119,6 +127,7 @@ export default function AdminOverview() {
             </div>
             <Badge variant="outline" className="border-accent/40 text-accent">SAR</Badge>
           </div>
+          <p className="text-xs text-muted-foreground mb-2 sm:hidden">مرّر الرسم أفقيًا لعرض بقية الجمعيات</p>
           <RevenueBarChart data={revenueByOrg} />
         </Card>
 
@@ -126,9 +135,9 @@ export default function AdminOverview() {
           <h3 className="text-foreground font-bold mb-1">توزيع المتبرعين</h3>
           <p className="text-muted-foreground text-xs mb-4">حصة كل جمعية</p>
 
-          <div className="flex items-center gap-5" style={{ direction: "ltr" }}>
+          <div className="flex flex-col items-center gap-5" style={{ direction: "ltr" }}>
             {/* قائمة الجمعيات على اليسار */}
-            <div className="flex-1 min-w-0 space-y-2 order-1">
+            <div className="w-full min-w-0 space-y-2 order-2">
               {donorsDist.map((item, i) => {
                 const total = donorsDist.reduce((s, d) => s + d.value, 0);
                 const pct = total ? (item.value / total) * 100 : 0;
@@ -146,7 +155,7 @@ export default function AdminOverview() {
                       >
                         {i + 1}
                       </span>
-                      <span className="text-foreground font-medium truncate">{item.name}</span>
+                      <span className="text-foreground font-medium break-words">{item.name}</span>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <span className="text-muted-foreground tabular-nums">{fmt(item.value)}</span>
@@ -163,7 +172,7 @@ export default function AdminOverview() {
             </div>
 
             {/* الدائرة على اليمين مع الأرقام داخل كل شريحة */}
-            <div className="flex-shrink-0 order-2" style={{ width: 200, height: 200 }}>
+            <div className="flex-shrink-0 order-1" style={{ width: 200, height: 200 }}>
               <NumberedDonut data={donorsDist} colors={PIE_COLORS} />
             </div>
           </div>
@@ -180,7 +189,7 @@ export default function AdminOverview() {
 function RevenueBarChart({ data }: { data: { name: string; revenue: number; donors: number }[] }) {
   const W = 760;
   const H = 300;
-  const padX = 44;
+  const padX = 72;
   const padTop = 22;
   const padBottom = 54;
   const chartW = W - padX * 2;
@@ -195,7 +204,8 @@ function RevenueBarChart({ data }: { data: { name: string; revenue: number; dono
   }
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-[300px]" role="img" aria-label="إيرادات الجمعيات">
+    <div className="overflow-x-auto rounded-lg" role="region" aria-label="مخطط إيرادات الجمعيات، قابل للتمرير أفقيًا" tabIndex={0}>
+    <svg viewBox={`0 0 ${W} ${H}`} className="min-w-[640px] w-full h-[300px]" role="img" aria-label="إيرادات الجمعيات">
       <defs>
         <linearGradient id="adminRevenueGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={ACCENT} />
@@ -231,6 +241,7 @@ function RevenueBarChart({ data }: { data: { name: string; revenue: number; dono
         );
       })}
     </svg>
+    </div>
   );
 }
 
@@ -238,12 +249,12 @@ function KpiCard({ icon: Icon, label, value, sub }: {
   icon: any; label: string; value: string; sub: string;
 }) {
   return (
-    <Card className="bg-card border-border p-4 hover:shadow-card transition-shadow">
+    <Card className="min-w-0 bg-card border-border p-4 hover:shadow-card transition-shadow">
       <div className="w-9 h-9 rounded-lg bg-accent/10 text-accent flex items-center justify-center mb-2">
         <Icon className="w-5 h-5" />
       </div>
       <div className="text-[13px] text-muted-foreground font-medium">{label}</div>
-      <div className="text-2xl font-bold text-foreground mt-1 leading-tight">{value}</div>
+      <div className="text-xl sm:text-2xl font-bold text-foreground mt-1 leading-tight tabular-nums break-words">{value}</div>
       <div className="text-[12px] text-muted-foreground mt-1">{sub}</div>
     </Card>
   );

@@ -87,13 +87,13 @@ const PHASE_META: Record<Phase, { label: string; color: string; chip: string; al
 };
 
 function toDateInputValue(year: number, month: number, day: number, offset: number) {
-  const d = new Date(year, month - 1, day);
-  d.setDate(d.getDate() + offset);
+  // These are calendar dates: local midnight converted to UTC shifts Riyadh dates back a day.
+  const d = new Date(Date.UTC(year, month - 1, day + offset));
   return d.toISOString().slice(0, 10);
 }
 
 function diffDays(year: number, month: number, day: number, isoDate: string) {
-  const base = new Date(year, month - 1, day);
+  const base = new Date(Date.UTC(year, month - 1, day));
   const target = new Date(isoDate);
   return Math.round((target.getTime() - base.getTime()) / (1000 * 60 * 60 * 24));
 }
@@ -470,11 +470,12 @@ export function ActivityPhasesPopover({
       <PopoverContent
         side="bottom"
         align="end"
-        className="w-[640px] p-0 bg-popover shadow-2xl border-2 border-[hsl(var(--primary)/0.2)] overflow-hidden"
+        collisionPadding={8}
+        className="flex flex-col w-[min(640px,calc(100vw-16px))] max-h-[var(--radix-popover-content-available-height)] p-0 bg-popover shadow-2xl border-2 border-[hsl(var(--primary)/0.2)] overflow-hidden"
         dir="rtl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-gradient-to-l from-[hsl(var(--primary))] to-[hsl(var(--accent))] p-4 text-white">
+        <div className="shrink-0 bg-gradient-to-l from-[hsl(var(--primary))] to-[hsl(var(--accent))] p-4 text-white">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur flex items-center justify-center shrink-0">
@@ -504,7 +505,7 @@ export function ActivityPhasesPopover({
           </div>
         </div>
 
-        <div className="p-4 max-h-[65vh] overflow-y-auto">
+        <div className="p-4 min-h-0 max-h-[65vh] overflow-y-auto">
           {loading && (
             <div className="flex flex-col items-center justify-center py-8 gap-2">
               <Loader2 className="w-6 h-6 animate-spin text-[hsl(var(--primary))]" />

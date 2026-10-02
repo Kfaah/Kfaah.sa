@@ -16,8 +16,9 @@ import {
   HardDriveUpload,
   UserCog,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import { getOrgPrivilegeFlags } from "@/lib/orgAuthorization";
 import { cn } from "@/lib/utils";
 
 type Tile = {
@@ -108,7 +109,7 @@ const tiles: Tile[] = [
     key: "notifications",
     to: "notifications",
     label: "الإشعارات",
-    description: "تخصيص قواعد التنبيهات والتذكيرات",
+    description: "تفضيلات التنبيه وإدارة إشعارات حسابك",
     icon: Bell,
     gradient: "from-blue-500 to-cyan-500",
     requiresAdmin: true,
@@ -117,7 +118,7 @@ const tiles: Tile[] = [
     key: "security",
     to: "security",
     label: "الأمان والخصوصية",
-    description: "كلمات المرور، الجلسات وسجل الدخول",
+    description: "كلمة المرور، الجلسات وآخر تسجيل دخول",
     icon: Database,
     gradient: "from-slate-600 to-zinc-700",
     requiresAdmin: true,
@@ -136,23 +137,26 @@ const tiles: Tile[] = [
 export default function SettingsHub() {
   const { slug } = useParams<{ slug?: string }>();
   const { user } = useAuth();
+  const { currentOrg } = useOrganization();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuper, setIsSuper] = useState(false);
 
   useEffect(() => {
     const load = async () => {
       if (!user) return;
-      const checks = await Promise.all([
-        supabase.rpc("has_role", { _user_id: user.id, _role: "super_admin" }),
-        supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }),
-        supabase.rpc("has_role", { _user_id: user.id, _role: "hr_manager" }),
-        supabase.rpc("has_role", { _user_id: user.id, _role: "moderator" }),
-      ]);
-      setIsSuper(checks[0].data === true);
-      setIsAdmin(checks.some((r) => r.data === true));
+      const flags = await getOrgPrivilegeFlags(
+        user.id,
+        currentOrg?.id,
+      );
+      setIsSuper(flags.isSuperAdmin);
+      setIsAdmin(
+        flags.isSuperAdmin ||
+        flags.isOrgAdmin ||
+        flags.isModerator,
+      );
     };
     load();
-  }, [user]);
+  }, [user, currentOrg?.id]);
 
   const base = slug ? `/${slug}/settings` : "/settings";
 

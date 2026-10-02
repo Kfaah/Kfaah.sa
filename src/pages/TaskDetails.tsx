@@ -51,6 +51,7 @@ interface Task {
   due_date: string | null;
   ai_generated: boolean;
   created_at: string;
+  organization_id: string;
   completion_percentage: number;
   quality_percentage: number;
   estimated_time_minutes: number | null;
@@ -107,37 +108,32 @@ const TaskDetails = () => {
     }
   }, [searchParams, task]);
 
-  // التحقق من صلاحيات المستخدم
+  // التحقق من صلاحيات المستخدم داخل جمعية المهمة نفسها
   useEffect(() => {
     const checkPermissions = async () => {
-      if (!authUser) return;
+      if (!authUser || !task?.organization_id) return;
 
-      const { data: roleData } = await supabase
+      const { data: roles } = await supabase
         .from("user_roles")
-        .select("role")
-        .eq("user_id", authUser.id)
-        .single();
+        .select("role, organization_id")
+        .eq("user_id", authUser.id);
 
-      if (roleData?.role === "admin") {
-        setIsAdmin(true);
-        setCanEditTime(true);
-      }
+      const isSuper = (roles ?? []).some((r) => r.role === "super_admin");
+      const isScopedAdmin = (roles ?? []).some(
+        (r) =>
+          r.role === "admin" &&
+          r.organization_id === task.organization_id
+      );
+      const isTimeEditor = (roles ?? []).some(
+        (r) => r.role === "time_editor"
+      );
 
-      // التحقق من صلاحية time_editor
-      const { data: timeEditorData } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", authUser.id)
-        .eq("role", "time_editor")
-        .maybeSingle();
-
-      if (timeEditorData) {
-        setCanEditTime(true);
-      }
+      setIsAdmin(isSuper || isScopedAdmin);
+      setCanEditTime(isSuper || isScopedAdmin || isTimeEditor);
     };
 
     checkPermissions();
-  }, [authUser]);
+  }, [authUser, task?.organization_id]);
 
   // جلب بيانات المهمة
   useEffect(() => {
@@ -161,6 +157,7 @@ const TaskDetails = () => {
           .from("employees")
           .select("id, full_name, user_id, job_role, avatar_url")
           .eq("user_id", taskData.user_id)
+          .eq("organization_id", taskData.organization_id)
           .single();
 
         setEmployee(employeeData);
@@ -709,6 +706,7 @@ const TaskDetails = () => {
             onOpenChange={setIsCommunicationDialogOpen}
             taskId={task.id}
             taskTitle={task.title}
+            organizationId={task.organization_id}
             currentUserId={authUser.id}
             isAdmin={isAdmin}
             taskOwnerId={task.user_id}

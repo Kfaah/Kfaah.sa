@@ -1,3 +1,4 @@
+import { ReportDataState } from "@/components/admin/ReportDataState";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,8 @@ import { DateRangeFilter } from "@/components/admin/DateRangeFilter";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import jsPDF from "jspdf";
+import { exportPaginatedPdf } from "@/lib/exportPaginatedPdf";
+import { exportReportOffice } from "@/utils/exportReportOffice";
 import { exportExecutiveReportPpt, type ExecReport } from "@/utils/exportExecutiveReportPpt";
 import { PageHeader } from "@/components/layout/PageHeader";
 
@@ -35,7 +37,7 @@ const THEMES: { key: ThemeKey; title: string; subtitle: string; icon: any; color
 ];
 
 const fmt = (n: number) => new Intl.NumberFormat("en-US").format(Math.round(n));
-const fmtSAR = (n: number) => `${fmt(n)} ر.س`;
+const fmtSAR = (n: number) => `${new Intl.NumberFormat("ar-SA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} ر.س`;
 const pct = (n: number) => `${n.toFixed(1)}%`;
 const escapePdfText = (value: unknown) => String(value ?? "").replace(/[&<>"']/g, character => ({
   "&": "&amp;",
@@ -47,7 +49,7 @@ const escapePdfText = (value: unknown) => String(value ?? "").replace(/[&<>"']/g
 
 export default function AdminReports({ embedded: embeddedProp = false, lockedOrgId }: { embedded?: boolean; lockedOrgId?: string } = {}) {
   const [range, setRange] = useState<DateRange>({ from: null, to: null, label: "منذ البداية" });
-  const { metrics, loading } = useAdminAggregates(range);
+  const { metrics, loading, error: metricsError, refresh: refreshMetrics } = useAdminAggregates(range);
   const [mode, setMode] = useState<Mode>("thematic");
   const [theme, setTheme] = useState<ThemeKey>("donors");
   const [orgId, setOrgId] = useState<string>("");
@@ -55,6 +57,9 @@ export default function AdminReports({ embedded: embeddedProp = false, lockedOrg
   const [execLoading, setExecLoading] = useState(false);
   const [exportingPpt, setExportingPpt] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
+  const reportRequest = useRef(0);
+  const [exportingOffice, setExportingOffice] = useState(false);
+  useEffect(() => { reportRequest.current++; setExecReport(null); setExecLoading(false); }, [orgId, range.from?.getTime(), range.to?.getTime()]);
 
   const _params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const isEmbedded = embeddedProp || _params.get("embedded") === "1";
@@ -69,13 +74,14 @@ export default function AdminReports({ embedded: embeddedProp = false, lockedOrg
   );
 
   useEffect(() => {
-    if (!orgId && visibleMetrics.length > 0) setOrgId(visibleMetrics[0].org_id);
-  }, [visibleMetrics, orgId]);
+    if (!loading && !metricsError && !visibleMetrics.some(m => m.org_id === orgId)) setOrgId(visibleMetrics[0]?.org_id || "");
+  }, [visibleMetrics, orgId, loading, metricsError]);
 
   const selected = useMemo(() => visibleMetrics.find(m => m.org_id === orgId), [visibleMetrics, orgId]);
 
   const generateExecutive = async () => {
     if (!selected) return;
+    const requestId = ++reportRequest.current;
     setExecLoading(true);
     setExecReport(null);
     try {
@@ -84,12 +90,13 @@ export default function AdminReports({ embedded: embeddedProp = false, lockedOrg
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+      if (requestId !== reportRequest.current) return;
       setExecReport(data.report as ExecReport);
       toast.success("تم توليد التقرير التنفيذي");
     } catch (e: any) {
-      toast.error(e.message || "تعذّر توليد التقرير");
+      if (requestId === reportRequest.current) toast.error(e.message || "تعذّر توليد التقرير");
     } finally {
-      setExecLoading(false);
+      if (requestId === reportRequest.current) setExecLoading(false);
     }
   };
 
@@ -110,8 +117,20 @@ export default function AdminReports({ embedded: embeddedProp = false, lockedOrg
     }
   };
 
+  const canExport = !!selected && (mode === "thematic" || !!execReport) && !loading && !execLoading;
+  const exportOffice = async (format: "docx" | "xlsx") => {
+    if (!selected || !canExport) return;
+    setExportingOffice(true);
+    try {
+      const executive = mode === "executive" ? execReport : null;
+      const title = executive ? "تقرير الأداء التنفيذي" : (THEMES.find(item => item.key === theme)?.title || "تقرير موضوعي");
+      await exportReportOffice({ title, organization: selected.org_name, period: range.label, summary: executive?.executive_summary, recommendations: executive?.strategic_recommendations, sections: executive ? executive.sections.map(section => ({ title: section.title, headers: ["المؤشر", "النتيجة", "التحليل والتوجيه"], rows: section.rows.map(row => [row.metric, row.result, row.analysis]) })) : [{ title, headers: ["المؤشر", "القيمة"], rows: themeRows(theme, selected).map(row => [row.label, row.value]) }] }, format);
+      toast.success("تم تنزيل التقرير");
+    } catch { toast.error("تعذر تصدير التقرير"); } finally { setExportingOffice(false); }
+  };
+
   const exportPDF = async () => {
-    if (!selected) return;
+    if (!selected || !canExport) return;
     const themeTitle = THEMES.find(t => t.key === theme)?.title ?? "تقرير موضوعي";
     const rows = themeRows(theme, selected);
     const reportHtml = mode === "thematic"
@@ -143,22 +162,7 @@ export default function AdminReports({ embedded: embeddedProp = false, lockedOrg
     document.body.appendChild(printable);
 
     try {
-      await document.fonts.ready;
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(printable, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
-      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const imageHeight = (canvas.height * pageWidth) / canvas.width;
-      const image = canvas.toDataURL("image/jpeg", 0.94);
-      let position = 0;
-      doc.addImage(image, "JPEG", 0, position, pageWidth, imageHeight);
-      for (let remaining = imageHeight - pageHeight; remaining > 0; remaining -= pageHeight) {
-        position -= pageHeight;
-        doc.addPage();
-        doc.addImage(image, "JPEG", 0, position, pageWidth, imageHeight);
-      }
-      doc.save(`${selected.org_name.replace(/\s+/g, "_")}_${mode}_${theme}.pdf`);
+      await exportPaginatedPdf(printable, `${selected.org_name.replace(/\s+/g, "_")}_${mode}_${theme}.pdf`);
       toast.success("تم تنزيل PDF باللغة العربية");
     } catch (error) {
       console.error("PDF export failed", error);
@@ -168,6 +172,8 @@ export default function AdminReports({ embedded: embeddedProp = false, lockedOrg
     }
   };
 
+  if (loading || metricsError) return <ReportDataState loading={loading} error={metricsError} retry={refreshMetrics} />;
+
   return (
     <div className={`${isEmbedded ? "" : "mx-auto max-w-[1280px] p-6"} w-full space-y-6`}>
       {!isEmbedded && (
@@ -176,7 +182,7 @@ export default function AdminReports({ embedded: embeddedProp = false, lockedOrg
         title="التقارير"
         subtitle="تقارير موضوعية متخصصة + تقارير تنفيذية سردية للمجلس والجهات الرسمية، قابلة للتصدير PDF"
         actions={
-          <Button onClick={exportPDF} disabled={!selected} className="gap-2 bg-white text-primary hover:bg-white/90 disabled:bg-white/60">
+          <Button onClick={exportPDF} disabled={!canExport} className="gap-2 bg-white text-primary hover:bg-white/90 disabled:bg-white/60">
             <Download className="w-4 h-4" /> تصدير PDF
           </Button>
         }
@@ -184,11 +190,13 @@ export default function AdminReports({ embedded: embeddedProp = false, lockedOrg
       )}
       {isEmbedded && (
         <div className="flex justify-end">
-          <Button onClick={exportPDF} disabled={!selected} className="gap-2">
+          <Button onClick={exportPDF} disabled={!canExport} className="gap-2">
             <Download className="w-4 h-4" /> تصدير PDF
           </Button>
         </div>
       )}
+
+      <div className="flex justify-end gap-2"><Button variant="outline" disabled={!canExport || exportingOffice} onClick={() => exportOffice("docx")}>تصدير Word</Button><Button variant="outline" disabled={!canExport || exportingOffice} onClick={() => exportOffice("xlsx")}>تصدير Excel</Button></div>
 
       {/* Mode tabs */}
       <div className="grid md:grid-cols-2 gap-3">

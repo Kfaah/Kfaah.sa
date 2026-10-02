@@ -90,11 +90,16 @@ const AddEmployee = () => {
   // جلب البيانات
   useEffect(() => {
     const fetchData = async () => {
+      if (!currentOrg?.id) {
+        setLoadingData(false);
+        return;
+      }
+
       try {
         const [deptsRes, rolesRes, employeesRes] = await Promise.all([
-          supabase.from("departments").select("*").order("name"),
-          supabase.from("job_roles").select("*").order("name"),
-          supabase.from("employees").select("id, full_name, user_id, job_role").order("full_name"),
+          supabase.from("departments").select("*").eq("organization_id", currentOrg.id).order("name"),
+          supabase.from("job_roles").select("*").eq("organization_id", currentOrg.id).order("name"),
+          supabase.from("employees").select("id, full_name, user_id, job_role").eq("organization_id", currentOrg.id).order("full_name"),
         ]);
 
         if (deptsRes.error) throw deptsRes.error;
@@ -112,7 +117,7 @@ const AddEmployee = () => {
     };
 
     fetchData();
-  }, []);
+  }, [currentOrg?.id]);
 
   const handleImageUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -185,8 +190,8 @@ const AddEmployee = () => {
       newErrors.username = "رقم الهوية يجب أن يتكون من 10 أرقام";
     }
     if (!form.password) newErrors.password = "كلمة المرور مطلوبة";
-    if (form.password && form.password.length < 6) {
-      newErrors.password = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
+    if (form.password && form.password.length < 8) {
+      newErrors.password = "كلمة المرور يجب أن تكون 8 أحرف على الأقل";
     }
     if (!form.email.trim()) newErrors.email = "البريد الإلكتروني مطلوب";
     if (!form.phone.trim()) newErrors.phone = "رقم الجوال مطلوب";
@@ -199,6 +204,10 @@ const AddEmployee = () => {
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
+    if (!currentOrg?.id) {
+      toast.error("تعذر تحديد الجمعية الحالية");
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -220,6 +229,7 @@ const AddEmployee = () => {
 
       const response = await supabase.functions.invoke("create-employee", {
         body: {
+          organizationId: currentOrg.id,
           fullName: form.name,
           username: form.username,
           password: form.password,

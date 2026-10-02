@@ -38,11 +38,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getArabicErrorMessage } from "@/lib/errors";
 
-// المسميات التي تمنح صلاحيات إدارية كاملة (admin) داخل الجمعية
-const ADMIN_ROLE_TITLES = ["مدير الجمعية", "مدير التسويق"];
-const isAdminTitle = (value: string) =>
-  ADMIN_ROLE_TITLES.includes(value.trim());
-
 interface Department {
   id: string;
   name: string;
@@ -108,8 +103,6 @@ const EditEmployee = () => {
     title: "",
     password: "",
     user_id: null as string | null,
-    roleLevel: "employee" as "employee" | "manager" | "admin",
-    roleTitle: "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -121,19 +114,21 @@ const EditEmployee = () => {
         navigate("/employees");
         return;
       }
+      if (!currentOrg?.id) return;
 
       try {
         const employeeRes = await supabase
           .from("employees")
           .select("*")
           .eq("id", employeeId)
+          .eq("organization_id", currentOrg.id)
           .single();
         if (employeeRes.error) throw employeeRes.error;
         const emp = employeeRes.data as Employee & { organization_id: string };
 
         const [deptsRes, rolesRes, allEmployeesRes] = await Promise.all([
-          supabase.from("departments").select("*").order("name"),
-          supabase.from("job_roles").select("*").order("name"),
+          supabase.from("departments").select("*").eq("organization_id", emp.organization_id).order("name"),
+          supabase.from("job_roles").select("*").eq("organization_id", emp.organization_id).order("name"),
           supabase
             .from("employees")
             .select("id, full_name, user_id, job_role")
@@ -162,8 +157,6 @@ const EditEmployee = () => {
           title: emp.title || "",
           password: "",
           user_id: emp.user_id,
-          roleLevel: (emp.role_level as any) || "employee",
-          roleTitle: emp.title || "",
         });
 
         setDepartments(deptsRes.data || []);
@@ -179,7 +172,7 @@ const EditEmployee = () => {
     };
 
     fetchData();
-  }, [employeeId, navigate]);
+  }, [employeeId, navigate, currentOrg?.id]);
 
   const handleImageUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -251,8 +244,8 @@ const EditEmployee = () => {
     } else if (!/^\d{10}$/.test(form.username.trim())) {
       newErrors.username = "رقم الهوية يجب أن يتكون من 10 أرقام";
     }
-    if (form.password && form.password.length < 6) {
-      newErrors.password = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
+    if (form.password && form.password.length < 8) {
+      newErrors.password = "كلمة المرور يجب أن تكون 8 أحرف على الأقل";
     }
     if (!form.email?.trim()) newErrors.email = "البريد الإلكتروني مطلوب";
     if (!form.phone?.trim()) newErrors.phone = "رقم الجوال مطلوب";
@@ -288,29 +281,11 @@ const EditEmployee = () => {
           avatar_url: avatarUrl,
           direct_manager_id: form.directManagerId && form.directManagerId !== "none" ? form.directManagerId : null,
           executive_manager_id: form.executiveManagerId && form.executiveManagerId !== "none" ? form.executiveManagerId : null,
-          title: (form.roleTitle || form.title).trim() || null,
-          role_level: isAdminTitle(form.roleTitle) ? "admin" : "employee",
+          title: form.title.trim() || null,
         })
         .eq("id", employeeId);
 
       if (error) throw error;
-
-      // Sync user_roles based on roleLevel (admin vs user)
-      if (form.user_id) {
-        const targetRole = isAdminTitle(form.roleTitle) ? "admin" : "user";
-        // Remove other roles, set the right one
-        await supabase
-          .from("user_roles")
-          .delete()
-          .eq("user_id", form.user_id)
-          .neq("role", targetRole);
-        await supabase
-          .from("user_roles")
-          .upsert(
-            { user_id: form.user_id, role: targetRole as any },
-            { onConflict: "user_id,role" }
-          );
-      }
 
       // ربط بيانات الدخول (رقم الهوية) مع حساب الدخول
       if (form.user_id) {
@@ -473,20 +448,14 @@ const EditEmployee = () => {
                   </Label>
                 </div>
                 <Input
-                  list="role-title-suggestions"
-                  value={form.roleTitle}
+                  value={form.title}
                   onChange={(e) =>
-                    setForm((prev) => ({ ...prev, roleTitle: e.target.value, title: e.target.value }))
+                    setForm((prev) => ({ ...prev, title: e.target.value }))
                   }
-                  placeholder="مثال: أخصائي تسويق، أخصائي حملات..."
+                  placeholder="مثال: أخصائي تسويق، مدير قسم..."
                 />
-                <datalist id="role-title-suggestions">
-                  {ADMIN_ROLE_TITLES.map((t) => (
-                    <option key={t} value={t} />
-                  ))}
-                </datalist>
                 <p className="text-xs text-muted-foreground">
-                  اختر <strong>مدير الجمعية</strong> أو <strong>مدير التسويق</strong> لمنح صلاحيات إدارية كاملة، أو اكتب أي مسمى آخر (مثل أخصائي) لصلاحيات موظف عادي.
+                  هذا الحقل للمسمى الوظيفي فقط. تغيير صلاحيات الدخول يتم من صفحة «صلاحيات الأعضاء» وفق صلاحيات مدير النظام والجمعية.
                 </p>
               </div>
             </div>

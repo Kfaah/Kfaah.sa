@@ -14,7 +14,7 @@ import namozajLogo from "@/assets/namozaj-logo.png";
 import { toast } from "sonner";
 
 const DEMO_NAME = "جمعية النموذج الخيري";
-const DEMO_TAGLINE = "منصة إدارة التسويق الإلكتروني بالذكاء الاصطناعي";
+const DEMO_TAGLINE = "منصة إدارة التسويق الإلكتروني وتنمية الموارد المالية بالذكاء الاصطناعي";
 const primaryHsl = "168 76% 28%";
 const accentHsl = "44 92% 55%";
 

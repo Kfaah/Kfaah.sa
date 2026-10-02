@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { arSA } from "date-fns/locale";
+import { EmailMessageBody } from "@/components/EmailMessageBody";
 
 const primaryHsl = "168 76% 28%";
 const accentHsl = "44 92% 55%";
@@ -29,6 +30,7 @@ type Message = {
   subject: string | null;
   body: string;
   received_at: string;
+  raw_headers?: { from_name?: string | null } | null;
 };
 
 type View = "list" | "compose" | "thread";
@@ -277,10 +279,10 @@ export default function PlatformMail() {
                   <div key={m.id} className={`rounded-2xl p-4 border ${m.direction === "inbound"
                     ? "bg-white/[0.07] border-white/10" : "bg-emerald-500/10 border-emerald-400/20"}`}>
                     <div className="flex items-center justify-between mb-2 text-[11px] text-slate-300">
-                      <span className="font-bold" dir="ltr">{m.sender_email}</span>
+                        <span className="font-bold" dir="auto">{m.raw_headers?.from_name || (m.direction === "inbound" ? activeThread.recipient_name : "منصة كفاءة") || m.sender_email}</span>
                       <span>{formatDistanceToNow(new Date(m.received_at), { addSuffix: true, locale: arSA })}</span>
                     </div>
-                    <div className="text-sm text-white whitespace-pre-wrap leading-relaxed">{m.body}</div>
+                    <EmailMessageBody body={m.body} />
                   </div>
                 ))}
               </div>

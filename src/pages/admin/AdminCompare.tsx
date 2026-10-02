@@ -1,3 +1,4 @@
+import { ReportDataState } from "@/components/admin/ReportDataState";
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -44,7 +45,7 @@ const sortable: { key: SortKey; label: string; format?: (n: any) => string }[] =
 
 export default function AdminCompare() {
   const [range, setRange] = useState<DateRange>({ from: null, to: null, label: "منذ البداية" });
-  const { metrics, loading } = useAdminAggregates(range);
+  const { metrics, loading, error: metricsError, refresh: refreshMetrics } = useAdminAggregates(range);
   const [sortKey, setSortKey] = useState<SortKey>("overall_score");
   const [sortDesc, setSortDesc] = useState(true);
   const [viewMode, setViewMode] = useState<"orgs" | "criteria">("orgs");
@@ -92,8 +93,10 @@ export default function AdminCompare() {
       : new Intl.NumberFormat("en-US").format(Math.round(safeValue));
   };
 
+  if (loading || metricsError) return <ReportDataState loading={loading} error={metricsError} retry={refreshMetrics} />;
+
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 sm:p-8 space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
@@ -120,16 +123,16 @@ export default function AdminCompare() {
                 <TrendingUp className="w-5 h-5 text-orange-500" />
               </div>
               <div className="flex-1">
-                <div className="font-bold text-base text-white leading-tight">جمع التبرعات (حجم خام)</div>
+                <div className="font-bold text-base text-white leading-tight">جمع التبرعات (مقارنة نسبية)</div>
                 <div className="text-[11px] text-white/80 mt-0.5">⏱ يتأثر بالفلتر الزمني</div>
               </div>
             </div>
             <div className="px-5 py-4 space-y-3 flex-1">
               <p className="text-sm text-white leading-relaxed">
-                إجمالي التبرعات في الفترة المختارة، بمقياس لوغاريتمي للمقارنة العادلة بين الجمعيات.
+                نسبة تبرعات الجمعية إلى أعلى إجمالي بين الجمعيات في الفترة المختارة.
               </p>
               <div className="font-mono text-sm bg-white/15 text-white border border-white/30 rounded-lg px-3 py-2 text-center font-bold tracking-wide">
-                log10(الإجمالي) × 15
+                (إجمالي الجمعية ÷ أعلى إجمالي) × 100
               </div>
             </div>
           </div>
@@ -231,7 +234,7 @@ export default function AdminCompare() {
             <h3 className="text-foreground font-bold">جدول الترتيب الذكي</h3>
             <p className="text-muted-foreground text-xs">
               {viewMode === "orgs"
-                ? "انقر عمودًا للترتيب · انقر صفًا للمقارنة"
+                ? "انقر عمودًا لترتيب الجمعيات حسب المعيار"
                 : "ترتيب الجمعيات حسب كل معيار على حدة"}
             </p>
           </div>

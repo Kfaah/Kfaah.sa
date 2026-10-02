@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState, useCallback, type ComponentType, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef, type ComponentType, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { EmailMessageBody } from "@/components/EmailMessageBody";
+import { emailPreview } from "@/lib/emailText";
 import { useNavigate } from "react-router-dom";
 import {
   Inbox, Search, Mail, Phone, MessageCircle, Send, ArrowRight,
@@ -44,6 +46,7 @@ type Reply = {
   body: string;
   from_owner: boolean;
   created_at: string;
+  sender_name?: string;
 };
 
 type Draft = {
@@ -72,6 +75,7 @@ type PlatformEmailMessage = {
   body: string | null;
   received_at: string | null;
   created_at: string | null;
+  raw_headers?: { from_name?: string | null } | null;
 };
 
 type FolderId = "inbox" | "starred" | "sent" | "drafts" | "archive" | "spam" | "trash";
@@ -98,6 +102,7 @@ export default function SupportInbox() {
   const [allReplies, setAllReplies] = useState<Reply[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [pemOutbound, setPemOutbound] = useState<PlatformEmailMessage[]>([]);
+  const [pemInbound, setPemInbound] = useState<PlatformEmailMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [folder, setFolder] = useState<FolderId>("inbox");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -110,6 +115,8 @@ export default function SupportInbox() {
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const syncInFlight = useRef(false);
+  const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState({
     sender_name: "منصة كفاءة",
@@ -176,7 +183,6 @@ export default function SupportInbox() {
 
   // Loaders
   const loadAll = useCallback(async () => {
-    setLoading(true);
     const [msgs, reps, drs, pemT, pemM, pemOut] = await Promise.all([
       supabase.from("support_messages").select("*").order("created_at", { ascending: false }),
       supabase.from("support_replies").select("*").order("created_at", { ascending: true }),
@@ -199,7 +205,7 @@ export default function SupportInbox() {
         .sort((a, b) => +new Date(b.received_at || b.created_at || 0) - +new Date(a.received_at || a.created_at || 0))[0];
       return {
         id: `pem:${t.id}`,
-        sender_name: t.recipient_name || t.recipient_email,
+        sender_name: latest?.raw_headers?.from_name || t.recipient_name || t.recipient_email,
         sender_email: t.recipient_email,
         sender_phone: null,
         organization_name: "بريد المنصة (Zoho)",
@@ -224,10 +230,27 @@ export default function SupportInbox() {
     setAllReplies((reps.data as Reply[]) || []);
     setDrafts((drs.data as Draft[]) || []);
     setPemOutbound(outbound);
+    setPemInbound(inbound);
     setLoading(false);
   }, []);
 
   useEffect(() => { if (isOwner) loadAll(); }, [isOwner, loadAll]);
+
+  useEffect(() => {
+    if (!isOwner || isPreviewMode) return;
+    const sync = async () => {
+      if (syncInFlight.current || document.visibilityState === "hidden") return;
+      syncInFlight.current = true;
+      try {
+        await loadAll();
+        setLastSynced(new Date());
+      } finally { syncInFlight.current = false; }
+    };
+    void sync();
+    const timer = window.setInterval(sync, 15000);
+    document.addEventListener("visibilitychange", sync);
+    return () => { clearInterval(timer); document.removeEventListener("visibilitychange", sync); };
+  }, [isOwner, isPreviewMode, loadAll]);
 
   // Realtime
   useEffect(() => {
@@ -262,7 +285,7 @@ export default function SupportInbox() {
       m.sender_name.toLowerCase().includes(s) ||
       m.sender_email.toLowerCase().includes(s) ||
       m.subject.toLowerCase().includes(s) ||
-      m.message.toLowerCase().includes(s)
+      emailPreview(m.message).toLowerCase().includes(s)
     );
     return list;
   }, [messages, folder, search, allReplies, pemOutbound]);
@@ -288,18 +311,20 @@ export default function SupportInbox() {
     if (!selectedId) return [];
     if (selectedId.startsWith("pem:")) {
       const threadId = selectedId.slice(4);
-      return pemOutbound
+      return [...pemInbound.map(o => ({ ...o, from_owner: false })), ...pemOutbound.map(o => ({ ...o, from_owner: true }))]
         .filter(o => o.thread_id === threadId)
+        .sort((a, b) => +new Date(a.received_at || a.created_at || 0) - +new Date(b.received_at || b.created_at || 0))
         .map(o => ({
           id: o.id,
           message_id: selectedId,
           body: o.body || "",
-          from_owner: true,
+          from_owner: o.from_owner,
+          sender_name: o.raw_headers?.from_name || selected?.sender_name,
           created_at: o.received_at || o.created_at,
         })) as Reply[];
     }
     return allReplies.filter(r => r.message_id === selectedId);
-  }, [allReplies, selectedId, pemOutbound]);
+  }, [allReplies, selectedId, pemOutbound, pemInbound, selected?.sender_name]);
 
   const selectMessage = async (msg: SupportMsg) => {
     setSelectedId(msg.id);
@@ -610,18 +635,21 @@ export default function SupportInbox() {
           <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={async () => {
-                if (syncing) return;
+                if (syncing || syncInFlight.current) return;
+                syncInFlight.current = true;
                 setSyncing(true);
                 const t = toast.loading("جاري سحب الرسائل من البريد...");
                 try {
                   const { data, error } = await supabase.functions.invoke("fetch-platform-email-replies", { body: {} });
                   if (error) throw error;
                   const s = (data as { stats?: { inserted?: number } } | null)?.stats;
+                  setLastSynced(new Date());
                   toast.success(s ? `تمت المزامنة — جديد: ${s.inserted ?? 0}` : "تمت المزامنة", { id: t });
                 } catch (e: unknown) {
                   toast.error(getErrorMessage(e, "تعذّرت مزامنة البريد"), { id: t });
                 } finally {
                   setSyncing(false);
+                  syncInFlight.current = false;
                 }
                 await loadAll();
               }}
@@ -631,6 +659,7 @@ export default function SupportInbox() {
             >
               <RefreshCcw className={`w-4 h-4 text-slate-300 ${syncing ? "animate-spin" : ""}`} />
             </button>
+            <span className="hidden md:inline text-[10px] text-slate-400" title="يُحدّث صندوق الوارد تلقائيًا كل 15 ثانية">{lastSynced ? `آخر تحديث ${lastSynced.toLocaleTimeString("ar-SA")}` : "مزامنة الوارد…"}</span>
             <button onClick={() => navigate("/")} className="text-xs font-bold text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/10">
               للرئيسية <ArrowRight className="inline w-3 h-3 mr-1 rotate-180" />
             </button>
@@ -765,7 +794,7 @@ export default function SupportInbox() {
                 <div className={`text-xs truncate mb-0.5 mr-6 ${m.is_read ? "text-slate-400" : "text-slate-100 font-bold"}`}>
                   {m.subject}
                 </div>
-                <div className="text-xs text-slate-500 line-clamp-1 mr-6">{m.message}</div>
+                <div className="text-xs text-slate-500 line-clamp-1 mr-6">{emailPreview(m.message)}</div>
               </div>
             ))}
           </div>
@@ -842,9 +871,9 @@ export default function SupportInbox() {
 
               {/* Conversation */}
               <div className="flex-1 overflow-y-auto p-5 space-y-3">
-                <div className="bg-white/[0.06] backdrop-blur rounded-2xl p-4 border border-white/15">
-                  <p className="text-sm text-slate-100 whitespace-pre-wrap leading-relaxed">{selected.message}</p>
-                </div>
+                {!selected.id.startsWith("pem:") && <div className="bg-white/[0.06] backdrop-blur rounded-2xl p-4 border border-white/15">
+                  <EmailMessageBody body={selected.message} />
+                </div>}
                 {selectedReplies.map(r => (
                   <div key={r.id}
                     className={`rounded-2xl p-4 border backdrop-blur ${
@@ -852,11 +881,11 @@ export default function SupportInbox() {
                     }`}>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-bold text-slate-200">
-                        {r.from_owner ? "ردّك (أُرسل بالبريد)" : selected.sender_name}
+                        {r.from_owner ? "منصة كفاءة — رسالة مرسلة" : r.sender_name || selected.sender_name}
                       </span>
                       <span className="text-[10px] text-slate-400">{formatDateFull(r.created_at)}</span>
                     </div>
-                    <p className="text-sm text-slate-100 whitespace-pre-wrap leading-relaxed">{r.body}</p>
+                    <EmailMessageBody body={r.body} />
                   </div>
                 ))}
               </div>

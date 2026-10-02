@@ -25,6 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Target, Calendar, TrendingUp, ChevronDown, ChevronUp, Trash2, Pencil, Check, X, Settings2, Lightbulb, Zap, UserCircle, ArrowUp, ArrowDown, Columns, Sparkles, Loader2, Filter, Building2, Users, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getOrgPrivilegeFlags } from "@/lib/orgAuthorization";
 import { useAuth } from "@/hooks/useAuth";
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
@@ -336,18 +337,29 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
     });
   };
 
-  // التحقق من دور المدير - نتحقق من role في user أو من user_roles
+  // صلاحية الإدارة مرتبطة بالجمعية الحالية وليست بدور عالمي.
   const [userRole, setUserRole] = useState<string | null>(null);
   const [currentEmployeeId, setCurrentEmployeeId] = useState<string | null>(null);
-  
+
   useEffect(() => {
+    let cancelled = false;
     const checkUserRole = async () => {
-      if (!authUser) return;
-      const { data } = await supabase.rpc("get_user_role", { _user_id: authUser.id });
-      setUserRole(data);
+      if (!authUser?.id || !activeOrgId) {
+        if (!cancelled) setUserRole(null);
+        return;
+      }
+      const flags = await getOrgPrivilegeFlags(authUser.id, activeOrgId);
+      if (!cancelled) {
+        setUserRole(
+          flags.isSuperAdmin ? "super_admin" :
+          flags.isOrgAdmin ? "admin" :
+          null
+        );
+      }
     };
     checkUserRole();
-  }, [authUser]);
+    return () => { cancelled = true; };
+  }, [authUser?.id, activeOrgId]);
 
   // جلب employee.id للمستخدم الحالي لاستخدامه في فلترة "أنشطتي" فقط
   useEffect(() => {
@@ -367,7 +379,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
   }, [authUser]);
   
   // المدير هو من له دور admin في قاعدة البيانات وليس في وضع المعاينة
-  const isAdmin = (userRole === "admin" || user.role === "مدير النظام") && !previewAsEmployee;
+  const isAdmin = (userRole === "admin" || userRole === "super_admin") && !previewAsEmployee;
 
   // المبادرات المفلترة حسب الهدف المختار
   const filteredInitiatives = initiatives.filter(
@@ -1827,7 +1839,7 @@ export default function OperationalPlans({ embedded = false }: { embedded?: bool
                   <SelectValue placeholder="اختر السنة" />
                 </SelectTrigger>
                 <SelectContent className="bg-white z-50">
-                  {getAvailableYears().map((yr) => (
+                  {Array.from(new Set([...getAvailableYears(), ...plans.map((plan) => plan.year)])).sort((a, b) => b - a).map((yr) => (
                     <SelectItem key={yr} value={yr.toString()}>
                       {yr}
                     </SelectItem>

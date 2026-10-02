@@ -1,4 +1,4 @@
-import jsPDF from "jspdf";
+import { exportPaginatedPdf } from "@/lib/exportPaginatedPdf";
 
 export interface SmartReportPayload {
   report: {
@@ -18,12 +18,12 @@ export interface SmartReportPayload {
 }
 
 const fmtSAR = (n: number) =>
-  new Intl.NumberFormat("ar-SA", { maximumFractionDigits: 0 }).format(Math.round(n || 0)) + " SAR";
+  new Intl.NumberFormat("ar-SA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0) + " SAR";
 
 // jsPDF default fonts don't render Arabic. We render an HTML element off-screen and rasterize it.
 export async function exportSmartReportPdf(payload: SmartReportPayload) {
   const { report, meta } = payload;
-  const html2canvas = (await import("html2canvas")).default;
+
 
   const wrap = document.createElement("div");
   wrap.dir = "rtl";
@@ -35,7 +35,7 @@ export async function exportSmartReportPdf(payload: SmartReportPayload) {
 
   wrap.innerHTML = `
     <div style="border-bottom:4px solid #0d7a5f;padding-bottom:16px;margin-bottom:24px">
-      <div style="font-size:12px;color:#64748b">${meta.org_name}</div>
+      <div style="font-size:12px;color:#64748b">${escape(meta.org_name)}</div>
       <h1 style="margin:6px 0 4px;font-size:26px;color:#0d7a5f;font-weight:800">${escape(report.title)}</h1>
       <div style="font-size:12px;color:#475569">للجمهور: ${escape(meta.audience)} • ${new Date().toLocaleDateString("ar-SA-u-nu-latn")}</div>
     </div>
@@ -85,24 +85,7 @@ export async function exportSmartReportPdf(payload: SmartReportPayload) {
 
   document.body.appendChild(wrap);
   try {
-    const canvas = await html2canvas(wrap, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
-    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const imgW = pageW;
-    const imgH = (canvas.height * imgW) / canvas.width;
-    let pos = 0;
-    let remaining = imgH;
-    const img = canvas.toDataURL("image/jpeg", 0.92);
-    pdf.addImage(img, "JPEG", 0, pos, imgW, imgH);
-    remaining -= pageH;
-    while (remaining > 0) {
-      pos -= pageH;
-      pdf.addPage();
-      pdf.addImage(img, "JPEG", 0, pos, imgW, imgH);
-      remaining -= pageH;
-    }
-    pdf.save(`${report.title}.pdf`);
+    await exportPaginatedPdf(wrap, `${report.title}.pdf`);
   } finally {
     document.body.removeChild(wrap);
   }

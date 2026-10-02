@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { fetchAllReportRows } from "@/lib/fetchAllReportRows";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,7 +42,7 @@ const REPORTS: ReportDef[] = [
 ];
 
 const fmt = (n: number) => new Intl.NumberFormat("en-US").format(Math.round(n || 0));
-const sar = (n: number) => `${fmt(n)} ر.س`;
+const sar = (n: number) => `${new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0)} ر.س`;
 
 const CHANNEL_LABEL: Record<string, { label: string; icon: any }> = {
   letter: { label: "خطاب رسمي", icon: FileTextIcon },
@@ -60,10 +61,11 @@ const PRIORITY_COLOR: Record<string, string> = {
 
 function downloadCsv(filename: string, rows: any[]) {
   if (!rows.length) return;
-  const headers = Object.keys(rows[0]);
+  const headers = Object.keys(rows[0]).filter(key => !key.startsWith("_"));
   const csv = [headers.join(",")]
     .concat(rows.map(r => headers.map(h => {
-      const v = r[h] == null ? "" : String(r[h]).replace(/"/g, '""');
+      const raw = r[h] == null ? "" : String(r[h]);
+      const v = (/^[=+@\-\t\r]/.test(raw) ? "'" + raw : raw).replace(/"/g, '""');
       return /[",\n]/.test(v) ? `"${v}"` : v;
     }).join(",")))
     .join("\n");
@@ -199,11 +201,14 @@ function ReportView({
   const [aiLoading, setAiLoading] = useState(false);
   const [ai, setAi] = useState<AIResult | null>(null);
   const [creatingTasks, setCreatingTasks] = useState(false);
+  const reportVersion = useRef(0);
+  const [page, setPage] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
+      setRows([]);
       try {
         const range = resolvePeriod(period, { from: customFrom, to: customTo });
         const data = await fetchReport(reportKey, orgId, range.from, range.to);
@@ -248,9 +253,12 @@ function ReportView({
     return Array.from(set).sort();
   }, [rows, reportKey]);
 
+  useEffect(() => { reportVersion.current += 1; setAi(null); setAiLoading(false); setPage(0); }, [reportKey, orgId, period, customFrom, customTo, tier, campaignStatus, subscriptionStatus, amountFrom, amountTo, giftStatus, projectFilter]);
+
   const aggregates = useMemo(() => computeAggregates(reportKey, filtered), [reportKey, filtered]);
 
   const runAI = async () => {
+    const version = ++reportVersion.current;
     setAiLoading(true);
     setAi(null);
     try {
@@ -260,12 +268,13 @@ function ReportView({
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
+      if (version !== reportVersion.current) return;
       setAi(data as AIResult);
       toast.success("تم توليد الاقتراحات الذكية");
     } catch (e: any) {
       toast.error(e.message || "تعذر توليد الاقتراحات");
     } finally {
-      setAiLoading(false);
+      if (version === reportVersion.current) setAiLoading(false);
     }
   };
 
@@ -335,7 +344,7 @@ ${a.rationale}
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => downloadCsv(`${reportKey}.csv`, filtered)} disabled={!filtered.length}>
+          <Button variant="outline" onClick={() => downloadCsv(`${reportKey}.csv`, filtered)} disabled={loading || !filtered.length}>
             <Download className="h-4 w-4 ml-1" /> تصدير CSV
           </Button>
           <Button variant="ghost" onClick={onBack}>
@@ -465,7 +474,7 @@ ${a.rationale}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.slice(0, 200).map((r, idx) => (
+                  {filtered.slice(page * 50, (page + 1) * 50).map((r, idx) => (
                     <TableRow key={idx}>
                       {columns.map(c => (
                         <TableCell key={c.key} className="text-right text-sm">
@@ -476,9 +485,11 @@ ${a.rationale}
                   ))}
                 </TableBody>
               </Table>
-              {filtered.length > 200 && (
+              {filtered.length > 50 && (
                 <div className="p-2 text-xs text-center text-muted-foreground border-t">
-                  عرض أول 200 صف من أصل {fmt(filtered.length)}. استخدم زر التصدير لتنزيل القائمة الكاملة.
+                  <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 0}>السابق</Button>
+                  <span className="mx-3">عرض {fmt(page * 50 + 1)}–{fmt(Math.min((page + 1) * 50, filtered.length))} من {fmt(filtered.length)}</span>
+                  <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={(page + 1) * 50 >= filtered.length}>التالي</Button>
                 </div>
               )}
             </div>
@@ -494,7 +505,7 @@ ${a.rationale}
               <Sparkles className="h-5 w-5 text-primary" /> اقتراحات ذكية لهذا التقرير
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Button onClick={runAI} disabled={aiLoading || !filtered.length} className="gap-1">
+              <Button onClick={runAI} disabled={loading || aiLoading || !filtered.length} className="gap-1">
                 {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                 {ai ? "إعادة توليد" : "توليد الاقتراحات"}
               </Button>
@@ -566,8 +577,9 @@ ${a.rationale}
 async function fetchReport(key: ReportKey, orgId: string, from?: Date | null, to?: Date | null): Promise<any[]> {
   const fromIso = from ? from.toISOString() : null;
   const toIso = to ? to.toISOString() : null;
-  const fromDate = from ? from.toISOString().slice(0, 10) : null;
-  const toDate = to ? to.toISOString().slice(0, 10) : null;
+  const calendarDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const fromDate = from ? calendarDate(from) : null;
+  const toDate = to ? calendarDate(to) : null;
   switch (key) {
     case "donor_tiers": {
       let q = supabase.from("donors")
@@ -575,7 +587,7 @@ async function fetchReport(key: ReportKey, orgId: string, from?: Date | null, to
         .eq("organization_id", orgId);
       if (fromIso) q = q.gte("last_donation_at", fromIso);
       if (toIso) q = q.lte("last_donation_at", toIso);
-      const { data } = await q.order("total_donated", { ascending: false }).limit(5000);
+      const data = await fetchAllReportRows<any>(q.order("total_donated", { ascending: false }).order("id", { ascending: true }));
       // Fetch completed tasks in same window for actions index
       let tq = supabase.from("tasks")
         .select("title, category, status, metadata")
@@ -583,7 +595,7 @@ async function fetchReport(key: ReportKey, orgId: string, from?: Date | null, to
         .in("status", ["completed", "executed"]);
       if (fromIso) tq = tq.gte("updated_at", fromIso);
       if (toIso) tq = tq.lte("updated_at", toIso);
-      const { data: tasks } = await tq.limit(5000);
+      const tasks = await fetchAllReportRows<any>(tq.order("id", { ascending: true }));
       const byPhone = buildActionsIndex(tasks || [], "donor_phone");
       const byName = buildActionsIndex(tasks || [], "donor_name");
       return (data || []).map(d => {
@@ -603,23 +615,23 @@ async function fetchReport(key: ReportKey, orgId: string, from?: Date | null, to
     }
     case "campaigns": {
       let q = supabase.from("campaigns")
-        .select("name, goal_amount, collected_amount, donations_count, status, start_date, end_date")
+        .select("id, name, goal_amount, collected_amount, donations_count, status, start_date, end_date")
         .eq("organization_id", orgId);
       if (fromDate) q = q.gte("start_date", fromDate);
       if (toDate) q = q.lte("end_date", toDate);
-      const { data } = await q.order("created_at", { ascending: false }).limit(500);
+      const data = await fetchAllReportRows<any>(q.order("created_at", { ascending: false }).order("id", { ascending: true }));
       let tq = supabase.from("tasks")
         .select("title, category, status, metadata")
         .eq("organization_id", orgId)
         .in("status", ["completed", "executed"]);
       if (fromIso) tq = tq.gte("updated_at", fromIso);
       if (toIso) tq = tq.lte("updated_at", toIso);
-      const { data: tasks } = await tq.limit(5000);
+      const tasks = await fetchAllReportRows<any>(tq.order("id", { ascending: true }));
       const byCampaign = buildActionsIndex(tasks || [], "campaign_id");
       return (data || []).map(c => {
         const goal = Number(c.goal_amount || 0); const got = Number(c.collected_amount || 0);
         const pct = goal ? Math.round((got / goal) * 100) : 0;
-        const reportSent = c.status === "completed";
+        const completed = c.status === "completed";
         return {
           "اسم الحملة": c.name,
           الحالة: c.status,
@@ -627,13 +639,13 @@ async function fetchReport(key: ReportKey, orgId: string, from?: Date | null, to
           "الهدف": sar(goal),
           "المُحصَّل": sar(got),
           "نسبة الإنجاز": `${pct}%`,
-          "عدد المتبرعين": c.donations_count || 0,
+          "عدد التبرعات": c.donations_count || 0,
           "بداية": c.start_date || "—",
           "نهاية": c.end_date || "—",
-          "تم التنفيذ": reportSent || got >= goal ? "نعم" : "لا",
-          "تقرير مُعَد": reportSent ? "نعم" : "لا",
-          "تقرير مُرسل": reportSent ? "نعم" : "لا",
-          _actions: byCampaign.get(c.name) as ActionCounts | undefined,
+          "تم التنفيذ": completed ? "نعم" : "لا",
+          "تقرير مُعَد": "غير موثق",
+          "تقرير مُرسل": "غير موثق",
+          _actions: byCampaign.get(c.id) as ActionCounts | undefined,
         };
       });
     }
@@ -643,14 +655,14 @@ async function fetchReport(key: ReportKey, orgId: string, from?: Date | null, to
         .eq("organization_id", orgId);
       if (fromIso) q = q.gte("attempted_at", fromIso);
       if (toIso) q = q.lte("attempted_at", toIso);
-      const { data } = await q.order("attempted_at", { ascending: false }).limit(2000);
+      const data = await fetchAllReportRows<any>(q.order("attempted_at", { ascending: false }).order("id", { ascending: true }));
       let tq = supabase.from("tasks")
         .select("title, category, status, metadata")
         .eq("organization_id", orgId)
         .in("status", ["completed", "executed"]);
       if (fromIso) tq = tq.gte("updated_at", fromIso);
       if (toIso) tq = tq.lte("updated_at", toIso);
-      const { data: tasks } = await tq.limit(5000);
+      const tasks = await fetchAllReportRows<any>(tq.order("id", { ascending: true }));
       const byPhone = buildActionsIndex(tasks || [], "donor_phone");
       const byName = buildActionsIndex(tasks || [], "donor_name");
       return (data || []).map(f => ({
@@ -669,14 +681,14 @@ async function fetchReport(key: ReportKey, orgId: string, from?: Date | null, to
         .eq("organization_id", orgId);
       if (fromIso) q = q.gte("abandoned_at", fromIso);
       if (toIso) q = q.lte("abandoned_at", toIso);
-      const { data } = await q.order("abandoned_at", { ascending: false }).limit(2000);
+      const data = await fetchAllReportRows<any>(q.order("abandoned_at", { ascending: false }).order("id", { ascending: true }));
       let tq = supabase.from("tasks")
         .select("title, category, status, metadata")
         .eq("organization_id", orgId)
         .in("status", ["completed", "executed"]);
       if (fromIso) tq = tq.gte("updated_at", fromIso);
       if (toIso) tq = tq.lte("updated_at", toIso);
-      const { data: tasks } = await tq.limit(5000);
+      const tasks = await fetchAllReportRows<any>(tq.order("id", { ascending: true }));
       const byPhone = buildActionsIndex(tasks || [], "donor_phone");
       const byName = buildActionsIndex(tasks || [], "donor_name");
       return (data || []).map(c => ({
@@ -695,14 +707,14 @@ async function fetchReport(key: ReportKey, orgId: string, from?: Date | null, to
         .eq("organization_id", orgId);
       if (fromDate) q = q.gte("start_date", fromDate);
       if (toDate) q = q.lte("start_date", toDate);
-      const { data } = await q.order("created_at", { ascending: false }).limit(2000);
+      const data = await fetchAllReportRows<any>(q.order("created_at", { ascending: false }).order("id", { ascending: true }));
       let tq = supabase.from("tasks")
         .select("title, category, status, metadata")
         .eq("organization_id", orgId)
         .in("status", ["completed", "executed"]);
       if (fromIso) tq = tq.gte("updated_at", fromIso);
       if (toIso) tq = tq.lte("updated_at", toIso);
-      const { data: tasks } = await tq.limit(5000);
+      const tasks = await fetchAllReportRows<any>(tq.order("id", { ascending: true }));
       const byPhone = buildActionsIndex(tasks || [], "donor_phone");
       const byName = buildActionsIndex(tasks || [], "donor_name");
       return (data || []).map(s => ({
@@ -724,14 +736,14 @@ async function fetchReport(key: ReportKey, orgId: string, from?: Date | null, to
         .eq("organization_id", orgId).gte("donations_count", 2);
       if (fromIso) q = q.gte("last_donation_at", fromIso);
       if (toIso) q = q.lte("last_donation_at", toIso);
-      const { data } = await q.order("donations_count", { ascending: false }).limit(2000);
+      const data = await fetchAllReportRows<any>(q.order("donations_count", { ascending: false }).order("id", { ascending: true }));
       let tq = supabase.from("tasks")
         .select("title, category, status, metadata")
         .eq("organization_id", orgId)
         .in("status", ["completed", "executed"]);
       if (fromIso) tq = tq.gte("updated_at", fromIso);
       if (toIso) tq = tq.lte("updated_at", toIso);
-      const { data: tasks } = await tq.limit(5000);
+      const tasks = await fetchAllReportRows<any>(tq.order("id", { ascending: true }));
       const byPhone = buildActionsIndex(tasks || [], "donor_phone");
       const byName = buildActionsIndex(tasks || [], "donor_name");
       return (data || []).map(d => ({
@@ -749,14 +761,14 @@ async function fetchReport(key: ReportKey, orgId: string, from?: Date | null, to
         .eq("organization_id", orgId);
       if (fromDate) q = q.gte("gift_date", fromDate);
       if (toDate) q = q.lte("gift_date", toDate);
-      const { data } = await q.order("gift_date", { ascending: false }).limit(2000);
+      const data = await fetchAllReportRows<any>(q.order("gift_date", { ascending: false }).order("id", { ascending: true }));
       let tq = supabase.from("tasks")
         .select("title, category, status, metadata")
         .eq("organization_id", orgId)
         .in("status", ["completed", "executed"]);
       if (fromIso) tq = tq.gte("updated_at", fromIso);
       if (toIso) tq = tq.lte("updated_at", toIso);
-      const { data: tasks } = await tq.limit(5000);
+      const tasks = await fetchAllReportRows<any>(tq.order("id", { ascending: true }));
       const byPhone = buildActionsIndex(tasks || [], "donor_phone");
       const byName = buildActionsIndex(tasks || [], "donor_name");
       return (data || []).map(g => ({
@@ -776,17 +788,18 @@ async function fetchReport(key: ReportKey, orgId: string, from?: Date | null, to
       let q = supabase.from("donations")
         .select("project_name, donor_name, donor_phone, amount, donation_date")
         .eq("organization_id", orgId)
+        .eq("status", "success")
         .not("project_name", "is", null);
       if (fromDate) q = q.gte("donation_date", fromDate);
       if (toDate) q = q.lte("donation_date", toDate);
-      const { data } = await q.order("donation_date", { ascending: false }).limit(5000);
+      const data = await fetchAllReportRows<any>(q.order("donation_date", { ascending: false }).order("id", { ascending: true }));
       let tq = supabase.from("tasks")
         .select("title, category, status, metadata")
         .eq("organization_id", orgId)
         .in("status", ["completed", "executed"]);
       if (fromIso) tq = tq.gte("updated_at", fromIso);
       if (toIso) tq = tq.lte("updated_at", toIso);
-      const { data: tasks } = await tq.limit(5000);
+      const tasks = await fetchAllReportRows<any>(tq.order("id", { ascending: true }));
       const byPhone = buildActionsIndex(tasks || [], "donor_phone");
       const byName = buildActionsIndex(tasks || [], "donor_name");
       return (data || []).map(d => ({
@@ -817,7 +830,7 @@ const COLUMN_DEFS: Record<ReportKey, Col[]> = {
   campaigns: [
     { key: "اسم الحملة", label: "اسم الحملة" }, { key: "الحالة", label: "الحالة" },
     { key: "الهدف", label: "الهدف" }, { key: "المُحصَّل", label: "المُحصَّل" },
-    { key: "نسبة الإنجاز", label: "نسبة الإنجاز" }, { key: "عدد المتبرعين", label: "عدد المتبرعين" },
+    { key: "نسبة الإنجاز", label: "نسبة الإنجاز" }, { key: "عدد التبرعات", label: "عدد التبرعات" },
     { key: "بداية", label: "بداية" }, { key: "نهاية", label: "نهاية" },
     { key: "تم التنفيذ", label: "تم التنفيذ" },
     { key: "تقرير مُعَد", label: "تقرير مُعَد" },
@@ -884,8 +897,8 @@ function computeAggregates(key: ReportKey, rows: any[]): Record<string, number |
       };
     }
     case "campaigns": {
-      const completed = rows.filter(r => r["تقرير مُرسل"] === "نعم").length;
-      return { "إجمالي الحملات": n, "مُرسل تقرير ختامي": completed, "بدون تقرير": n - completed };
+
+      return { "إجمالي الحملات": n, "حملات مكتملة": rows.filter(r => r._statusKey === "completed").length, "توثيق إرسال التقارير": "غير متاح في السجلات" };
     }
     case "failed_donations": {
       const reasons: Record<string, number> = {};

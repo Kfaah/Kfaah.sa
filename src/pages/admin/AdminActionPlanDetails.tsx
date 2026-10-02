@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { fetchAllReportRows } from "@/lib/fetchAllReportRows";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { ActionPlanTaskCard, type ActionPlanEmployee, type ActionPlanTask } from "@/components/admin/action-plans/ActionPlanTaskCard";
 
@@ -25,55 +27,60 @@ interface Plan {
   org_logo_url?: string | null;
 }
 
-export default function AdminActionPlanDetails() {
-  const { planId } = useParams();
+export default function AdminActionPlanDetails({ orgIdProp }: { orgIdProp?: string } = {}) {
+  const { planId, slug } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const backPath = orgIdProp ? `${slug ? `/${slug}` : ""}/internal-dashboard?tab=operational-plans` : "/admin/action-plans";
+  const [readOnly, setReadOnly] = useState(true);
   const [plan, setPlan] = useState<Plan | null>(null);
   const [tasks, setTasks] = useState<ActionPlanTask[]>([]);
   const [employees, setEmployees] = useState<ActionPlanEmployee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const loadVersion = useRef(0);
+  const savingTasks = useRef(new Set<string>());
   const [savingTask, setSavingTask] = useState<string | null>(null);
   const [exportingPpt, setExportingPpt] = useState(false);
 
   const load = async () => {
     if (!planId) return;
-    setLoading(true);
-    const { data: planData } = await supabase
-      .from("action_plans")
-      .select("*, organizations(name, logo_url)")
-      .eq("id", planId).maybeSingle();
-    if (!planData) { toast.error("الخطة غير موجودة"); navigate("/admin/action-plans"); return; }
-    setPlan({
-      ...planData,
-      org_name: (planData as any).organizations?.name,
-      org_logo_url: (planData as any).organizations?.logo_url,
-    });
-
-    const [{ data: taskData }, { data: empData }] = await Promise.all([
-      supabase.from("action_plan_tasks").select("*").eq("action_plan_id", planId).order("priority"),
-      supabase.from("employees").select("id, full_name, job_role").eq("organization_id", planData.organization_id),
-    ]);
-    setTasks((taskData || []) as unknown as ActionPlanTask[]);
-    setEmployees((empData || []) as ActionPlanEmployee[]);
-    setLoading(false);
+    const version = ++loadVersion.current;
+    setLoading(true); setLoadError(false); setReadOnly(true);
+    try {
+      let planQuery = supabase.from("action_plans")
+        .select("*, organizations(name, logo_url)").eq("id", planId);
+      if (orgIdProp) planQuery = planQuery.eq("organization_id", orgIdProp);
+      const { data: planData, error: planError } = await planQuery.single();
+      if (planError) throw planError;
+      const [taskRows, employeeRows, writeAccess] = await Promise.all([
+        fetchAllReportRows(supabase.from("action_plan_tasks").select("*").eq("action_plan_id", planId).eq("organization_id", planData.organization_id).order("priority").order("id")),
+        fetchAllReportRows(supabase.from("employees").select("id, full_name, job_role").eq("organization_id", planData.organization_id).order("id")),
+        user ? supabase.rpc("organization_member_can_write", { _user: user.id, _org: planData.organization_id }) : Promise.resolve({ data: false, error: null }),
+      ]);
+      if (version !== loadVersion.current) return;
+      setReadOnly(!!writeAccess.error || writeAccess.data !== true);
+      setPlan({ ...planData, org_name: (planData as any).organizations?.name, org_logo_url: (planData as any).organizations?.logo_url });
+      setTasks(taskRows as unknown as ActionPlanTask[]); setEmployees(employeeRows);
+    } catch { if (version === loadVersion.current) setLoadError(true); }
+    finally { if (version === loadVersion.current) setLoading(false); }
   };
-  useEffect(() => { load(); }, [planId]);
+  useEffect(() => { void load(); return () => { loadVersion.current++; }; }, [planId, orgIdProp, user?.id]);
 
   const updateTask = async (id: string, patch: Partial<ActionPlanTask>) => {
-    setSavingTask(id);
-    const finalPatch: any = { ...patch };
-    if (patch.status === "completed") finalPatch.completed_at = new Date().toISOString();
-    if (patch.status && patch.status !== "completed") finalPatch.completed_at = null;
-    const { error } = await supabase.from("action_plan_tasks").update(finalPatch).eq("id", id);
-    setSavingTask(null);
-    if (error) { toast.error("تعذّر التحديث"); return; }
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t));
-    // refresh plan progress
-    const total = tasks.length;
-    const done = tasks.filter(t => t.id === id ? patch.status === "completed" : t.status === "completed").length;
-    const progress = total ? (done / total) * 100 : 0;
-    await supabase.from("action_plans").update({ progress }).eq("id", planId!);
+    if (!plan || readOnly || savingTasks.current.has(id)) return;
+    savingTasks.current.add(id); setSavingTask(id);
+    try {
+      const { data, error } = await supabase.from("action_plan_tasks").update(patch as any)
+        .eq("id", id).eq("action_plan_id", planId!).eq("organization_id", plan.organization_id).select("*").single();
+      if (error) throw error;
+      setTasks(previous => previous.map(task => task.id === id ? data as unknown as ActionPlanTask : task));
+      // Progress and completed_at are updated transactionally by the database.
+    } catch { toast.error("تعذر حفظ التعديل. أعد المحاولة؛ لم يتم تأكيد الحفظ."); }
+    finally { savingTasks.current.delete(id); setSavingTask(current => current === id ? null : current); }
   };
+
+  if (loadError) return <div className="p-6 space-y-4 text-center" role="alert"><p>تعذر تحميل الخطة أو لا تملك صلاحية الوصول إليها</p><Button onClick={load}>إعادة المحاولة</Button><Button variant="outline" onClick={() => navigate(backPath)}>رجوع للخطط</Button></div>;
 
   if (loading || !plan) {
     return (
@@ -89,13 +96,8 @@ export default function AdminActionPlanDetails() {
   const progress = tasks.length ? (done / tasks.length) * 100 : 0;
 
   const toggleSubtask = async (task: ActionPlanTask, idx: number) => {
-    const next = (task.subtasks || []).map((s, i) => i === idx ? { ...s, done: !s.done } : s);
-    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, subtasks: next } : t));
-    const { error } = await supabase
-      .from("action_plan_tasks")
-      .update({ subtasks: next as any })
-      .eq("id", task.id);
-    if (error) toast.error("تعذّر حفظ المهمة الفرعية");
+    const next = (task.subtasks || []).map((subtask, i) => i === idx ? { ...subtask, done: !subtask.done } : subtask);
+    await updateTask(task.id, { subtasks: next });
   };
 
   const handleCompletionNotesChange = (taskId: string, value: string) => {
@@ -123,9 +125,9 @@ export default function AdminActionPlanDetails() {
   };
 
   return (
-    <div className="p-8 space-y-6" dir="rtl">
+    <div className="p-4 sm:p-8 space-y-6" dir="rtl">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button variant="ghost" onClick={() => navigate("/admin/action-plans")} className="text-white hover:bg-white/10 gap-2">
+        <Button variant="ghost" onClick={() => navigate(backPath)} className="text-foreground hover:bg-muted gap-2">
           <ArrowRightCircle className="w-4 h-4" />
           رجوع للخطط
         </Button>
@@ -186,6 +188,7 @@ export default function AdminActionPlanDetails() {
             task={task}
             employees={employees}
             saving={savingTask === task.id}
+            readOnly={readOnly}
             onUpdateTask={updateTask}
             onToggleSubtask={toggleSubtask}
             onCompletionNotesChange={handleCompletionNotesChange}

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, forwardRef } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useCallback, useRef, forwardRef } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +67,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { useAuth } from "@/hooks/useAuth";
 import { getAvailableYears } from "@/lib/utils";
 import { AddColumnDialog, ColumnConfig, ColumnContentType } from "@/components/operational-plans/AddColumnDialog";
@@ -1156,6 +1157,10 @@ const AddOperationalPlan = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user: authUser } = useAuth();
+  const { currentOrg } = useOrganization();
+  const { slug } = useParams();
+  const makeOrgUrl = (path: string) => slug ? `/${slug}${path}` : path;
+  const saveRequest = useRef({ key: "", id: "" });
 
   const [isLoading, setIsLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
@@ -1236,12 +1241,13 @@ const AddOperationalPlan = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!currentOrg?.id) return;
       try {
         const [departmentsRes, employeesRes, goalsRes, initiativesRes] = await Promise.all([
-          supabase.from("departments").select("id, name, color").order("name"),
-          supabase.from("employees").select("id, user_id, full_name, department_id").eq("status", "active").order("full_name"),
-          supabase.from("strategic_goals").select("id, name, color, year").eq("year", year).order("display_order"),
-          supabase.from("initiatives").select("id, strategic_goal_id, name").order("display_order"),
+          supabase.from("departments").select("id, name, color").eq("organization_id", currentOrg.id).order("name"),
+          supabase.from("employees").select("id, user_id, full_name, department_id").eq("organization_id", currentOrg.id).eq("status", "active").order("full_name"),
+          supabase.from("strategic_goals").select("id, name, color, year").eq("organization_id", currentOrg.id).eq("year", year).order("display_order"),
+          supabase.from("initiatives").select("id, strategic_goal_id, name").eq("organization_id", currentOrg.id).order("display_order"),
         ]);
 
         if (departmentsRes.error) throw departmentsRes.error;
@@ -1266,7 +1272,7 @@ const AddOperationalPlan = () => {
     };
 
     fetchData();
-  }, [year]);
+  }, [year, currentOrg?.id]);
 
   const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -1820,7 +1826,7 @@ const AddOperationalPlan = () => {
       if (!initiative) {
         const existingInitiative = initiatives.find(i => 
           i.name === row.initiative && 
-          (goal.existingId ? i.strategic_goal_id === goal.existingId : true)
+          (!!goal.existingId && i.strategic_goal_id === goal.existingId)
         );
         initiative = {
           id: generateId(),
@@ -1915,152 +1921,26 @@ const AddOperationalPlan = () => {
   };
 
   const handleSubmit = async () => {
-    if (!canSubmit() || !authUser) return;
-
+    if (!canSubmit() || !authUser || !currentOrg?.id || isLoading) return;
     setIsLoading(true);
     try {
       const goals = convertRowsToGoals();
-
-      // التحقق من وجود أنشطة فعلية للحفظ
-      const totalActivities = goals.reduce(
-        (sum, g) => sum + g.initiatives.reduce((s, i) => s + i.activities.length, 0),
-        0
-      );
-
-      if (totalActivities === 0) {
-        const flexiblePlan = buildFlexiblePlanPayload();
-
-        if (flexiblePlan.columns.length === 0 || flexiblePlan.rows.length === 0) {
-          toast({
-            title: "لا توجد بيانات للحفظ",
-            description: "أضف عمودًا واحدًا وصفًا يحتوي على بيانات على الأقل",
-            variant: "destructive",
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        const { error: flexibleError } = await supabase.from("excel_plans" as any).insert({
-          plan_name: planName?.trim() || "الخطة",
-          year,
-          sheet_name: "إدخال يدوي",
-          columns: flexiblePlan.columns as any,
-          rows: flexiblePlan.rows as any,
-          use_for_ai: false,
-          source_filename: "إدخال يدوي من جدول حر",
-          user_id: authUser.id,
-        });
-
-        if (flexibleError) throw flexibleError;
-
-        toast({
-          title: `تم حفظ ${flexiblePlan.rows.length} صف ضمن "${planName?.trim() || "الخطة"}" بنجاح`,
-        });
-        navigate("/operational-plans");
-        return;
-      }
-
-      let savedCount = 0;
-
-      for (const goal of goals) {
-        let goalId = goal.existingId;
-
-        // إنشاء الهدف الاستراتيجي إذا كان جديداً
-        if (goal.isNew) {
-          const { data: newGoal, error: goalError } = await supabase
-            .from("strategic_goals")
-            .insert({ name: goal.name, year, color: "hsl(var(--primary))" })
-            .select()
-            .single();
-
-          if (goalError) throw goalError;
-          goalId = newGoal.id;
-
-          // إضافة الأقسام المالكة
-          if (goal.departmentIds.length > 0) {
-            await supabase
-              .from("strategic_goal_departments")
-              .insert(goal.departmentIds.map(deptId => ({
-                strategic_goal_id: goalId,
-                department_id: deptId,
-              })));
-          }
-        }
-
-        for (const init of goal.initiatives) {
-          let initId = init.existingId;
-
-          // إنشاء المبادرة إذا كانت جديدة
-          if (init.isNew) {
-            const { data: newInit, error: initError } = await supabase
-              .from("initiatives")
-              .insert({ name: init.name, strategic_goal_id: goalId })
-              .select()
-              .single();
-
-            if (initError) throw initError;
-            initId = newInit.id;
-
-            // إضافة الأقسام المالكة
-            if (init.departmentIds.length > 0) {
-              await supabase
-                .from("initiative_departments")
-                .insert(init.departmentIds.map(deptId => ({
-                  initiative_id: initId,
-                  department_id: deptId,
-                })));
-            }
-          }
-
-          // إنشاء الأنشطة
-          for (const activity of init.activities) {
-            const { data: plan, error: planError } = await supabase
-              .from("operational_plans")
-              .insert({
-                user_id: authUser.id,
-                activity_name: activity.name,
-                strategic_goal: goal.name,
-                strategic_goal_id: goalId,
-                initiative: init.name,
-                initiative_id: initId,
-                annual_target: activity.annualTarget,
-                year,
-                responsible_employee_id: activity.responsibleEmployeeId || null,
-                status: "active",
-                plan_name: planName?.trim() || "الخطة الأولى",
-              })
-              .select()
-              .single();
-
-            if (planError) throw planError;
-
-            // إنشاء المستهدفات الشهرية
-            const monthlyData = Array.from({ length: 12 }, (_, index) => ({
-              operational_plan_id: plan.id,
-              month: index + 1,
-              monthly_target: Math.round(activity.annualTarget / 12),
-            }));
-
-            const { error: monthsError } = await supabase
-              .from("operational_plan_months")
-              .insert(monthlyData);
-
-            if (monthsError) throw monthsError;
-            savedCount++;
-          }
-        }
-      }
-
-      if (savedCount === 0) {
-        toast({
-          title: "لم يتم حفظ أي نشاط",
-          description: "تأكد من اكتمال بيانات الصفوف (هدف + مبادرة + نشاط)",
-          variant: "destructive",
-        });
-      } else {
-        toast({ title: `تم حفظ ${savedCount} نشاط ضمن "${planName?.trim() || "الخطة"}" بنجاح` });
-        navigate("/operational-plans");
-      }
+      const totalActivities = goals.reduce((sum, g) => sum + g.initiatives.reduce((n, i) => n + i.activities.length, 0), 0);
+      const payload = totalActivities ? { name: planName, year, goals } : { name: planName, year, flexible: buildFlexiblePlanPayload() };
+      // Local grouping IDs are regenerated by convertRowsToGoals; they must not
+      // turn a retry of the same form into another database request.
+      const key = totalActivities
+        ? JSON.stringify(payload, (name, value) => name === "id" ? undefined : value)
+        : JSON.stringify(payload);
+      if (saveRequest.current.key !== key) saveRequest.current = { key, id: crypto.randomUUID() };
+      const { data, error } = await supabase.rpc("save_manual_operational_plan", {
+        p_org: currentOrg.id, p_request_id: saveRequest.current.id, p_payload: JSON.parse(key),
+      });
+      if (error) throw error;
+      const result = data as { saved_count: number };
+      if (!result?.saved_count) throw new Error("لم تُحفظ أي بيانات؛ أعد المحاولة.");
+      toast({ title: 'تم حفظ ' + result.saved_count + ' ضمن ' + planName + ' بنجاح' });
+      navigate(makeOrgUrl("/operational-plans"));
     } catch (error: any) {
       toast({
         title: "خطأ",
@@ -2129,7 +2009,7 @@ const AddOperationalPlan = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => navigate("/operational-plans")}
+                  onClick={() => navigate(makeOrgUrl("/operational-plans"))}
                   className="rounded-xl hover:bg-muted"
                 >
                   <ArrowRight className="w-5 h-5" />
@@ -2174,7 +2054,7 @@ const AddOperationalPlan = () => {
 
                 <Button
                   variant="outline"
-                  onClick={() => navigate("/operational-plans")}
+                  onClick={() => navigate(makeOrgUrl("/operational-plans"))}
                   disabled={isLoading}
                 >
                   إلغاء
@@ -2491,7 +2371,7 @@ const AddOperationalPlan = () => {
             {rows.length} صف | {rows.filter(r => r.strategicGoal && r.initiative && r.activity).length} نشاط مكتمل
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => navigate("/operational-plans")}>
+            <Button variant="outline" onClick={() => navigate(makeOrgUrl("/operational-plans"))}>
               إلغاء
             </Button>
             <Button 

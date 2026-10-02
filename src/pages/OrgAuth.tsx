@@ -133,7 +133,9 @@ export default function OrgAuth() {
         const { data: userOrgId } = await supabase.rpc("get_user_organization_id", { _user_id: user.id });
 
         if (userOrgId === org.id) {
-          navigate(`/${slug}/app`, { replace: true });
+          const url = new URL(`/${slug}/app`, window.location.origin);
+          url.searchParams.set("v", Date.now().toString(36));
+          window.location.replace(url.toString());
         } else {
           await supabase.auth.signOut();
         }
@@ -196,7 +198,9 @@ export default function OrgAuth() {
         }
 
         toast.success("تم تسجيل الدخول بنجاح");
-        navigate(`/${slug}/app`, { replace: true });
+        const url = new URL(`/${slug}/app`, window.location.origin);
+        url.searchParams.set("v", Date.now().toString(36));
+        window.location.replace(url.toString());
       } else {
         if (!org.allow_self_signup) {
           toast.error("التسجيل الذاتي معطّل لهذه الجمعية. يرجى التواصل مع المسؤول");
@@ -384,7 +388,7 @@ export default function OrgAuth() {
           >
             {org.name}
           </h1>
-          <p className="text-sm text-slate-300 mt-1.5">منصة إدارة التسويق الإلكتروني بالذكاء الاصطناعي</p>
+          <p className="text-sm text-slate-300 mt-1.5">منصة إدارة التسويق الإلكتروني وتنمية الموارد المالية بالذكاء الاصطناعي</p>
 
           {/* Decorative divider */}
           <div className="flex items-center justify-center gap-2 mt-3" aria-hidden="true">
@@ -500,7 +504,7 @@ export default function OrgAuth() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    minLength={6}
+                    minLength={isLogin ? 6 : 8}
                     placeholder="••••••••"
                     className="h-11 ps-12 text-right"
                     dir="rtl"

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -51,14 +51,17 @@ const KIND_COLOR: Record<Kind, string> = {
 };
 
 function fmtSAR(n: number) {
-  return new Intl.NumberFormat("ar-SA", { maximumFractionDigits: 0 }).format(Math.round(n || 0)) + " ر.س";
+  return new Intl.NumberFormat("ar-SA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0) + " ر.س";
 }
 
 export function FinanceHub({ orgId }: { orgId: string }) {
   const [view, setView] = useState<"dashboard" | "add" | "rules" | "donor" | "import" | "reports" | "sources">("dashboard");
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expenseCount, setExpenseCount] = useState(0);
+  const [expensePage, setExpensePage] = useState(0);
   const [rule, setRule] = useState<Rule | null>(null);
   const [totalDonated, setTotalDonated] = useState(0);
+  const [expenseTotals, setExpenseTotals] = useState({ p: 0, m: 0, o: 0, total: 0 });
   const [projects, setProjects] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -76,35 +79,33 @@ export function FinanceHub({ orgId }: { orgId: string }) {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [expRes, ruleRes, donRes, projRes] = await Promise.all([
-        supabase.from("expenses" as any).select("*").eq("organization_id", orgId).order("expense_date", { ascending: false }).limit(500),
+      const [expRes, ruleRes, summaryRes] = await Promise.all([
+        supabase.from("expenses" as any).select("*", { count: "exact" }).eq("organization_id", orgId).order("expense_date", { ascending: false }).order("id").range(expensePage * 50, expensePage * 50 + 49),
         supabase.from("org_allocation_rules" as any).select("*").eq("organization_id", orgId).maybeSingle(),
-        supabase.from("donations").select("amount").eq("organization_id", orgId).eq("status", "success").limit(20000),
-        supabase.from("donations").select("project_name").eq("organization_id", orgId).not("project_name", "is", null).limit(2000),
+        supabase.rpc("org_financial_summary" as any, { p_org: orgId }),
       ]);
       if (cancelled) return;
+      if (expRes.error || ruleRes.error || summaryRes.error) {
+        toast.error("تعذر تحميل البيانات المالية كاملة، يرجى إعادة المحاولة");
+        setLoading(false);
+        return;
+      }
       setExpenses(((expRes.data as any) || []) as Expense[]);
+      setExpenseCount(expRes.count || 0);
       setRule((ruleRes.data as any) || { organization_id: orgId, project_pct: 50, marketing_pct: 40, operational_pct: 10 });
-      const total = ((donRes.data as any) || []).reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
-      setTotalDonated(total);
-      const projSet = new Set<string>();
-      ((projRes.data as any) || []).forEach((r: any) => { const p = (r.project_name || "").trim(); if (p) projSet.add(p); });
-      setProjects(Array.from(projSet).sort());
+      const summary = summaryRes.data as any;
+      setTotalDonated(Number(summary?.donations_total || 0));
+      const p = Number(summary?.expenses_project || 0);
+      const m = Number(summary?.expenses_marketing || 0);
+      const o = Number(summary?.expenses_operational || 0);
+      setExpenseTotals({ p, m, o, total: p + m + o });
+      setProjects(Array.isArray(summary?.projects) ? summary.projects : []);
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [orgId, refreshKey]);
+  }, [orgId, refreshKey, expensePage]);
 
-  const totals = useMemo(() => {
-    let p = 0, m = 0, o = 0;
-    expenses.forEach((e) => {
-      if (e.kind === "project") p += Number(e.amount);
-      else if (e.kind === "marketing") m += Number(e.amount);
-      else o += Number(e.amount);
-    });
-    const total = p + m + o;
-    return { p, m, o, total };
-  }, [expenses]);
+  const totals = expenseTotals;
 
   const refresh = () => setRefreshKey((k) => k + 1);
 
@@ -186,7 +187,7 @@ export function FinanceHub({ orgId }: { orgId: string }) {
       {/* Expenses table */}
       <Card>
         <CardHeader>
-          <CardTitle>سجل المصروفات ({expenses.length})</CardTitle>
+          <CardTitle>سجل المصروفات ({expenseCount})</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -251,6 +252,11 @@ export function FinanceHub({ orgId }: { orgId: string }) {
                   ))}
                 </TableBody>
               </Table>
+              <div className="flex items-center justify-between pt-4">
+                <Button variant="outline" disabled={expensePage === 0} onClick={() => setExpensePage(p => p - 1)}>السابق</Button>
+                <span className="text-sm">{expensePage * 50 + 1}–{expensePage * 50 + expenses.length} من {expenseCount}</span>
+                <Button variant="outline" disabled={(expensePage + 1) * 50 >= expenseCount} onClick={() => setExpensePage(p => p + 1)}>التالي</Button>
+              </div>
             </div>
           )}
         </CardContent>
@@ -491,6 +497,8 @@ function DonorTransparencyView({ orgId, onBack }: { orgId: string; onBack: () =>
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [orgName, setOrgName] = useState<string>("الجمعية");
 
   useEffect(() => {
@@ -498,32 +506,29 @@ function DonorTransparencyView({ orgId, onBack }: { orgId: string; onBack: () =>
     let cancelled = false;
     (async () => {
       setLoading(true);
+      let query = supabase.from("donor_spend_summary" as any)
+        .select("donor_id, total_donated, total_allocated, projects_funded, fully_spent, fully_spent_message, primary_project, donors!inner(full_name, phone)", { count: "exact" })
+        .eq("organization_id", orgId)
+        .order("total_donated", { ascending: false }).order("donor_id")
+        .range(page * 50, page * 50 + 49);
+      const term = search.trim().replace(/[,().*%_]/g, " ").trim();
+      if (term) query = query.or(`full_name.ilike.*${term}*,phone.ilike.*${term}*`, { referencedTable: "donors" });
       const [sumRes, orgRes] = await Promise.all([
-        supabase
-          .from("donor_spend_summary" as any)
-          .select("donor_id, total_donated, total_allocated, projects_funded, fully_spent, fully_spent_message, primary_project, donors(full_name, phone)")
-          .eq("organization_id", orgId)
-          .order("total_donated", { ascending: false })
-          .limit(500),
+        query,
         supabase.from("organizations").select("name").eq("id", orgId).maybeSingle(),
       ]);
       if (!cancelled) {
+        if (sumRes.error || orgRes.error) toast.error("تعذر تحميل بيانات المتبرعين، يرجى إعادة المحاولة");
         setRows(((sumRes as any).data) || []);
+        setTotalCount(sumRes.count || 0);
         setOrgName((orgRes as any).data?.name || "الجمعية");
         setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [orgId]);
+  }, [orgId, page, search]);
 
-  const filtered = rows.filter((r) => {
-    if (!search.trim()) return true;
-    const s = search.toLowerCase();
-    return (
-      (r.donors?.full_name || "").toLowerCase().includes(s) ||
-      (r.donors?.phone || "").toLowerCase().includes(s)
-    );
-  });
+  const filtered = rows;
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -540,8 +545,8 @@ function DonorTransparencyView({ orgId, onBack }: { orgId: string; onBack: () =>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between gap-3">
-            <span>قائمة المتبرعين ({filtered.length})</span>
-            <Input placeholder="بحث بالاسم أو الجوال…" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
+            <span>قائمة المتبرعين ({totalCount})</span>
+            <Input placeholder="بحث بالاسم أو الجوال…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} className="max-w-xs" />
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -623,6 +628,11 @@ function DonorTransparencyView({ orgId, onBack }: { orgId: string; onBack: () =>
                   })}
                 </TableBody>
               </Table>
+              <div className="flex items-center justify-between pt-4">
+                <Button variant="outline" disabled={page === 0} onClick={() => setPage(p => p - 1)}>السابق</Button>
+                <span className="text-sm">{page * 50 + 1}–{page * 50 + rows.length} من {totalCount}</span>
+                <Button variant="outline" disabled={(page + 1) * 50 >= totalCount} onClick={() => setPage(p => p + 1)}>التالي</Button>
+              </div>
             </div>
           )}
         </CardContent>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { useAuth } from "@/hooks/useAuth";
 
 /**
@@ -9,7 +10,8 @@ import { useAuth } from "@/hooks/useAuth";
  */
 export function useIsViewer() {
   const { user } = useAuth();
-  const [isViewer, setIsViewer] = useState(false);
+  const { currentOrg } = useOrganization();
+  const [isViewer, setIsViewer] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,9 +24,11 @@ export function useIsViewer() {
         }
         return;
       }
-      const { data } = await supabase.rpc("is_viewer", { _user_id: user.id });
+      setIsViewer(true); setLoading(true);
+      if (!currentOrg?.id) { setLoading(false); return; }
+      const { data, error } = await supabase.rpc("organization_member_can_write", { _user: user.id, _org: currentOrg.id });
       if (!cancelled) {
-        setIsViewer(!!data);
+        setIsViewer(!!error || data !== true);
         setLoading(false);
       }
     };
@@ -32,7 +36,7 @@ export function useIsViewer() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, currentOrg?.id]);
 
   return { isViewer, loading };
 }

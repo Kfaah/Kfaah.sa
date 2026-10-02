@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { fetchAllReportRows } from "@/lib/fetchAllReportRows";
+import { ReportDataState } from "@/components/admin/ReportDataState";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,14 +33,22 @@ interface PlanRow {
   tasks_done?: number;
 }
 
-export default function AdminActionPlans() {
+export default function AdminActionPlans({ orgIdProp }: { orgIdProp?: string } = {}) {
   const navigate = useNavigate();
+  const { slug } = useParams();
+  const location = useLocation();
+  const organizationView = !location.pathname.startsWith("/admin/");
+  const planPath = (id: string) => organizationView
+    ? `${slug ? `/${slug}` : ""}/action-plans/${id}` : `/admin/action-plans/${id}`;
   const _params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
-  const isEmbedded = _params.get("embedded") === "1";
-  const lockedSlug = _params.get("org") || "";
+  const isEmbedded = !!orgIdProp || _params.get("embedded") === "1";
+  const lockedSlug = slug || _params.get("org") || "";
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
   const [plans, setPlans] = useState<PlanRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const loadVersion = useRef(0);
+  const generationLock = useRef(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState<string>("");
   const [duration, setDuration] = useState<number>(30);
@@ -47,50 +57,51 @@ export default function AdminActionPlans() {
 
   // Auto-select the locked org in embedded mode
   useEffect(() => {
-    if (isEmbedded && orgs.length === 1 && !selectedOrg) {
+    if (isEmbedded && orgs.length === 1 && selectedOrg !== orgs[0].id) {
       setSelectedOrg(orgs[0].id);
     }
   }, [isEmbedded, orgs, selectedOrg]);
 
   const fetchAll = async () => {
-    setLoading(true);
-    const [{ data: orgsData }, { data: plansData }] = await Promise.all([
-      supabase.from("organizations").select("id, name, slug").order("name"),
-      supabase.from("action_plans")
-        .select("*, organizations(name)")
-        .order("created_at", { ascending: false }),
-    ]);
-    const orgList = (orgsData || []) as OrgRow[];
-    const visibleOrgs = isEmbedded && lockedSlug
-      ? orgList.filter((o) => o.slug === lockedSlug)
-      : orgList;
-    setOrgs(visibleOrgs);
-    const lockedOrgIds = new Set(visibleOrgs.map((o) => o.id));
-
-    const planList = (plansData || []) as any[];
-    const filteredPlans = isEmbedded && lockedSlug
-      ? planList.filter((p) => lockedOrgIds.has(p.organization_id))
-      : planList;
-    // counts per plan
-    const enriched = await Promise.all(filteredPlans.map(async (p) => {
-      const [{ count: total }, { count: done }] = await Promise.all([
-        supabase.from("action_plan_tasks").select("*", { count: "exact", head: true }).eq("action_plan_id", p.id),
-        supabase.from("action_plan_tasks").select("*", { count: "exact", head: true }).eq("action_plan_id", p.id).eq("status", "completed"),
-      ]);
-      return { ...p, org_name: p.organizations?.name, tasks_count: total || 0, tasks_done: done || 0 } as PlanRow;
-    }));
-    setPlans(enriched);
-    setLoading(false);
+    const version = ++loadVersion.current;
+    setLoading(true); setLoadError(null);
+    try {
+      let orgQuery = supabase.from("organizations").select("id, name, slug").order("name").order("id");
+      if (orgIdProp) orgQuery = orgQuery.eq("id", orgIdProp);
+      if (isEmbedded && lockedSlug) orgQuery = orgQuery.eq("slug", lockedSlug);
+      const orgList = await fetchAllReportRows(orgQuery);
+      const ids = orgList.map(o => o.id);
+      // Fetch compact counts in one paginated pass instead of two requests per plan.
+      const [planRows, taskRows] = ids.length ? await Promise.all([
+        fetchAllReportRows(supabase.from("action_plans").select("*, organizations(name)").in("organization_id", ids).order("created_at", { ascending: false }).order("id")),
+        fetchAllReportRows(supabase.from("action_plan_tasks").select("id, action_plan_id, status").in("organization_id", ids).order("id")),
+      ]) : [[], []];
+      const counts = new Map<string, { total: number; done: number }>();
+      for (const task of taskRows) {
+        const count = counts.get(task.action_plan_id) || { total: 0, done: 0 };
+        count.total++; if (task.status === "completed") count.done++;
+        counts.set(task.action_plan_id, count);
+      }
+      if (version !== loadVersion.current) return;
+      setOrgs(orgList);
+      setPlans(planRows.map(p => ({ ...p, org_name: p.organizations?.name,
+        tasks_count: counts.get(p.id)?.total || 0, tasks_done: counts.get(p.id)?.done || 0 })));
+    } catch {
+      if (version === loadVersion.current) { setPlans([]); setOrgs([]); setLoadError("تعذّر تحميل الخطط. أعد المحاولة."); }
+    } finally { if (version === loadVersion.current) setLoading(false); }
   };
-
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => { void fetchAll(); return () => { loadVersion.current++; }; }, [isEmbedded, lockedSlug, orgIdProp]);
 
   const handleGenerate = async () => {
-    if (!selectedOrg) { toast.error("اختر جمعية"); return; }
+    if (generationLock.current) return;
+    if (!selectedOrg || !orgs.some(o => o.id === selectedOrg)) { toast.error("اختر جمعية"); return; }
+    if (!Number.isInteger(duration) || duration < 7 || duration > 365) { toast.error("مدة الخطة من 7 إلى 365 يوماً"); return; }
+    generationLock.current = true;
     setGenerating(true);
     try {
       // Use direct fetch so we can read the JSON body even on non-2xx responses
       const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("انتهت الجلسة. سجّل الدخول مجدداً.");
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL.replace(/\/$/, "")}/functions/v1/generate-action-plan`,
         {
@@ -118,10 +129,11 @@ export default function AdminActionPlans() {
       setDialogOpen(false);
       setPlanTitle("");
       await fetchAll();
-      if (data?.plan_id) navigate(`/admin/action-plans/${data.plan_id}`);
+      if (data?.plan_id) navigate(planPath(data.plan_id));
     } catch (e: any) {
       toast.error(e.message || "تعذّر توليد الخطة. تأكد من وجود تحليل ذكي مسبق لهذه الجمعية.");
     } finally {
+      generationLock.current = false;
       setGenerating(false);
     }
   };
@@ -143,14 +155,16 @@ export default function AdminActionPlans() {
         title="الخطط من التوصيات"
         subtitle="حوّل توصيات التحليل الذكي إلى خطة عمل مزمنة، مكلَّفة، وقابلة للمتابعة"
         actions={
-          <Button onClick={() => setDialogOpen(true)} className="gap-2 bg-white text-primary hover:bg-white/90">
+          <Button onClick={() => setDialogOpen(true)} disabled={loading || !!loadError || !orgs.length} className="gap-2 bg-white text-primary hover:bg-white/90">
             <Sparkles className="w-4 h-4" />
             توليد خطة جديدة من آخر تحليل
           </Button>
         }
       />
 
-      {loading ? (
+      {loadError ? (
+        <ReportDataState error={loadError} retry={fetchAll} />
+      ) : loading ? (
         <Card className="p-12 text-center bg-card border-border text-muted-foreground">جاري التحميل...</Card>
       ) : plans.length === 0 ? (
         <Card className="p-12 text-center bg-card border-border">
@@ -179,7 +193,7 @@ export default function AdminActionPlans() {
                     <Card
                       key={p.id}
                       className="bg-card border-border p-5 shadow-sm hover:shadow-md transition cursor-pointer"
-                      onClick={() => navigate(`/admin/action-plans/${p.id}`)}
+                      onClick={() => navigate(planPath(p.id))}
                     >
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <h3 className="font-bold text-foreground line-clamp-2">{p.title}</h3>
@@ -217,7 +231,7 @@ export default function AdminActionPlans() {
         </div>
       )}
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={open => { if (!generating) setDialogOpen(open); }}>
         <DialogContent dir="rtl" className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -231,7 +245,7 @@ export default function AdminActionPlans() {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>الجمعية</Label>
-              <Select value={selectedOrg} onValueChange={setSelectedOrg}>
+              <Select value={selectedOrg} onValueChange={setSelectedOrg} disabled={generating}>
                 <SelectTrigger><SelectValue placeholder="اختر..." /></SelectTrigger>
                 <SelectContent>
                   {orgs.map(o => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
@@ -240,11 +254,11 @@ export default function AdminActionPlans() {
             </div>
             <div className="space-y-2">
               <Label>عنوان الخطة (اختياري)</Label>
-              <Input value={planTitle} onChange={e => setPlanTitle(e.target.value)} placeholder="مثلاً: خطة Q2 لتطوير التبرعات" />
+              <Input disabled={generating} value={planTitle} onChange={e => setPlanTitle(e.target.value)} placeholder="مثلاً: خطة Q2 لتطوير التبرعات" />
             </div>
             <div className="space-y-2">
               <Label>المدة (أيام)</Label>
-              <Input type="number" min={7} max={365} value={duration}
+              <Input disabled={generating} type="number" min={7} max={365} value={duration}
                 onChange={e => setDuration(Math.max(7, Math.min(365, Number(e.target.value) || 30)))} />
               <p className="text-xs text-muted-foreground">تُوزَّع المهام تلقائيًا على المدة (الأعلى تأثيرًا أولًا).</p>
             </div>

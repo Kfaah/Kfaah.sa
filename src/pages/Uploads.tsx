@@ -184,6 +184,7 @@ export default function Uploads({ orgIdProp, embedded = false }: { orgIdProp?: s
   const [pending, setPending] = useState<PendingFile[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [history, setHistory] = useState<HistoryRow[]>([]);
+  const [historyTotal, setHistoryTotal] = useState(0);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [orgId, setOrgId] = useState<string | null>(null);
   const historyRequest = useRef(0);
@@ -211,22 +212,33 @@ export default function Uploads({ orgIdProp, embedded = false }: { orgIdProp?: s
   }, [user, currentOrg?.id, orgLoading, orgIdProp]);
 
 
-  const loadHistory = useCallback(async () => {
+  const loadHistory = useCallback(async (offset = 0) => {
     const requestId = ++historyRequest.current;
     if (!orgId) {
       setHistory([]);
+      setHistoryTotal(0);
       setLoadingHistory(false);
       return;
     }
     setLoadingHistory(true);
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
       .from("data_uploads_log")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("organization_id", orgId)
       .order("created_at", { ascending: false })
-      .limit(50);
+      .order("id", { ascending: false })
+      .range(offset, offset + 49);
     if (requestId !== historyRequest.current) return;
-    if (!error && data) setHistory(data as HistoryRow[]);
+    if (error) {
+      toast.error("تعذر تحميل سجل الرفع، حاول مرة أخرى");
+    } else if (data) {
+      setHistory((previous) => {
+        const rows = offset === 0 ? [] : previous;
+        const existingIds = new Set(rows.map((row) => row.id));
+        return [...rows, ...(data as HistoryRow[]).filter((row) => !existingIds.has(row.id))];
+      });
+      setHistoryTotal(count ?? 0);
+    }
     setLoadingHistory(false);
   }, [orgId]);
 
@@ -234,6 +246,7 @@ export default function Uploads({ orgIdProp, embedded = false }: { orgIdProp?: s
     // Clear stale rows immediately when switching associations. Only load
     // history after OrganizationContext has resolved the same organization.
     setHistory([]);
+    setHistoryTotal(0);
     historyRequest.current++;
     if (!orgLoading && orgId && orgId === currentOrg?.id) {
       void loadHistory();
@@ -493,6 +506,7 @@ export default function Uploads({ orgIdProp, embedded = false }: { orgIdProp?: s
         organization_id: orgId,
         file_name: pf.file.name,
         file_type: pf.file.type || "application/vnd.ms-excel",
+        file_size_bytes: pf.file.size,
         detected_schema: "staff_duties",
         file_path: path,
         storage_bucket: "staff-duties-files",
@@ -533,6 +547,7 @@ export default function Uploads({ orgIdProp, embedded = false }: { orgIdProp?: s
           organization_id: orgId,
           file_name: pf.file.name,
           file_type: pf.file.type || "application/octet-stream",
+          file_size_bytes: pf.file.size,
           detected_schema: schemaTag,
           file_path: path,
           storage_bucket: "org-documents",
@@ -660,7 +675,11 @@ export default function Uploads({ orgIdProp, embedded = false }: { orgIdProp?: s
                 inserted: data.inserted ?? 0,
                 duplicates: data.duplicates ?? 0,
                 failed: data.failed ?? 0,
+                uploadId: data.uploadId,
+                archivedOnly: data.archivedOnly,
+                importError: data.importError,
               };
+              if (data.profileSyncWarning) toast.warning(data.profileSyncWarning, { duration: 10000 });
             }
           }
 
@@ -1258,7 +1277,7 @@ export default function Uploads({ orgIdProp, embedded = false }: { orgIdProp?: s
           </CardHeader>
 
           <CardContent>
-            {loadingHistory ? (
+            {loadingHistory && history.length === 0 ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
@@ -1418,6 +1437,23 @@ export default function Uploads({ orgIdProp, embedded = false }: { orgIdProp?: s
                   })}
                 </TableBody>
               </Table>
+            )}
+            {history.length > 0 && (
+              <div className="flex items-center justify-between gap-3 pt-4">
+                <p className="text-sm text-muted-foreground">
+                  عرض {history.length} من {historyTotal} ملفًا
+                </p>
+                {history.length < historyTotal && (
+                  <Button
+                    variant="outline"
+                    disabled={loadingHistory}
+                    onClick={() => void loadHistory(history.length)}
+                  >
+                    {loadingHistory && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
+                    عرض المزيد من الملفات
+                  </Button>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
