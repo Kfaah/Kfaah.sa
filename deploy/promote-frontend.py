@@ -1,10 +1,19 @@
 #!/usr/bin/python3
 """Promote a verified frontend release atomically and roll back on HTTP mismatch."""
-import datetime, fcntl, hashlib, html, os, re, shutil, sys, time, uuid
+import datetime, fcntl, hashlib, html, os, re, shutil, stat, sys, time, uuid
 from pathlib import Path
 from urllib.request import Request, urlopen
 
+def validate_tree(root):
+    if root.is_symlink() or not root.is_dir():
+        raise ValueError("Release must be a regular directory")
+    for path in root.rglob("*"):
+        mode = path.lstat().st_mode
+        if not (stat.S_ISREG(mode) or stat.S_ISDIR(mode)):
+            raise ValueError("Unsupported release entry: " + str(path.relative_to(root)))
+
 def validate_release(root):
+    validate_tree(root)
     index = root / "index.html"
     body = index.read_bytes()
     text = body.decode("utf-8")
@@ -39,12 +48,13 @@ def promote(stage, current, releases, verify):
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
     candidate = releases / (".building-" + stamp)
     final = releases / stamp
-    shutil.copytree(stage, candidate)
+    shutil.copytree(stage, candidate, symlinks=True)
+    validate_tree(candidate)
     # Retain hashed chunks needed by tabs that were already open.
     if (previous / "assets").is_dir():
         for source in (previous / "assets").rglob("*"):
             destination = candidate / "assets" / source.relative_to(previous / "assets")
-            if source.is_file() and not destination.exists():
+            if source.is_file() and not source.is_symlink() and not destination.exists():
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(source, destination)
     validate_release(candidate)
