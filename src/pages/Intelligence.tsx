@@ -103,20 +103,43 @@ const safeLink = (value: string): string | null => {
   }
 };
 
-const analysisSources = (analysis: AnalysisRecord): AnalysisRecord[] => {
-  const keys = ["sources", "stores", "websites", "social_accounts", "accounts", "channels"];
-  const sources = keys.flatMap((key) =>
-    Array.isArray(analysis[key]) ? (analysis[key] as unknown[]).map(asRecord).filter((item): item is AnalysisRecord => item !== null) : [],
-  );
-  return sources.length ? sources : [analysis];
-};
-
 const sourceFindings = (source: AnalysisRecord): AnalysisRecord[] => {
   const keys = ["findings", "gaps", "issues", "observations", "recommendations"];
   const findings = keys.flatMap((key) =>
     Array.isArray(source[key]) ? (source[key] as unknown[]).map((item) => asRecord(item) ?? (text(item) ? { observation: text(item) } : null)).filter((item): item is AnalysisRecord => item !== null) : [],
   );
-  return findings.length ? findings : [source];
+  const hasDirectFinding = field(source, ["observation", "finding", "gap", "issue", "evidence", "proof", "impact", "risk", "action", "recommendation"]);
+  return hasDirectFinding ? [source, ...findings] : findings;
+};
+
+const detail = (value: unknown): string => {
+  if (Array.isArray(value)) return value.map(detail).filter(Boolean).join("، ");
+  const record = asRecord(value);
+  return record ? field(record, ["text", "description", "detail", "quote", "url", "link"]) : text(value);
+};
+
+const findingDetail = (record: AnalysisRecord, keys: string[]): string => {
+  for (const key of keys) {
+    const value = detail(record[key]);
+    if (value) return value;
+  }
+  return "";
+};
+
+const analysisSources = (analysis: AnalysisRecord): { source: AnalysisRecord; kind: string }[] => {
+  const groups: [string, string][] = [
+    ["stores", "متجر إلكتروني"], ["websites", "موقع إلكتروني"],
+    ["social_accounts", "حساب اجتماعي"], ["accounts", "حساب"],
+    ["channels", "قناة"], ["sources", "جهة مذكورة"],
+  ];
+  const sources = groups.flatMap(([key, kind]) =>
+    Array.isArray(analysis[key]) ? (analysis[key] as unknown[]).map(asRecord)
+      .filter((item): item is AnalysisRecord => item !== null)
+      .map((source) => ({ source, kind })) : [],
+  );
+  const general = sourceFindings(analysis).length > 0 || field(analysis, ["summary", "overview", "description"]);
+  // لا ننقل نتائج الملف العامة إلى أي متجر أو حساب لم يسمّه التحليل صراحةً.
+  return [...sources, ...(general || !sources.length ? [{ source: analysis, kind: "تحليل عام للمرفق" }] : [])];
 };
 
 const severityLabel = (severity: string) =>
@@ -214,7 +237,7 @@ const Intelligence = () => {
         <PageHeader
           icon={<Brain className="w-6 h-6" />}
           title="التحليل الذكي"
-          subtitle="رؤى ومهام وأفكار مستندة إلى بيانات الجمعية، مع توضيح الجهات والشواهد المتاحة"
+          subtitle="قراءة منظّمة لنتائج الجمعية: كل جهة على حدة، وما ورد عنها من ملاحظات وشواهد وخطوات"
           actions={
             <Button size="lg" onClick={runAnalysis} disabled={running} className="gap-2 shadow-lg">
               <RefreshCcw className={`w-4 h-4 ${running ? "animate-spin" : ""}`} />
@@ -223,78 +246,87 @@ const Intelligence = () => {
           }
         />
         <PageGuide
-          description="تعرض الصفحة نتائج التحليل المحفوظة لكل جمعية. تظهر الجهات وروابطها والشواهد والتوصيات عندما تكون موجودة في بيانات التحليل؛ وغياب الرابط أو الشاهد يعني أن النتيجة تحتاج إلى تحقق، لا أنها فُحصت مباشرة."
+          description="هذه قراءة لنتائج التحليل المحفوظة، وليست إثباتًا لفحص مباشر للمواقع. تُعرض كل جهة مذكورة منفصلة؛ وما لم يُربط بجهة محددة يبقى ضمن تحليل المرفق العام. راجع الشاهد والرابط قبل اعتماد أي نتيجة."
           features={[
-            "بطاقة مستقلة لكل متجر أو موقع أو حساب مذكور على حدة في تحليل الملف",
-            "ترتيب الملاحظة والشاهد والأثر والخطوة المقترحة عند توفرها",
-            "عرض الرؤى والمهام والأفكار المحفوظة دون إضافة استنتاجات غير موثقة",
-            "إمكانية إعادة التحليل في أي وقت",
+            "بطاقة لكل متجر أو موقع أو حساب حدّدته بيانات التحليل، دون دمج المتاجر المختلفة",
+            "لكل ملاحظة: ما رُصد، والشاهد إن وُجد، والأثر والخطوة المقترحة",
+            "تمييز النتائج التي تفتقر إلى رابط أو شاهد بدل تقديمها كحقائق مؤكدة",
+            "الرؤى والمهام والأفكار المحفوظة متاحة أدناه، ويمكن إعادة التحليل",
           ]}
         />
 
         {!loading && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">بطاقات تحليل الجهات والمرفقات</CardTitle>
-              <CardDescription>كل بطاقة لجهة محددة إذا سمّتها بيانات التحليل. لا تُنسب ملاحظة عامة إلى متجر أو حساب بعينه دون تحديده في المصدر.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {fileAnalyses.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  لا توجد تحليلات ملفات محفوظة لهذه الجمعية في السجل الحالي.
-                </p>
-              ) : (
-                fileAnalyses.flatMap((file) => analysisSources(file.ai_analysis).map((source, index) => {
-                  const isGeneral = source === file.ai_analysis;
-                  const name = field(source, ["name", "title", "store_name", "website_name", "account_name", "source_name", "platform"]);
-                  const urlText = field(source, ["url", "link", "website", "store_url", "account_url", "profile_url"]);
-                  const url = safeLink(urlText);
-                  const overview = field(source, ["summary", "overview", "description"]);
-                  const findings = sourceFindings(source);
-                  return (
-                    <article key={`${file.id}-${index}`} className="rounded-xl border bg-card shadow-sm overflow-hidden">
-                      <div className="border-b bg-primary/5 p-4 space-y-2">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <h3 className="font-bold text-base break-words">{name || (isGeneral ? `تحليل عام: ${file.file_name}` : `جهة غير مسماة في ${file.file_name}`)}</h3>
-                          <Badge variant="outline">{isGeneral ? "ملف عام" : "جهة مستقلة"}</Badge>
-                        </div>
-                        {url ? (
-                          <a href={url} target="_blank" rel="noopener noreferrer" dir="ltr" className="inline-flex items-center gap-1 text-sm text-primary underline break-all">
-                            {urlText} <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                          </a>
-                        ) : (
-                          <p className="text-xs text-muted-foreground">{urlText ? "الرابط المسجل غير صالح للفتح؛ يلزم التحقق منه." : "لم يُذكر رابط لهذه الجهة في التحليل المحفوظ."}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground">المرفق: {file.file_name}{file.ai_analyzed_at ? ` · تاريخ التحليل: ${new Date(file.ai_analyzed_at).toLocaleString("ar-SA")}` : ""}</p>
-                      </div>
-                      <div className="p-4 space-y-4">
-                        {overview && <div><p className="text-xs font-semibold text-primary mb-1">ملخص التحليل</p><p className="text-sm whitespace-pre-wrap leading-relaxed">{overview}</p></div>}
-                        {findings.map((finding, findingIndex) => {
-                          const observation = field(finding, ["observation", "finding", "gap", "issue", "title", "description", "summary"]);
-                          const evidence = field(finding, ["evidence", "proof", "example", "reference", "screenshot", "source"]);
-                          const impact = field(finding, ["impact", "risk", "consequence", "expected_impact"]);
-                          const action = field(finding, ["action", "recommendation", "recommended_action", "suggestion"]);
-                          if (!observation && !evidence && !impact && !action) return null;
-                          return (
-                            <div key={findingIndex} className="rounded-lg border bg-muted/20 p-3 space-y-2 text-sm leading-relaxed">
-                              <p className="text-xs font-bold text-primary">{findings.length > 1 ? `النقطة ${findingIndex + 1}` : "تفاصيل النتيجة"}</p>
-                              {observation && <p className="whitespace-pre-wrap"><strong>الملاحظة أو الفجوة:</strong> {observation}</p>}
-                              <p className="whitespace-pre-wrap text-muted-foreground"><strong>الشاهد:</strong> {evidence || "لا يوجد شاهد محدد في التحليل المحفوظ؛ يلزم التحقق قبل اعتماد الملاحظة."}</p>
-                              {impact && <p className="whitespace-pre-wrap"><strong>الأثر المذكور:</strong> {impact}</p>}
-                              {action && <p className="whitespace-pre-wrap"><strong>الخطوة المقترحة:</strong> {action}</p>}
+          <section className="space-y-4" aria-label="تحليل الجهات والمرفقات">
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <div>
+                <h2 className="text-lg font-bold">ملفّات الجهات تحت المجهر</h2>
+                <p className="text-sm text-muted-foreground">بطاقة مستقلة لكل جهة وردت في المرفقات؛ التحليل العام لا يُنسب إلى متجر بعينه.</p>
+              </div>
+              <Badge variant="outline">{fileAnalyses.length} مرفق محلّل</Badge>
+            </div>
+            {fileAnalyses.length === 0 ? (
+              <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">لا توجد تحليلات ملفات محفوظة لهذه الجمعية في السجل الحالي.</CardContent></Card>
+            ) : (
+              <div className="grid gap-4 lg:grid-cols-2 items-start">
+                {fileAnalyses.flatMap((file) => {
+                  const analysis = asRecord(file.ai_analysis) ?? {};
+                  return analysisSources(analysis).map(({ source, kind }, index) => {
+                    const isGeneral = source === analysis;
+                    const name = field(source, ["store_name", "website_name", "account_name", "source_name", "name", "title", "platform"]);
+                    const urlText = field(source, ["url", "link", "store_url", "website_url", "account_url", "profile_url", "website"]);
+                    const url = safeLink(urlText);
+                    const overview = field(source, ["summary", "overview", "description"]);
+                    const findings = sourceFindings(source);
+                    return (
+                      <article key={`${file.id}-${index}`} className="rounded-xl border bg-card shadow-sm overflow-hidden min-w-0">
+                        <div className="border-b bg-primary/5 p-5 space-y-3">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div className="min-w-0 space-y-1">
+                              <p className="text-xs font-semibold text-primary">{kind}</p>
+                              <h3 className="text-lg font-bold leading-snug break-words">{isGeneral ? `نتائج عامة · ${file.file_name}` : name || urlText || "جهة لم يُذكر اسمها"}</h3>
                             </div>
-                          );
-                        })}
-                        {!overview && findings.every((finding) => !field(finding, ["observation", "finding", "gap", "issue", "title", "description", "summary", "evidence", "proof", "example", "reference", "screenshot", "source", "impact", "risk", "consequence", "expected_impact", "action", "recommendation", "recommended_action", "suggestion"])) && (
-                          <p className="text-sm text-muted-foreground">التحليل محفوظ، لكن لا تتوفر تفاصيل قابلة للعرض لهذه الجهة في السجل.</p>
-                        )}
-                      </div>
-                    </article>
-                  );
-                }))
-              )}
-            </CardContent>
-          </Card>
+                            <Badge variant={name || isGeneral ? "secondary" : "outline"}>{isGeneral ? "غير منسوبة لجهة" : name ? "جهة محددة" : "تحتاج تحديدًا"}</Badge>
+                          </div>
+                          {!isGeneral && (url ? (
+                            <a href={url} target="_blank" rel="noopener noreferrer" dir="ltr" className="inline-flex max-w-full items-center gap-1 text-sm text-primary underline break-all">
+                              <ExternalLink className="w-4 h-4 shrink-0" />{urlText}
+                            </a>
+                          ) : <p className="text-xs text-muted-foreground">{urlText ? "الرابط المسجل غير صالح للفتح؛ تحقّق منه قبل الاعتماد." : "لم يُذكر رابط لهذه الجهة؛ لا يمكن تحديد المتجر أو الحساب من الاسم وحده إذا تشابهت الأسماء."}</p>)}
+                          <p className="text-xs text-muted-foreground break-words">مصدر البيانات: {file.file_name}{file.ai_analyzed_at ? ` · تحليل: ${new Date(file.ai_analyzed_at).toLocaleString("ar-SA")}` : ""}</p>
+                        </div>
+                        <div className="p-5 space-y-4">
+                          {overview && <div className="border-r-2 border-primary pr-3"><p className="text-xs font-bold text-primary mb-1">خلاصة واردة في التحليل</p><p className="text-sm whitespace-pre-wrap leading-relaxed">{overview}</p></div>}
+                          {findings.map((finding, findingIndex) => {
+                            const observation = findingDetail(finding, ["observation", "finding", "gap", "issue", "title", "description", "summary"]);
+                            const evidence = findingDetail(finding, ["evidence", "proof", "example", "reference", "screenshot", "source"]);
+                            const evidenceUrl = safeLink(evidence);
+                            const impact = findingDetail(finding, ["impact", "risk", "consequence", "expected_impact"]);
+                            const action = findingDetail(finding, ["action", "recommendation", "recommended_action", "suggestion"]);
+                            if (!observation && !evidence && !impact && !action) return null;
+                            return (
+                              <div key={findingIndex} className="rounded-lg border bg-muted/20 overflow-hidden text-sm leading-relaxed">
+                                <div className="border-b px-4 py-2 flex items-center justify-between gap-2">
+                                  <span className="text-xs font-bold text-primary">{`الملاحظة ${findingIndex + 1}`}</span>
+                                  <Badge variant="outline" className="text-xs">{evidence ? "شاهد مذكور" : "شاهد غير مذكور"}</Badge>
+                                </div>
+                                <div className="p-4 space-y-3">
+                                  <div><p className="text-xs font-semibold text-muted-foreground mb-1">ما الذي رُصد؟</p><p className="whitespace-pre-wrap">{observation || "لم تُذكر ملاحظة مفصّلة؛ راجع المصدر."}</p></div>
+                                  <div><p className="text-xs font-semibold text-muted-foreground mb-1">الشاهد المذكور في البيانات</p>{evidenceUrl ? <a href={evidenceUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline break-all inline-flex items-center gap-1" dir="ltr">{evidence}<ExternalLink className="w-3.5 h-3.5 shrink-0" /></a> : <p className="whitespace-pre-wrap break-words">{evidence || "لا يوجد شاهد محدد؛ هذه الملاحظة تحتاج تحققًا قبل اعتمادها."}</p>}</div>
+                                  {impact && <div><p className="text-xs font-semibold text-muted-foreground mb-1">الأثر المذكور</p><p className="whitespace-pre-wrap">{impact}</p></div>}
+                                  {action && <div className="rounded-md bg-primary/5 p-3"><p className="text-xs font-semibold text-primary mb-1">الخطوة المقترحة</p><p className="whitespace-pre-wrap">{action}</p></div>}
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {!overview && findings.length === 0 && <p className="text-sm text-muted-foreground">وردت هذه الجهة في التحليل، لكن لا توجد ملاحظات مفصّلة قابلة للعرض لها؛ لا تُنسب إليها نتائج المرفق العامة.</p>}
+                        </div>
+                      </article>
+                    );
+                  });
+                })}
+              </div>
+            )}
+          </section>
         )}
 
         {/* آخر تشغيل */}
