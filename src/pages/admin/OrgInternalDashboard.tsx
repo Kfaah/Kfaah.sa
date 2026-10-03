@@ -806,7 +806,7 @@ export default function OrgInternalDashboard({
             <PageHeader
               icon={<Sparkles />}
               title="التحليل الذكي"
-              subtitle="تحليل شامل للملفات والموقع والمتجر وجميع حسابات الجمعية ومصادرها الرقمية"
+              subtitle="تحليل شامل للملفات المرفوعة والموقع والمتجر وجميع حسابات الجمعية ومصادرها الرقمية"
               actions={
                 <Button
                   onClick={runDeepAnalysis}
@@ -1165,9 +1165,9 @@ function BulletBlock({ title, items }: { title: string; items?: string[] | null 
   const list = (items ?? []).filter(Boolean);
   if (list.length === 0) return null;
   return (
-    <div className="text-right">
-      <p className="mb-1 text-sm font-semibold text-foreground">{title}</p>
-      <ul className="space-y-1 text-sm leading-relaxed text-muted-foreground">
+    <div className="min-w-0 space-y-2 text-right">
+      <p className="text-base font-bold text-foreground">{title}</p>
+      <ul className="space-y-2 text-sm leading-7 text-foreground/85">
         {list.map((item, i) => (
           <li key={i} className="flex items-start gap-2">
             <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
@@ -1208,15 +1208,16 @@ function SourceBreakdownSection({ analysis }: { analysis: DeepAnalysis }) {
           {sources.length} مصدراً تم شرحه بالتفصيل: الموقع الرسمي والمتجر وجميع الحسابات الرقمية
         </p>
       </div>
+      <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-2">
       {sources.map((source) => {
         const isOpen = openSource === source.source_index;
         return (
-          <Card key={source.source_index} className="border-border bg-card">
-            <CardHeader className="border-b border-border bg-muted/30 text-right">
+          <Card key={source.source_index} className="min-w-0 overflow-hidden rounded-2xl border-border bg-card shadow-sm transition-shadow hover:shadow-md">
+            <CardHeader className="border-b border-border bg-muted/30 px-5 py-5 text-right sm:px-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <CardTitle className="text-base">{source.source_name || "مصدر"}</CardTitle>
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  <CardTitle className="break-words text-lg font-bold leading-relaxed text-foreground">{source.source_name || "مصدر"}</CardTitle>
+                  <div className="mt-3 flex flex-wrap gap-2">
                     {source.source_type && <Badge variant="secondary">{source.source_type}</Badge>}
                     {source.source_status && <Badge variant="outline">{source.source_status}</Badge>}
                   </div>
@@ -1231,14 +1232,14 @@ function SourceBreakdownSection({ analysis }: { analysis: DeepAnalysis }) {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4 pt-4">
+            <CardContent className="space-y-5 px-5 py-6 text-base leading-7 sm:px-6">
               {source.purpose && (
-                <p className="text-right text-sm leading-relaxed text-muted-foreground">
+                <p className="text-right text-base leading-7 text-muted-foreground">
                   <span className="font-semibold text-foreground">الغرض: </span>{source.purpose}
                 </p>
               )}
               {source.overview && (
-                <p className="text-right text-sm leading-relaxed text-foreground">{source.overview}</p>
+                <p className="text-right text-base leading-7 text-foreground">{source.overview}</p>
               )}
               <BulletBlock title="تفاصيل ما ظهر في المصدر" items={source.content_details} />
               {source.donation_experience && (
@@ -1286,6 +1287,7 @@ function SourceBreakdownSection({ analysis }: { analysis: DeepAnalysis }) {
           </Card>
         );
       })}
+      </div>
     </section>
   );
 }
