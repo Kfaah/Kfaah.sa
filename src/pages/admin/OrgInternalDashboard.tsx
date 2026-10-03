@@ -815,6 +815,11 @@ export default function OrgInternalDashboard({
               border-color: #e8eee9 !important;
               color: #172b24 !important;
             }
+            .analysis-results .analysis-source-header {
+              background: #edf5ee !important;
+              border-color: #d5e7d9 !important;
+              color: #14532d !important;
+            }
             .analysis-results .analysis-surface > [class*="CardHeader"] :is(h2, h3, p) { color: #172b24 !important; }
             .analysis-results .analysis-surface > [class*="CardContent"] { background: #fff !important; color: #33463b; }
             .analysis-results .analysis-detail-box {
@@ -1296,22 +1301,11 @@ function SourceBreakdownSection({ analysis, profile }: { analysis: DeepAnalysis;
         return (
           <Card key={source.source_index} className={cn("analysis-surface relative min-w-0 overflow-hidden rounded-3xl border bg-white", tone.border)}>
             <div className={cn("absolute inset-y-0 right-0 w-1", tone.line)} aria-hidden="true" />
-            <CardHeader className={cn("border-b px-5 py-5 text-right sm:px-6", tone.border, tone.header)}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <CardTitle className={cn("analysis-title-chip inline-flex max-w-full items-center gap-2 break-words rounded-xl border px-3 py-2 text-lg font-extrabold leading-relaxed shadow-sm", tone.chip, tone.accent)}><Eye className="h-5 w-5 shrink-0" />{source.source_name || "مصدر"}</CardTitle>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {source.source_type && <Badge variant="secondary">{source.source_type}</Badge>}
-                    {source.source_status && <Badge variant="outline" className="analysis-title-chip inline-flex items-center gap-2 rounded-xl border px-3 py-2 font-bold"><CheckCircle2 className="h-4 w-4 shrink-0" />{source.source_status}</Badge>}
-                  </div>
-                  {(() => {
-                    const description = `${source.source_type ?? ""} ${source.source_name ?? ""}`;
-                    const isStore = /متجر|store/i.test(description);
-                    const isWebsite = !isStore && /موقع|website/i.test(description);
-                    const url = (isStore ? storeUrl : isWebsite ? websiteUrl : null) || source.source_url;
-                    return url ? <AnalysisSourceLink label={isStore ? "رابط مصدر المتجر الإلكتروني" : "رابط المصدر"} url={url} /> : null;
-                  })()}
-                </div>
+            <CardHeader className={cn("analysis-source-header border-b px-5 py-4 text-right sm:px-6", tone.border, tone.header)}>
+              <div className="flex flex-wrap items-center gap-3">
+                <CardTitle className={cn("analysis-title-chip inline-flex max-w-full items-center gap-2 break-words rounded-xl border px-3 py-2 text-lg font-extrabold leading-relaxed shadow-sm", tone.chip, tone.accent)}><Eye className="h-5 w-5 shrink-0" />{source.source_name || "مصدر"}</CardTitle>
+                {source.source_type && <Badge variant="secondary">{source.source_type}</Badge>}
+                {source.source_status && !source.source_name?.includes(source.source_status) && <Badge variant="outline" className="analysis-title-chip inline-flex items-center gap-2 rounded-xl border px-3 py-2 font-bold"><CheckCircle2 className="h-4 w-4 shrink-0" />{source.source_status}</Badge>}
                 <Button
                   variant="outline"
                   size="sm"
@@ -1321,6 +1315,13 @@ function SourceBreakdownSection({ analysis, profile }: { analysis: DeepAnalysis;
                 >
                   <Eye className="h-4 w-4" /> {isOpen ? "إخفاء المعاينة" : "عرض المعاينة"}
                 </Button>
+                {(() => {
+                  const description = `${source.source_type ?? ""} ${source.source_name ?? ""}`;
+                  const isStore = /متجر|store/i.test(description);
+                  const isWebsite = !isStore && /موقع|website/i.test(description);
+                  const url = (isStore ? storeUrl : isWebsite ? websiteUrl : null) || source.source_url;
+                  return url ? <AnalysisSourceLink label={isStore ? "رابط مصدر المتجر الإلكتروني" : "رابط المصدر"} url={url} /> : null;
+                })()}
               </div>
             </CardHeader>
             <CardContent className="space-y-5 px-5 py-6 text-base leading-7 sm:px-6">
