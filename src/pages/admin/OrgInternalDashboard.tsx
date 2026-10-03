@@ -804,28 +804,17 @@ export default function OrgInternalDashboard({
         <TabsContent value="analysis" className={cn(standaloneTab ? "mt-0 space-y-4" : "mt-6 space-y-4", "analysis-results")} dir="rtl">
           <style>{`
             .analysis-results .analysis-surface {
+              background: #fff !important;
+              border-color: #d1e5d7 !important;
+              color: #1f2937;
+            }
+            .analysis-results .analysis-surface .analysis-title-chip {
               background: #166534 !important;
-              border-color: rgba(255, 255, 255, .35) !important;
+              border-color: #166534 !important;
               color: #fff !important;
             }
-            .analysis-results .analysis-surface :is(div, article, blockquote, li, span, button, a) {
-              background-image: none !important;
-            }
-            .analysis-results .analysis-surface [class*="bg-"] {
-              background-color: transparent !important;
-            }
-            .analysis-results .analysis-surface :is(h1, h2, h3, h4, p, span, li, div, blockquote, a, button, svg) {
+            .analysis-results .analysis-surface .analysis-title-chip svg {
               color: #fff !important;
-            }
-            .analysis-results .analysis-surface :is([class*="border-"], article, blockquote) {
-              border-color: rgba(255, 255, 255, .3) !important;
-            }
-            .analysis-results .analysis-surface button {
-              background-color: rgba(255, 255, 255, .16) !important;
-              border: 1px solid rgba(255, 255, 255, .45) !important;
-            }
-            .analysis-results .analysis-surface button:hover {
-              background-color: rgba(255, 255, 255, .28) !important;
             }
             .analysis-results .analysis-surface a {
               text-decoration: underline;
@@ -906,7 +895,7 @@ export default function OrgInternalDashboard({
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
                     <span className="inline-flex items-center gap-2 rounded-full border border-white/30 px-3 py-1 text-xs font-bold"><Sparkles className="h-4 w-4" /> لوحة نتائج التحليل</span>
-                    <h2 className="mt-3 text-xl font-extrabold tracking-tight sm:text-2xl">قراءة واضحة لكل مصدر ونتيجة</h2>
+                    <h2 className="analysis-title-chip mt-3 inline-flex rounded-xl border px-4 py-2 text-xl font-extrabold tracking-tight sm:text-2xl">قراءة واضحة لكل مصدر ونتيجة</h2>
                     <p className="mt-2 text-sm leading-7">افتح المعاينة داخل كل بطاقة للاطلاع على الشاهد المحفوظ أو رابط المصدر عند توفره.</p>
                   </div>
                   {analysis.completed_at && <span className="rounded-xl border border-white/30 px-4 py-2 text-sm font-medium shadow-sm">آخر تحليل: {new Date(analysis.completed_at).toLocaleString("ar-SA")}</span>}
@@ -1222,7 +1211,7 @@ function GapsCard({ gaps, evidence }: { gaps: string[]; evidence: GapEvidence[] 
 }
 
 const ANALYSIS_CARD_TONES = [
-  { border: "border-white/30 hover:border-white/50", header: "", accent: "text-white", line: "bg-white/35", chip: "border-white/30 bg-white/10" },
+  { border: "border-emerald-200 hover:border-emerald-300", header: "", accent: "text-[#166534]", line: "bg-[#166534]", chip: "border-emerald-200 bg-emerald-50" },
 ] as const;
 
 function BulletBlock({ title, items }: { title: string; items?: string[] | null }) {
@@ -1282,7 +1271,7 @@ function SourceBreakdownSection({ analysis }: { analysis: DeepAnalysis }) {
             <CardHeader className={cn("border-b px-5 py-5 text-right sm:px-6", tone.border, tone.header)}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <CardTitle className={cn("inline-flex max-w-full items-center gap-2 break-words rounded-xl border bg-background/80 px-3 py-2 text-lg font-extrabold leading-relaxed shadow-sm", tone.chip, tone.accent)}><Eye className="h-5 w-5 shrink-0" />{source.source_name || "مصدر"}</CardTitle>
+                  <CardTitle className={cn("analysis-title-chip inline-flex max-w-full items-center gap-2 break-words rounded-xl border px-3 py-2 text-lg font-extrabold leading-relaxed shadow-sm", tone.chip, tone.accent)}><Eye className="h-5 w-5 shrink-0" />{source.source_name || "مصدر"}</CardTitle>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {source.source_type && <Badge variant="secondary">{source.source_type}</Badge>}
                     {source.source_status && <Badge variant="outline">{source.source_status}</Badge>}
@@ -1395,7 +1384,7 @@ function AnalysisEvidenceSection({ analysis }: { analysis: DeepAnalysis }) {
         <Card key={category} className={cn("analysis-surface relative min-w-0 overflow-hidden rounded-3xl border-2 bg-card shadow-sm transition-all duration-300 hover:shadow-lg motion-reduce:transition-none", tone.border)}>
           <div className={cn("absolute inset-y-0 right-0 w-1", tone.line)} aria-hidden="true" />
           <CardHeader className={cn("border-b text-right", tone.border, tone.header)}>
-            <CardTitle className={cn("inline-flex w-fit items-center gap-2 rounded-xl border bg-background/80 px-4 py-2 text-base font-extrabold shadow-sm", tone.chip, tone.accent)}><Quote className="h-4 w-4" />{category}</CardTitle>
+            <CardTitle className={cn("analysis-title-chip inline-flex w-fit items-center gap-2 rounded-xl border px-4 py-2 text-base font-extrabold shadow-sm", tone.chip, tone.accent)}><Quote className="h-4 w-4" />{category}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 pt-4">
             {items.map((item, index) => {
@@ -1465,7 +1454,7 @@ function AnalysisRecommendationsSection({ analysis }: { analysis: DeepAnalysis }
     <Card dir="rtl" className="analysis-surface relative overflow-hidden rounded-3xl border-2 border-white/30 bg-card shadow-sm transition-all duration-300 hover:shadow-lg motion-reduce:transition-none">
       <div className="absolute inset-y-0 right-0 w-1 bg-white/35" aria-hidden="true" />
       <CardHeader className="border-b border-white/30 text-right">
-        <CardTitle className="inline-flex w-fit items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-base font-extrabold text-white shadow-sm">
+        <CardTitle className="analysis-title-chip inline-flex w-fit items-center gap-2 rounded-xl border px-4 py-2 text-base font-extrabold shadow-sm">
           <Target className="h-5 w-5" /> التوصيات
         </CardTitle>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -1642,7 +1631,7 @@ function InsightCard({ title, data, toneIndex }: { title: string; data: Record<s
     <Card dir="rtl" className={cn("analysis-surface group relative min-w-0 overflow-hidden rounded-3xl border-2 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none motion-reduce:transition-none", tone.border)}>
       <div className={cn("absolute inset-y-0 right-0 w-1", tone.line)} aria-hidden="true" />
       <CardHeader className={cn("border-b text-right", tone.border, tone.header)}>
-        <CardTitle className={cn("inline-flex w-fit max-w-full items-center gap-2 rounded-xl border bg-background/80 px-4 py-2 text-base font-extrabold leading-relaxed shadow-sm", tone.chip, tone.accent)}><Sparkles className="h-4 w-4 shrink-0" />{title}</CardTitle>
+        <CardTitle className={cn("analysis-title-chip inline-flex w-fit max-w-full items-center gap-2 rounded-xl border px-4 py-2 text-base font-extrabold leading-relaxed shadow-sm", tone.chip, tone.accent)}><Sparkles className="h-4 w-4 shrink-0" />{title}</CardTitle>
       </CardHeader>
       <CardContent className="pt-5 text-right">
         {entries.length === 0 ? (
