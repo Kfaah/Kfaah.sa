@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import base64
+import importlib.util
 import hashlib
 import json
 import os
@@ -23,6 +24,9 @@ CLOUDFLARED = ROOT / "cloudflared"
 VITE_LOG = ROOT / "vite.log"
 TUNNEL_LOG = ROOT / "cloudflared.log"
 LAST_PREVIEW = ROOT / "last-preview.json"
+_release_spec = importlib.util.spec_from_file_location("prepared_release", Path(__file__).with_name("prepared-release.py"))
+prepared_release = importlib.util.module_from_spec(_release_spec)
+_release_spec.loader.exec_module(prepared_release)
 
 def log(message):
     print(time.strftime("%Y-%m-%d %H:%M:%S"), message, flush=True)
@@ -348,6 +352,8 @@ def finish_job(job, ok, error=None):
         "token": job["callbackToken"], "ok": bool(ok),
         "branch": job.get("branch") or "", "error": error or "",
     }
+    if ok and job.get("preparedBundle"):
+        payload["preparedBundle"] = job["preparedBundle"]
     pending = ROOT / "pending-completion.json"
     pending.write_text(json.dumps(payload), encoding="utf-8")
     pending.chmod(0o600)
@@ -374,7 +380,13 @@ def process_job(job):
         if LAST_PREVIEW.exists():
             LAST_PREVIEW.rename(ROOT / "previous-preview.json")
         apply_edits(job.get("edits") or [])
+        reviewed_inputs = prepared_release.build_inputs(WORKSPACE)
         validate_build()
+        if reviewed_inputs != prepared_release.build_inputs(WORKSPACE):
+            raise RuntimeError("Source changed while building the reviewed preview")
+        job["preparedBundle"] = prepared_release.prepare(
+            WORKSPACE, ROOT / "prepared", str(job["commandId"]), str(job["jobId"]), str(job["baseSha"])
+        )
         announce_preview(job)
         finish_job(job, True)
         log("completed job " + str(job.get("jobId")))

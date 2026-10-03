@@ -90,15 +90,64 @@ jobs:
           NODE
           git diff --check
 
+      - name: Identify the immutable preview build
+        id: reviewed
+        run: |
+          python3 - <<'PYMETA'
+          import json, os, re
+          p = json.load(open('/tmp/kfaah-reviewed.json'))
+          prepared = p.get('preparedBundle')
+          if prepared is not None:
+              assert prepared.get('version') == 1
+              assert re.fullmatch('[a-f0-9]{64}', prepared.get('manifestSha256', ''))
+              assert re.fullmatch('[1-9][0-9]*', p['jobId'])
+              assert re.fullmatch('[1-9][0-9]*', p['commandId'])
+              assert re.fullmatch('[a-f0-9]{40}', p['baseSha'])
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write('prepared=' + ('true' if prepared else 'false') + '\n')
+              if prepared:
+                  for k, v in [('job', p['jobId']), ('command', p['commandId']), ('sha', prepared['manifestSha256'])]:
+                      out.write(k + '=' + v + '\n')
+          PYMETA
+
+      - name: Configure verified SSH connection
+        env:
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$HOME/.ssh/id_kfaah_deploy"
+          chmod 600 "$HOME/.ssh/id_kfaah_deploy"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Verify and stage the already built preview
+        if: steps.reviewed.outputs.prepared == 'true'
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          JOB_ID: ${{ steps.reviewed.outputs.job }}
+          COMMAND_ID: ${{ steps.reviewed.outputs.command }}
+          MANIFEST_SHA: ${{ steps.reviewed.outputs.sha }}
+        run: |
+          set -euo pipefail
+          test "$HETZNER_USER" = deploy
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" "cat /home/deploy/kfaah-fast/prepared/$JOB_ID/manifest.json" > /tmp/kfaah-manifest.json
+          python3 deploy/prepared-release.py verify-source --manifest /tmp/kfaah-manifest.json --sha "$MANIFEST_SHA" --command "$COMMAND_ID" --job "$JOB_ID" --base "$BASE_SHA"
+          ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" "python3 /home/deploy/kfaah-fast/prepared-release.py stage --sha $MANIFEST_SHA --command $COMMAND_ID --job $JOB_ID --base $BASE_SHA"
+
       - uses: actions/setup-node@v4
+        if: steps.reviewed.outputs.prepared != 'true'
         with:
           node-version: '22'
           cache: npm
 
       - name: Rebuild reviewed frontend
+        if: steps.reviewed.outputs.prepared != 'true'
         run: bash deploy/build-frontend.sh
 
       - name: Upload exact reviewed build to staging
+        if: steps.reviewed.outputs.prepared != 'true'
         env:
           HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
           HETZNER_USER: ${{ secrets.HETZNER_USER }}
@@ -128,15 +177,6 @@ jobs:
           git push origin HEAD:main
           echo "REVIEW_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
-      - name: Refresh fast preview baseline
-        env:
-          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
-          HETZNER_USER: ${{ secrets.HETZNER_USER }}
-        run: |
-          set -euo pipefail
-          rsync -az --delete --exclude '.git/' --exclude 'node_modules/' --exclude 'vite.fast.config.ts' --exclude '.env.local' -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" ./ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/baseline/"
-          printf '%s\n' "$REVIEW_SHA" | ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'cat > /home/deploy/kfaah-fast/baseline/.manager-base-sha'
-
       - name: Promote staging to live and verify
         env:
           HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
@@ -147,6 +187,15 @@ jobs:
           curl -fsS --retry 6 --retry-delay 5 https://kfaah.sa/ -o /tmp/kfaah-home.html
           test -s /tmp/kfaah-home.html
           echo "LIVE_OK https://kfaah.sa sha=$REVIEW_SHA"
+
+      - name: Refresh fast preview baseline
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          set -euo pipefail
+          rsync -az --delete --exclude '.git/' --exclude 'node_modules/' --exclude 'vite.fast.config.ts' --exclude '.env.local' -e "ssh -i $HOME/.ssh/id_kfaah_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" ./ "$HETZNER_USER@$HETZNER_HOST:/home/deploy/kfaah-fast/baseline/"
+          printf '%s\n' "$REVIEW_SHA" | ssh -i "$HOME/.ssh/id_kfaah_deploy" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$HETZNER_USER@$HETZNER_HOST" 'cat > /home/deploy/kfaah-fast/baseline/.manager-base-sha'
 
       - name: Sync fast preview workspace
         if: ${{ success() }}

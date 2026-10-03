@@ -25,6 +25,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: bash deploy/build-frontend.sh
+      - name: Verify reviewed-build promotion safety
+        run: |
+          python3 scripts/recovery/test-prepared-release.py
+          python3 scripts/recovery/test-manager-worker-safety.py
+          python3 scripts/recovery/test-manager-promotion-safety.py
+
       - name: Verify production bundle is independent
         run: |
           set -euo pipefail
