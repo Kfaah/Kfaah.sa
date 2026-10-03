@@ -149,7 +149,7 @@ export default function PublicLanding() {
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2 text-right" dir="rtl">
                 <Label htmlFor="username" className="block w-full text-right text-cyan-700 text-sm sm:text-base font-semibold">
-                  اسم المستخدم / رقم الهوية
+                  اسم المستخدم أو رقم الهوية
                 </Label>
                 <Input
                   id="username"
