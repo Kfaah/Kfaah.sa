@@ -259,8 +259,8 @@ const Intelligence = () => {
           <section className="space-y-4" aria-label="تحليل الجهات والمرفقات">
             <div className="flex flex-wrap items-end justify-between gap-2">
               <div>
-                <h2 className="text-lg font-bold">ملفّات الجهات تحت المجهر</h2>
-                <p className="text-sm text-muted-foreground">بطاقة مستقلة لكل جهة وردت في المرفقات؛ التحليل العام لا يُنسب إلى متجر بعينه.</p>
+                <h2 className="text-lg font-bold">تحليل شامل للملفات المرفوعة</h2>
+                <p className="text-sm text-muted-foreground">نتائج التحليل المحفوظة للملفات المرفوعة؛ بطاقة مستقلة لكل جهة وردت فيها، والتحليل العام لا يُنسب إلى متجر بعينه.</p>
               </div>
               <Badge variant="outline">{fileAnalyses.length} مرفق محلّل</Badge>
             </div>
