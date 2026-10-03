@@ -292,13 +292,18 @@ export default function AdminAnalytics() {
 
 function StatBox({ icon: Icon, label, value, sub }: any) {
   return (
-    <Card className="bg-card border-border p-4 shadow-sm">
-      <div className="w-10 h-10 rounded-xl bg-accent text-accent-foreground flex items-center justify-center mb-2 shadow-sm">
-        <Icon className="w-5 h-5" />
+    <Card className="group relative overflow-hidden border-border/70 bg-gradient-to-br from-card via-card to-accent/5 p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
+      <div className="absolute -left-5 -top-5 h-20 w-20 rounded-full bg-accent/5 transition-transform duration-300 group-hover:scale-125" />
+      <div className="relative flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-muted-foreground">{label}</div>
+          <div className="mt-2 text-xl font-bold leading-tight text-foreground sm:text-2xl">{value}</div>
+          {sub && <div className="mt-1.5 text-xs text-muted-foreground">{sub}</div>}
+        </div>
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent/10 text-accent ring-1 ring-accent/15">
+          <Icon className="h-5 w-5" />
+        </div>
       </div>
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="text-2xl font-bold text-foreground leading-tight">{value}</div>
-      {sub && <div className="text-[11px] text-muted-foreground mt-0.5">{sub}</div>}
     </Card>
   );
 }
@@ -331,41 +336,62 @@ function Heatmap({ data }: { data: { day: number; value: number }[] }) {
 }
 
 function AIInsightView({ insight }: { insight: AIInsight }) {
-  const impactColor = (_: string) => "bg-transparent text-white border-white/60";
+  const impactColor = (impact: string) => {
+    if (impact === "high") return "border-destructive/25 bg-destructive/10 text-destructive";
+    if (impact === "medium") return "border-warning/30 bg-warning/10 text-foreground";
+    return "border-success/25 bg-success/10 text-success";
+  };
 
   return (
-    <Card className="bg-transparent border-primary/30 p-6 space-y-5 shadow-sm">
-      <div className="flex items-center gap-2 mb-2">
-        <Sparkles className="w-5 h-5 text-white" />
-        <h3 className="text-white font-bold text-lg">التحليل الذكي</h3>
-        <Badge className="bg-white/15 text-white border-white/40 mr-auto">تحليل ذكي</Badge>
-      </div>
-
-      <div className="bg-white/10 rounded-xl p-4 border border-white/20">
-        <p className="text-white leading-relaxed">{insight.summary}</p>
-      </div>
-
-      <div className="grid md:grid-cols-3 gap-3">
-        <InsightList icon={CheckCircle2} title="نقاط القوة" items={insight.strengths} variant="success" />
-        <InsightList icon={AlertTriangle} title="نقاط الضعف" items={insight.weaknesses} variant="destructive" />
-        <InsightList icon={Lightbulb} title="فرص" items={insight.opportunities} variant="warning" />
-      </div>
-
-      <div>
-        <div className="text-white font-bold mb-2 flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-white" />
-          توصيات قابلة للتنفيذ
+    <Card className="relative overflow-hidden border-primary/15 bg-gradient-to-br from-card via-card to-accent/5 p-5 shadow-sm sm:p-7">
+      <div className="absolute -left-16 -top-20 h-48 w-48 rounded-full bg-accent/5 blur-2xl" />
+      <div className="relative space-y-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/10 text-accent ring-1 ring-accent/15">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-foreground">التحليل الذكي</h3>
+            <p className="text-xs text-muted-foreground">رؤى وتوصيات مبنية على بيانات الفترة المحددة</p>
+          </div>
+          <Badge className="mr-auto border-accent/20 bg-accent/10 text-accent">تحليل ذكي</Badge>
         </div>
-        <div className="space-y-2">
-          {insight.recommendations.map((r, i) => (
-            <div key={i} className="bg-white/10 border border-white/20 rounded-xl p-3">
-              <div className="flex items-start justify-between gap-3 mb-1">
-                <h5 className="font-bold text-white">{r.title}</h5>
-                <Badge className={impactColor(r.impact)}>تأثير {r.impact === "high" ? "عالٍ" : r.impact === "medium" ? "متوسط" : "منخفض"}</Badge>
-              </div>
-              <p className="text-sm text-white/85">{r.action}</p>
+
+        <div className="rounded-2xl border border-accent/15 bg-accent/[0.045] p-4 sm:p-5">
+          <div className="mb-2 flex items-center gap-2 text-sm font-bold text-foreground">
+            <Sparkles className="h-4 w-4 text-accent" />
+            الملخص التنفيذي
+          </div>
+          <p className="leading-7 text-muted-foreground">{insight.summary}</p>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <InsightList icon={CheckCircle2} title="نقاط القوة" items={insight.strengths} variant="success" />
+          <InsightList icon={AlertTriangle} title="نقاط الضعف" items={insight.weaknesses} variant="destructive" />
+          <InsightList icon={Lightbulb} title="الفرص" items={insight.opportunities} variant="warning" />
+        </div>
+
+        <div>
+          <div className="mb-3 flex items-center gap-2 font-bold text-foreground">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <TrendingUp className="h-4 w-4" />
             </div>
-          ))}
+            توصيات قابلة للتنفيذ
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {insight.recommendations.map((r, i) => (
+              <div key={i} className="rounded-2xl border border-border/70 bg-card p-4 transition-colors hover:border-accent/30">
+                <div className="mb-2 flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-2">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-bold text-muted-foreground">{i + 1}</span>
+                    <h5 className="font-bold leading-6 text-foreground">{r.title}</h5>
+                  </div>
+                  <Badge variant="outline" className={`shrink-0 ${impactColor(r.impact)}`}>تأثير {r.impact === "high" ? "عالٍ" : r.impact === "medium" ? "متوسط" : "منخفض"}</Badge>
+                </div>
+                <p className="pr-8 text-sm leading-6 text-muted-foreground">{r.action}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </Card>
@@ -374,24 +400,34 @@ function AIInsightView({ insight }: { insight: AIInsight }) {
 
 function InsightList({ icon: Icon, title, items, variant }: any) {
   const variantMap: Record<string, string> = {
-    success: "border-success/50 bg-success/25",
-    destructive: "border-destructive/50 bg-destructive/25",
-    warning: "border-warning/50 bg-warning/25",
+    success: "border-success/20 bg-success/[0.06] text-success",
+    destructive: "border-destructive/20 bg-destructive/[0.06] text-destructive",
+    warning: "border-warning/25 bg-warning/[0.08] text-foreground",
+  };
+  const iconMap: Record<string, string> = {
+    success: "bg-success/10 text-success",
+    destructive: "bg-destructive/10 text-destructive",
+    warning: "bg-warning/15 text-warning",
   };
   return (
-    <div className={`rounded-xl border p-3 text-white ${variantMap[variant]}`}>
-      <div className="flex items-center gap-2 mb-2 font-bold text-white">
-        <Icon className="w-4 h-4 text-white" />
+    <div className={`rounded-2xl border p-4 ${variantMap[variant]}`}>
+      <div className="mb-3 flex items-center gap-2 font-bold text-foreground">
+        <span className={`flex h-8 w-8 items-center justify-center rounded-xl ${iconMap[variant]}`}>
+          <Icon className="h-4 w-4" />
+        </span>
         {title}
+        <span className="mr-auto rounded-full bg-background/70 px-2 py-0.5 text-xs font-semibold text-muted-foreground">{items.length}</span>
       </div>
-      <ul className="space-y-1.5 text-sm text-white">
-        {items.map((it: string, i: number) => (
-          <li key={i} className="flex gap-2">
-            <span className="text-white/70">•</span>
-            <span>{it}</span>
-          </li>
-        ))}
-      </ul>
+      {items.length ? (
+        <ul className="space-y-2 text-sm leading-6 text-muted-foreground">
+          {items.map((it: string, i: number) => (
+            <li key={i} className="flex gap-2">
+              <span className="mt-0.5 text-current">•</span>
+              <span>{it}</span>
+            </li>
+          ))}
+        </ul>
+      ) : <p className="text-sm text-muted-foreground">لا توجد ملاحظات مسجلة</p>}
     </div>
   );
 }
