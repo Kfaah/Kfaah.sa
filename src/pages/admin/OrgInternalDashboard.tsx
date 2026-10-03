@@ -831,25 +831,45 @@ export default function OrgInternalDashboard({
               text-decoration: underline;
               text-underline-offset: 3px;
             }
+            .analysis-results .analysis-title-header > * {
+              background: #166534 !important;
+              border-color: rgba(255, 255, 255, .35) !important;
+              color: #fff !important;
+            }
+            .analysis-results .analysis-title-header [class*="bg-gradient"] {
+              background-image: none !important;
+            }
+            .analysis-results .analysis-title-header :is(h1, h2, h3, p, span, svg) {
+              color: #fff !important;
+            }
+            .analysis-results .analysis-title-header button {
+              background: #15803d !important;
+              border: 1px solid #fff !important;
+              color: #fff !important;
+            }
+            .analysis-results .analysis-title-header button:hover {
+              background: #14532d !important;
+            }
           `}</style>
           {standaloneTab && (
-            <PageHeader
-              icon={<Sparkles />}
-              title="التحليل الذكي"
-              subtitle="تحليل شامل للملفات المرفوعة والموقع والمتجر وجميع حسابات الجمعية ومصادرها الرقمية"
-              actions={
-                <Button
-                  onClick={runDeepAnalysis}
-                  disabled={analyzing || isDemo}
-                  size="lg"
-                  className="gap-2 bg-white shadow-md hover:bg-white/90"
-                  style={{ color: ORG_PRIMARY }}
-                >
-                  {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                  {analysis ? "إعادة تشغيل التحليل" : "تشغيل التحليل الذكي"}
-                </Button>
-              }
-            />
+            <div className="analysis-title-header">
+              <PageHeader
+                icon={<Sparkles />}
+                title="التحليل الذكي"
+                subtitle="تحليل شامل للملفات المرفوعة والموقع والمتجر وجميع حسابات الجمعية ومصادرها الرقمية"
+                actions={
+                  <Button
+                    onClick={runDeepAnalysis}
+                    disabled={analyzing || isDemo}
+                    size="lg"
+                    className="gap-2 border border-white bg-[#15803d] text-white shadow-md hover:bg-[#14532d] hover:text-white"
+                  >
+                    {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    {analysis ? "إعادة تشغيل التحليل" : "تشغيل التحليل الذكي"}
+                  </Button>
+                }
+              />
+            </div>
           )}
           {isDemo ? (
             <Card className="analysis-surface">
