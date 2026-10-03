@@ -72,8 +72,16 @@ interface FileAnalysis {
 
 type AnalysisRecord = Record<string, unknown>;
 
-const asRecord = (value: unknown): AnalysisRecord | null =>
-  value !== null && typeof value === "object" && !Array.isArray(value) ? value as AnalysisRecord : null;
+const asRecord = (value: unknown): AnalysisRecord | null => {
+  if (typeof value === "string") {
+    try {
+      return asRecord(JSON.parse(value));
+    } catch {
+      return null;
+    }
+  }
+  return value !== null && typeof value === "object" && !Array.isArray(value) ? value as AnalysisRecord : null;
+};
 
 const text = (value: unknown): string =>
   typeof value === "string" ? value.trim() : typeof value === "number" ? String(value) : "";
