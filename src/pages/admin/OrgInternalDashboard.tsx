@@ -944,34 +944,23 @@ export default function OrgInternalDashboard({
                   </div>
                   {analysis.completed_at && <span className="rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-[#166534] shadow-sm">آخر تحليل: {new Date(analysis.completed_at).toLocaleString("ar-SA")}</span>}
                 </div>
-                {(analysis.sources ?? []).length > 0 && (
-                  <div className="mt-5 grid gap-3 border-t border-emerald-200 pt-5 md:grid-cols-2">
-                    {(analysis.sources ?? []).map((source, index) => {
-                      const url = analysisSourceUrl(source.url);
-                      return (
-                        <div key={`${source.kind ?? "source"}-${index}`} className="analysis-detail-box text-sm">
-                          <p className="font-bold">{source.kind === "store" ? "رابط المتجر" : source.kind === "website" ? "رابط الموقع" : source.kind === "social" ? "رابط الحساب الرقمي" : "رابط المصدر"}: {source.label || "مصدر رقمي"}</p>
-                          {url ? <a className="analysis-source-link mt-2 block underline underline-offset-4" href={url} target="_blank" rel="noreferrer" dir="ltr">{source.url}</a> : <p className="mt-2">{source.url ? "الرابط المسجل غير صالح للفتح" : "لم يُحفظ رابط لهذا المصدر"}</p>}
-                          {source.status && <p className="mt-2 text-xs">حالة المصدر: {source.status}</p>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                <div className="mt-5 border-t border-emerald-200 pt-5">
+                  <AnalysisLinks analysis={analysis} profile={profile} />
+                </div>
               </div>
-              <InsightCard title="التقييم العام ونقاط القوة والفجوات" data={{ summary: analysis.overall_assessment, strengths: analysis.strengths, gaps: analysis.gaps }} toneIndex={0} />
-              <SourceBreakdownSection analysis={analysis} />
-              <AnalysisEvidenceSection analysis={analysis} />
+              <InsightCard title="التقييم العام ونقاط القوة والفجوات" data={{ summary: analysis.overall_assessment, strengths: analysis.strengths, gaps: analysis.gaps }} toneIndex={0} analysis={analysis} profile={profile} />
+              <SourceBreakdownSection analysis={analysis} profile={profile} />
+              <AnalysisEvidenceSection analysis={analysis} profile={profile} />
               <div className="grid gap-4 md:grid-cols-2">
-                <InsightCard title="تحليل الملفات المرفوعة" data={analysis.document_insights} toneIndex={0} />
-                <InsightCard title="رؤى الموقع الإلكتروني" data={analysis.website_insights} toneIndex={1} />
-                <InsightCard title="رؤى المتجر" data={analysis.store_insights} toneIndex={2} />
-                <InsightCard title="تحليل جميع المواقع والحسابات الرقمية" data={analysis.social_insights} toneIndex={3} />
-                <InsightCard title="تحليل الحملات" data={analysis.campaigns_analysis} toneIndex={4} />
-                <InsightCard title="شرائح المتبرعين" data={analysis.donors_segmentation} toneIndex={1} />
-                <InsightCard title="ملخص التبرعات" data={analysis.donations_summary} toneIndex={0} />
+                <InsightCard title="تحليل الملفات المرفوعة" data={analysis.document_insights} toneIndex={0} analysis={analysis} profile={profile} />
+                <InsightCard title="رؤى الموقع الإلكتروني" data={analysis.website_insights} toneIndex={1} analysis={analysis} profile={profile} />
+                <InsightCard title="رؤى المتجر" data={analysis.store_insights} toneIndex={2} analysis={analysis} profile={profile} />
+                <InsightCard title="تحليل جميع المواقع والحسابات الرقمية" data={analysis.social_insights} toneIndex={3} analysis={analysis} profile={profile} />
+                <InsightCard title="تحليل الحملات" data={analysis.campaigns_analysis} toneIndex={4} analysis={analysis} profile={profile} />
+                <InsightCard title="شرائح المتبرعين" data={analysis.donors_segmentation} toneIndex={1} analysis={analysis} profile={profile} />
+                <InsightCard title="ملخص التبرعات" data={analysis.donations_summary} toneIndex={0} analysis={analysis} profile={profile} />
               </div>
-              <AnalysisRecommendationsSection analysis={analysis} />
+              <AnalysisRecommendationsSection analysis={analysis} profile={profile} />
             </div>
           )}
         </TabsContent>
@@ -1294,7 +1283,7 @@ function BulletBlock({ title, items }: { title: string; items?: string[] | null 
   );
 }
 
-function SourceBreakdownSection({ analysis }: { analysis: DeepAnalysis }) {
+function SourceBreakdownSection({ analysis, profile }: { analysis: DeepAnalysis; profile: Profile | null }) {
   const [openSource, setOpenSource] = useState<number | null>(null);
   const sources = analysis.source_breakdown ?? [];
 
@@ -1305,6 +1294,7 @@ function SourceBreakdownSection({ analysis }: { analysis: DeepAnalysis }) {
           <CardTitle className="flex items-center justify-start gap-2 text-base">
             <Eye className="h-5 w-5 text-accent" /> الشرح التفصيلي لمواقع الجمعية وحساباتها
           </CardTitle>
+          <AnalysisLinks analysis={analysis} profile={profile} />
         </CardHeader>
         <CardContent className="text-right text-sm text-muted-foreground">
           لا تتوفر تفاصيل لمصادر رقمية في هذا التحليل. راجع روابط الموقع والمتجر والحسابات المسجلة، ثم أعد تشغيل التحليل. عدم توفر المصدر هنا لا يعني عدم وجوده لدى الجمعية.
@@ -1331,6 +1321,7 @@ function SourceBreakdownSection({ analysis }: { analysis: DeepAnalysis }) {
           <Card key={source.source_index} className={cn("analysis-surface group relative min-w-0 overflow-hidden rounded-3xl border-2 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none motion-reduce:transition-none", tone.border)}>
             <div className={cn("absolute inset-y-0 right-0 w-1", tone.line)} aria-hidden="true" />
             <CardHeader className={cn("border-b px-5 py-5 text-right sm:px-6", tone.border, tone.header)}>
+              <AnalysisLinks analysis={analysis} profile={profile} extraLinks={[{ label: source.source_name || "مصدر", url: source.source_url }]} />
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <CardTitle className={cn("analysis-title-chip inline-flex max-w-full items-center gap-2 break-words rounded-xl border px-3 py-2 text-lg font-extrabold leading-relaxed shadow-sm", tone.chip, tone.accent)}><Eye className="h-5 w-5 shrink-0" />{source.source_name || "مصدر"}</CardTitle>
@@ -1410,7 +1401,7 @@ function SourceBreakdownSection({ analysis }: { analysis: DeepAnalysis }) {
   );
 }
 
-function AnalysisEvidenceSection({ analysis }: { analysis: DeepAnalysis }) {
+function AnalysisEvidenceSection({ analysis, profile }: { analysis: DeepAnalysis; profile: Profile | null }) {
   const [openItem, setOpenItem] = useState<number | null>(null);
   const items = analysis.analysis_evidence ?? [];
   const categories = Array.from(new Set(items.map((item) => item.category || "تحليل عام")));
@@ -1422,6 +1413,7 @@ function AnalysisEvidenceSection({ analysis }: { analysis: DeepAnalysis }) {
           <CardTitle className="flex items-center justify-start gap-2 text-base">
             <Eye className="h-5 w-5 text-accent" /> الأدلة والمعاينات التفصيلية
           </CardTitle>
+          <AnalysisLinks analysis={analysis} profile={profile} />
         </CardHeader>
         <CardContent className="text-right text-sm text-muted-foreground">
           هذا التحليل أُنشئ قبل إضافة الأدلة التفصيلية. اضغط «إعادة تشغيل التحليل» لإظهار كل النتائج مع الصور والمقتطفات.
@@ -1448,6 +1440,7 @@ function AnalysisEvidenceSection({ analysis }: { analysis: DeepAnalysis }) {
           <div className={cn("absolute inset-y-0 right-0 w-1", tone.line)} aria-hidden="true" />
           <CardHeader className={cn("border-b text-right", tone.border, tone.header)}>
             <CardTitle className={cn("analysis-title-chip inline-flex w-fit items-center gap-2 rounded-xl border px-4 py-2 text-base font-extrabold shadow-sm", tone.chip, tone.accent)}><Quote className="h-4 w-4" />{category}</CardTitle>
+            <AnalysisLinks analysis={analysis} profile={profile} />
           </CardHeader>
           <CardContent className="space-y-3 pt-4">
             {items.map((item, index) => {
@@ -1464,7 +1457,8 @@ function AnalysisEvidenceSection({ analysis }: { analysis: DeepAnalysis }) {
               };
               return (
                 <article key={`${category}-${index}`} className={cn("rounded-2xl border bg-background/70 p-4 text-right transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none", tone.border)}>
-                  <div className="flex flex-wrap items-start justify-between gap-3">
+                  <AnalysisLinks analysis={analysis} profile={profile} extraLinks={[{ label: item.source_label || "مصدر الدليل", url: item.source_url }]} />
+                  <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="mb-2 flex flex-wrap gap-2">
                         <Badge variant="secondary">{item.finding_type || "ملاحظة"}</Badge>
@@ -1502,7 +1496,7 @@ function AnalysisEvidenceSection({ analysis }: { analysis: DeepAnalysis }) {
   );
 }
 
-function AnalysisRecommendationsSection({ analysis }: { analysis: DeepAnalysis }) {
+function AnalysisRecommendationsSection({ analysis, profile }: { analysis: DeepAnalysis; profile: Profile | null }) {
   const topRecommendations = Array.isArray(analysis.recommendations) ? analysis.recommendations.filter(Boolean) : [];
   const evidenceActions = (analysis.analysis_evidence ?? [])
     .map((item) => item.recommendation)
@@ -1522,6 +1516,7 @@ function AnalysisRecommendationsSection({ analysis }: { analysis: DeepAnalysis }
         <CardTitle className="analysis-title-chip inline-flex w-fit items-center gap-2 rounded-xl border px-4 py-2 text-base font-extrabold shadow-sm">
           <Target className="h-5 w-5" /> التوصيات
         </CardTitle>
+        <AnalysisLinks analysis={analysis} profile={profile} />
         <p className="mt-1 text-sm text-muted-foreground">
           خلاصة التوصيات والإجراءات المقترحة المستخلصة من نتائج التحليل كاملة
         </p>
@@ -1651,6 +1646,72 @@ function analysisSourceUrl(raw: string | null | undefined): string | null {
   }
 }
 
+function AnalysisLinks({ analysis, profile, extraLinks = [] }: {
+  analysis: DeepAnalysis;
+  profile: Profile | null;
+  extraLinks?: Array<{ label: string; url?: string | null }>;
+}) {
+  const profileLinks: Array<{ label: string; url?: string | null }> = [
+    { label: "رابط المتجر", url: profile?.store_url },
+    { label: "رابط الموقع", url: profile?.website_url },
+    { label: "رابط حساب X", url: profile?.twitter_url },
+    { label: "رابط Instagram", url: profile?.instagram_url },
+    { label: "رابط TikTok", url: profile?.tiktok_url },
+    { label: "رابط Snapchat", url: profile?.snapchat_url },
+    { label: "رابط YouTube", url: profile?.youtube_url },
+    { label: "رابط Facebook", url: profile?.facebook_url },
+    { label: "رابط LinkedIn", url: profile?.linkedin_url },
+  ];
+  const savedLinks = [
+    ...(analysis.sources ?? []).map((source) => ({
+      label: source.kind === "store" ? "رابط المتجر" : source.kind === "website" ? "رابط الموقع" : source.label || "رابط الحساب الرقمي",
+      url: source.url,
+    })),
+    ...(analysis.source_breakdown ?? []).map((source) => ({ label: source.source_name || "رابط المصدر", url: source.source_url })),
+    ...extraLinks,
+  ];
+  const seen = new Set<string>();
+  const links = [
+    ...profileLinks.map((link) => ({ ...link, origin: "ملف الجمعية الحالي" })),
+    ...savedLinks.map((link) => ({ ...link, origin: "التحليل المحفوظ" })),
+  ].filter((link) => {
+    const value = link.url?.trim();
+    if (!value) return false;
+    const key = analysisSourceUrl(value)?.toLowerCase() ?? value.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return (
+    <div className="rounded-xl border border-emerald-200 bg-white p-3 text-right text-[#166534] shadow-sm">
+      <p className="mb-2 text-sm font-bold">روابط المتجر والموقع والحسابات المرتبطة بالتحليل</p>
+      {links.length === 0 ? (
+        <p className="text-sm leading-6">لا توجد روابط مسجلة هنا؛ لا يمكن تحديد عنوان المتجر أو الموقع من هذا التحليل.</p>
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-2">
+          {links.map((link) => {
+            const href = analysisSourceUrl(link.url);
+            return (
+              <div key={`${link.origin}-${link.url}`} className="min-w-0 rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm">
+                <p className="font-bold">{link.label} <span className="text-xs font-normal">({link.origin})</span></p>
+                {href ? (
+                  <a className="analysis-source-link mt-1 block underline underline-offset-4" href={href} target="_blank" rel="noreferrer" dir="ltr">{link.url}</a>
+                ) : (
+                  <p className="mt-1">الرابط المسجل غير صالح للفتح: <span dir="ltr">{link.url}</span></p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {!profile?.store_url && !savedLinks.some((link) => link.label === "رابط المتجر" && link.url?.trim()) && (
+        <p className="mt-2 text-xs">رابط المتجر غير مسجل في ملف الجمعية أو مصادر التحليل المحفوظة.</p>
+      )}
+    </div>
+  );
+}
+
 function insightText(value: string) {
   const normalized = value.trim().toLowerCase();
   return INSIGHT_VALUE_LABELS[normalized] ?? value
@@ -1698,7 +1759,7 @@ const HIDDEN_INSIGHT_KEYS = new Set([
   "coverage_gaps",
 ]);
 
-function InsightCard({ title, data, toneIndex }: { title: string; data: Record<string, unknown> | null | undefined; toneIndex: number }) {
+function InsightCard({ title, data, toneIndex, analysis, profile }: { title: string; data: Record<string, unknown> | null | undefined; toneIndex: number; analysis: DeepAnalysis; profile: Profile | null }) {
   const entries = Object.entries(data ?? {}).filter(([k]) => !HIDDEN_INSIGHT_KEYS.has(k));
   const tone = ANALYSIS_CARD_TONES[toneIndex % ANALYSIS_CARD_TONES.length];
   return (
@@ -1706,6 +1767,7 @@ function InsightCard({ title, data, toneIndex }: { title: string; data: Record<s
       <div className={cn("absolute inset-y-0 right-0 w-1", tone.line)} aria-hidden="true" />
       <CardHeader className={cn("border-b text-right", tone.border, tone.header)}>
         <CardTitle className={cn("analysis-title-chip inline-flex w-fit max-w-full items-center gap-2 rounded-xl border px-4 py-2 text-base font-extrabold leading-relaxed shadow-sm", tone.chip, tone.accent)}><Sparkles className="h-4 w-4 shrink-0" />{title}</CardTitle>
+        <AnalysisLinks analysis={analysis} profile={profile} />
       </CardHeader>
       <CardContent className="pt-5 text-right">
         {entries.length === 0 ? (
