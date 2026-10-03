@@ -816,10 +816,25 @@ export default function OrgInternalDashboard({
               color: #172b24 !important;
             }
             .analysis-results .analysis-source-header {
-              background: #edf5ee !important;
-              border-color: #d5e7d9 !important;
+              background: #14532d !important;
+              border-color: #14532d !important;
+              color: #fff !important;
+            }
+            .analysis-results .analysis-source-header .analysis-title-chip,
+            .analysis-results .analysis-source-header [data-slot="badge"] {
+              background: #fff !important;
+              border-color: #fff !important;
               color: #14532d !important;
             }
+            .analysis-results .analysis-source-header .analysis-title-chip svg { color: #166534 !important; }
+            .analysis-results .analysis-source-header button {
+              background: transparent !important;
+              border-color: #c5dfcb !important;
+              color: #fff !important;
+            }
+            .analysis-results .analysis-source-header button svg { color: #fff !important; }
+            .analysis-results .analysis-source-header button:hover { background: #166534 !important; }
+            .analysis-results .analysis-source-header .analysis-source-link { color: #fff !important; }
             .analysis-results .analysis-surface > [class*="CardHeader"] :is(h2, h3, p) { color: #172b24 !important; }
             .analysis-results .analysis-surface > [class*="CardContent"] { background: #fff !important; color: #33463b; }
             .analysis-results .analysis-detail-box {
@@ -917,18 +932,10 @@ export default function OrgInternalDashboard({
             </Card>
           ) : (
             <div className="space-y-6">
-              <div className="analysis-surface relative overflow-hidden rounded-3xl border p-6 sm:p-9">
-                <div className="absolute inset-y-0 right-0 w-1.5 bg-[#166534]" aria-hidden="true" />
-                <div className="flex flex-wrap items-end justify-between gap-5">
-                  <div className="max-w-2xl">
-                    <span className="inline-flex items-center gap-2 text-xs font-bold tracking-wide text-[#166534]"><Sparkles className="h-4 w-4" /> التقرير الاستراتيجي · التحليل الذكي</span>
-                    <h2 className="mt-3 text-2xl font-extrabold leading-snug text-[#172b24] sm:text-3xl">من المصادر إلى قرارات واضحة</h2>
-                    <p className="mt-3 text-sm leading-7 text-[#526359]">ابدأ بالتقييم العام، ثم اقرأ تفاصيل كل مصدر والأدلة والتوصيات. تجد رابط كل قناة داخل بطاقتها المعنية فقط.</p>
-                  </div>
-                  {analysis.completed_at && <span className="rounded-xl border border-[#e1eae4] bg-[#f8faf8] px-4 py-2 text-xs font-medium text-[#526359]">آخر تحليل: {new Date(analysis.completed_at).toLocaleString("ar-SA")}</span>}
-                </div>
+              <div className="space-y-2">
+                {analysis.completed_at && <p className="text-xs font-medium text-[#526359]">آخر تحليل: {new Date(analysis.completed_at).toLocaleString("ar-SA")}</p>}
+                <InsightCard title="التقييم العام ونقاط القوة والفجوات" data={{ summary: analysis.overall_assessment, strengths: analysis.strengths, gaps: analysis.gaps }} toneIndex={0} analysis={analysis} profile={profile} />
               </div>
-              <InsightCard title="التقييم العام ونقاط القوة والفجوات" data={{ summary: analysis.overall_assessment, strengths: analysis.strengths, gaps: analysis.gaps }} toneIndex={0} analysis={analysis} profile={profile} />
               <SourceBreakdownSection analysis={analysis} profile={profile} />
               <AnalysisEvidenceSection analysis={analysis} />
               <div className="grid gap-4 md:grid-cols-2">
@@ -1304,7 +1311,7 @@ function SourceBreakdownSection({ analysis, profile }: { analysis: DeepAnalysis;
             <CardHeader className={cn("analysis-source-header border-b px-5 py-4 text-right sm:px-6", tone.border, tone.header)}>
               <div className="flex flex-wrap items-center gap-3">
                 <CardTitle className={cn("analysis-title-chip inline-flex max-w-full items-center gap-2 break-words rounded-xl border px-3 py-2 text-lg font-extrabold leading-relaxed shadow-sm", tone.chip, tone.accent)}><Eye className="h-5 w-5 shrink-0" />{source.source_name || "مصدر"}</CardTitle>
-                {source.source_type && <Badge variant="secondary">{source.source_type}</Badge>}
+                {source.source_type && !source.source_name?.includes(source.source_type) && <Badge variant="secondary">{source.source_type}</Badge>}
                 {source.source_status && !source.source_name?.includes(source.source_status) && <Badge variant="outline" className="analysis-title-chip inline-flex items-center gap-2 rounded-xl border px-3 py-2 font-bold"><CheckCircle2 className="h-4 w-4 shrink-0" />{source.source_status}</Badge>}
                 <Button
                   variant="outline"
@@ -1629,13 +1636,13 @@ function channelSourceUrl(analysis: DeepAnalysis, profile: Profile | null, kind:
 function AnalysisSourceLink({ label, url }: { label: string; url: string }) {
   const href = analysisSourceUrl(url);
   return (
-    <div className="mt-4 min-w-0 rounded-xl border border-[#d5e7d9] bg-[#f4f8f4] px-4 py-3 text-right text-sm">
-      <p className="mb-1 font-semibold text-[#14532d]">{label}</p>
+    <div className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1 text-right text-xs">
+      <span className="font-semibold">{label}:</span>
       {href ? (
-        <a className="analysis-source-link inline-flex max-w-full items-center gap-2" href={href} target="_blank" rel="noreferrer">
-          <ExternalLink className="h-4 w-4 shrink-0" /> <span className="min-w-0 break-all text-left" dir="ltr">{url}</span>
+        <a className="analysis-source-link inline-flex min-w-0 max-w-full items-center gap-1.5" href={href} target="_blank" rel="noreferrer" aria-label={`${label}: ${url}`}>
+          <ExternalLink className="h-3.5 w-3.5 shrink-0" /> <span className="min-w-0 break-all" dir="ltr">{url}</span>
         </a>
-      ) : <span className="break-all text-[#526359]" dir="ltr">{url} — الرابط المسجل غير صالح للفتح</span>}
+      ) : <span className="break-all" dir="ltr">{url} — الرابط المسجل غير صالح للفتح</span>}
     </div>
   );
 }
@@ -1691,7 +1698,11 @@ function InsightCard({ title, data, toneIndex, analysis, profile }: { title: str
   const entries = Object.entries(data ?? {}).filter(([k]) => !HIDDEN_INSIGHT_KEYS.has(k));
   const tone = ANALYSIS_CARD_TONES[toneIndex % ANALYSIS_CARD_TONES.length];
   const channel = title === "رؤى المتجر" ? "store" : title === "رؤى الموقع الإلكتروني" ? "website" : null;
-  const channelUrl = channel ? channelSourceUrl(analysis, profile, channel) : null;
+  const hasChannelCard = channel && (analysis.source_breakdown ?? []).some((source) => {
+    const description = `${source.source_type ?? ""} ${source.source_name ?? ""}`;
+    return channel === "store" ? /متجر|store/i.test(description) : /موقع|website/i.test(description) && !/متجر|store/i.test(description);
+  });
+  const channelUrl = channel && !hasChannelCard ? channelSourceUrl(analysis, profile, channel) : null;
   return (
     <Card dir="rtl" className={cn("analysis-surface relative min-w-0 overflow-hidden rounded-3xl border bg-white", tone.border)}>
       <div className={cn("absolute inset-y-0 right-0 w-1", tone.line)} aria-hidden="true" />
