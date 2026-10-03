@@ -868,15 +868,15 @@ export default function OrgInternalDashboard({
             }
             .analysis-results .analysis-surface a { text-decoration: underline; text-underline-offset: 3px; }
             .analysis-results .analysis-title-header > * {
-              background: #fff1e6 !important;
-              border-color: #f3c9a5 !important;
-              color: #7c3f16 !important;
+              background: linear-gradient(270deg, #14532d 0%, #166534 76%, #b95f20 100%) !important;
+              border-color: #a95017 !important;
+              color: #fff !important;
             }
             .analysis-results .analysis-title-header [class*="bg-gradient"] { background-image: none !important; }
-            .analysis-results .analysis-title-header :is(h1, h2, h3, p, span, svg) { color: #7c3f16 !important; }
+            .analysis-results .analysis-title-header :is(h1, h2, h3, p, span, svg) { color: #fff !important; }
             .analysis-results .analysis-title-header button {
               background: #c66b24 !important;
-              border: 1px solid #a95017 !important;
+              border: 1px solid #f3c9a5 !important;
               color: #fff !important;
             }
             .analysis-results .analysis-title-header button:hover { background: #a95017 !important; }
