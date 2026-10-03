@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Brain, Sparkles, TrendingUp, AlertTriangle, Target, Lightbulb, Users, Megaphone, RefreshCcw, CheckCircle2, MessageCircle, Phone, Mail } from "lucide-react";
+import { Brain, Sparkles, TrendingUp, AlertTriangle, Target, Lightbulb, Users, Megaphone, RefreshCcw, CheckCircle2, MessageCircle, Phone, Mail, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useOrganization } from "@/contexts/OrganizationContext";
@@ -69,6 +69,50 @@ interface FileAnalysis {
   ai_analysis: Record<string, unknown>;
   ai_analyzed_at: string | null;
 }
+
+type AnalysisRecord = Record<string, unknown>;
+
+const asRecord = (value: unknown): AnalysisRecord | null =>
+  value !== null && typeof value === "object" && !Array.isArray(value) ? value as AnalysisRecord : null;
+
+const text = (value: unknown): string =>
+  typeof value === "string" ? value.trim() : typeof value === "number" ? String(value) : "";
+
+const field = (record: AnalysisRecord, keys: string[]): string => {
+  for (const key of keys) {
+    const value = text(record[key]);
+    if (value) return value;
+  }
+  return "";
+};
+
+const safeLink = (value: string): string | null => {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.href : null;
+  } catch {
+    return null;
+  }
+};
+
+const analysisSources = (analysis: AnalysisRecord): AnalysisRecord[] => {
+  const keys = ["sources", "stores", "websites", "social_accounts", "accounts", "channels"];
+  const sources = keys.flatMap((key) =>
+    Array.isArray(analysis[key]) ? (analysis[key] as unknown[]).map(asRecord).filter((item): item is AnalysisRecord => item !== null) : [],
+  );
+  return sources.length ? sources : [analysis];
+};
+
+const sourceFindings = (source: AnalysisRecord): AnalysisRecord[] => {
+  const keys = ["findings", "gaps", "issues", "observations", "recommendations"];
+  const findings = keys.flatMap((key) =>
+    Array.isArray(source[key]) ? (source[key] as unknown[]).map((item) => asRecord(item) ?? (text(item) ? { observation: text(item) } : null)).filter((item): item is AnalysisRecord => item !== null) : [],
+  );
+  return findings.length ? findings : [source];
+};
+
+const severityLabel = (severity: string) =>
+  ({ critical: "حرج", high: "مرتفع", medium: "متوسط", low: "منخفض" } as Record<string, string>)[severity] ?? severity;
 
 const severityColor = (s: string) =>
   s === "critical" ? "bg-destructive text-destructive-foreground" :
@@ -162,7 +206,7 @@ const Intelligence = () => {
         <PageHeader
           icon={<Brain className="w-6 h-6" />}
           title="التحليل الذكي"
-          subtitle="رؤى ذكية، مهام ذكية، وأفكار إبداعية مولّدة من بيانات جمعيتك"
+          subtitle="رؤى ومهام وأفكار مستندة إلى بيانات الجمعية، مع توضيح الجهات والشواهد المتاحة"
           actions={
             <Button size="lg" onClick={runAnalysis} disabled={running} className="gap-2 shadow-lg">
               <RefreshCcw className={`w-4 h-4 ${running ? "animate-spin" : ""}`} />
@@ -171,12 +215,11 @@ const Intelligence = () => {
           }
         />
         <PageGuide
-          description="هذه الصفحة هي عقل النظام الذكي. تقوم بفحص جميع بيانات الجمعية (الموظفون، الخطط، المهام، التقارير، المساءلات) باستخدام نماذج الذكاء الاصطناعي، ثم تستخرج رؤى عميقة، تحدد نقاط القوة والضعف، وتقترح مهام وأفكار تطويرية قابلة للتنفيذ مباشرة."
+          description="تعرض الصفحة نتائج التحليل المحفوظة لكل جمعية. تظهر الجهات وروابطها والشواهد والتوصيات عندما تكون موجودة في بيانات التحليل؛ وغياب الرابط أو الشاهد يعني أن النتيجة تحتاج إلى تحقق، لا أنها فُحصت مباشرة."
           features={[
-            "تحليل شامل لكافة بيانات الجمعية بالذكاء الاصطناعي",
-            "استخراج رؤى عملية حول الأداء والمخاطر",
-            "توليد مهام ذكية مرتبطة بالتوصيات",
-            "اقتراح أفكار ابتكارية لتطوير الخدمات",
+            "بطاقة مستقلة لكل متجر أو موقع أو حساب مذكور على حدة في تحليل الملف",
+            "ترتيب الملاحظة والشاهد والأثر والخطوة المقترحة عند توفرها",
+            "عرض الرؤى والمهام والأفكار المحفوظة دون إضافة استنتاجات غير موثقة",
             "إمكانية إعادة التحليل في أي وقت",
           ]}
         />
@@ -184,8 +227,8 @@ const Intelligence = () => {
         {!loading && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">تحليلات الملفات المحفوظة ({fileAnalyses.length})</CardTitle>
-              <CardDescription>التحليلات المرتبطة بملفات الجمعية المرفوعة سابقًا.</CardDescription>
+              <CardTitle className="text-base">بطاقات تحليل الجهات والمرفقات</CardTitle>
+              <CardDescription>كل بطاقة لجهة محددة إذا سمّتها بيانات التحليل. لا تُنسب ملاحظة عامة إلى متجر أو حساب بعينه دون تحديده في المصدر.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {fileAnalyses.length === 0 ? (
@@ -193,23 +236,54 @@ const Intelligence = () => {
                   لا توجد تحليلات ملفات محفوظة لهذه الجمعية في السجل الحالي.
                 </p>
               ) : (
-                fileAnalyses.map((file) => (
-                  <div key={file.id} className="rounded-lg border p-3 space-y-2">
-                    <p className="font-semibold">{file.file_name}</p>
-                    {file.ai_analyzed_at && (
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(file.ai_analyzed_at).toLocaleString("ar-SA")}
-                      </p>
-                    )}
-                    {"summary" in file.ai_analysis && file.ai_analysis.summary ? (
-                      <p className="text-sm whitespace-pre-wrap">
-                        {String(file.ai_analysis.summary)}
-                      </p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">تحليل محفوظ ومتاح في سجل الملف.</p>
-                    )}
-                  </div>
-                ))
+                fileAnalyses.flatMap((file) => analysisSources(file.ai_analysis).map((source, index) => {
+                  const isGeneral = source === file.ai_analysis;
+                  const name = field(source, ["name", "title", "store_name", "website_name", "account_name", "source_name", "platform"]);
+                  const urlText = field(source, ["url", "link", "website", "store_url", "account_url", "profile_url"]);
+                  const url = safeLink(urlText);
+                  const overview = field(source, ["summary", "overview", "description"]);
+                  const findings = sourceFindings(source);
+                  return (
+                    <article key={`${file.id}-${index}`} className="rounded-xl border bg-card shadow-sm overflow-hidden">
+                      <div className="border-b bg-primary/5 p-4 space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <h3 className="font-bold text-base break-words">{name || (isGeneral ? `تحليل عام: ${file.file_name}` : `جهة غير مسماة في ${file.file_name}`)}</h3>
+                          <Badge variant="outline">{isGeneral ? "ملف عام" : "جهة مستقلة"}</Badge>
+                        </div>
+                        {url ? (
+                          <a href={url} target="_blank" rel="noopener noreferrer" dir="ltr" className="inline-flex items-center gap-1 text-sm text-primary underline break-all">
+                            {urlText} <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                          </a>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">{urlText ? "الرابط المسجل غير صالح للفتح؛ يلزم التحقق منه." : "لم يُذكر رابط لهذه الجهة في التحليل المحفوظ."}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground">المرفق: {file.file_name}{file.ai_analyzed_at ? ` · تاريخ التحليل: ${new Date(file.ai_analyzed_at).toLocaleString("ar-SA")}` : ""}</p>
+                      </div>
+                      <div className="p-4 space-y-4">
+                        {overview && <div><p className="text-xs font-semibold text-primary mb-1">ملخص التحليل</p><p className="text-sm whitespace-pre-wrap leading-relaxed">{overview}</p></div>}
+                        {findings.map((finding, findingIndex) => {
+                          const observation = field(finding, ["observation", "finding", "gap", "issue", "title", "description", "summary"]);
+                          const evidence = field(finding, ["evidence", "proof", "example", "reference", "screenshot", "source"]);
+                          const impact = field(finding, ["impact", "risk", "consequence", "expected_impact"]);
+                          const action = field(finding, ["action", "recommendation", "recommended_action", "suggestion"]);
+                          if (!observation && !evidence && !impact && !action) return null;
+                          return (
+                            <div key={findingIndex} className="rounded-lg border bg-muted/20 p-3 space-y-2 text-sm leading-relaxed">
+                              <p className="text-xs font-bold text-primary">{findings.length > 1 ? `النقطة ${findingIndex + 1}` : "تفاصيل النتيجة"}</p>
+                              {observation && <p className="whitespace-pre-wrap"><strong>الملاحظة أو الفجوة:</strong> {observation}</p>}
+                              <p className="whitespace-pre-wrap text-muted-foreground"><strong>الشاهد:</strong> {evidence || "لا يوجد شاهد محدد في التحليل المحفوظ؛ يلزم التحقق قبل اعتماد الملاحظة."}</p>
+                              {impact && <p className="whitespace-pre-wrap"><strong>الأثر المذكور:</strong> {impact}</p>}
+                              {action && <p className="whitespace-pre-wrap"><strong>الخطوة المقترحة:</strong> {action}</p>}
+                            </div>
+                          );
+                        })}
+                        {!overview && findings.every((finding) => !field(finding, ["observation", "finding", "gap", "issue", "title", "description", "summary", "evidence", "proof", "example", "reference", "screenshot", "source", "impact", "risk", "consequence", "expected_impact", "action", "recommendation", "recommended_action", "suggestion"])) && (
+                          <p className="text-sm text-muted-foreground">التحليل محفوظ، لكن لا تتوفر تفاصيل قابلة للعرض لهذه الجهة في السجل.</p>
+                        )}
+                      </div>
+                    </article>
+                  );
+                }))
               )}
             </CardContent>
           </Card>
@@ -257,19 +331,19 @@ const Intelligence = () => {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <Badge className={severityColor(i.severity)}>{i.severity}</Badge>
+                        <Badge className={severityColor(i.severity)}>الأولوية: {severityLabel(i.severity)}</Badge>
                         <Badge variant="outline">{i.category}</Badge>
                         <Badge variant="secondary">{i.insight_type}</Badge>
                       </div>
                       <CardTitle className="text-lg">{i.title}</CardTitle>
-                      <CardDescription className="mt-2 leading-relaxed">{i.summary}</CardDescription>
+                      <CardDescription className="mt-2 leading-relaxed whitespace-pre-wrap"><strong className="text-foreground">ما الذي رصده التحليل؟</strong><br />{i.summary}</CardDescription>
                     </div>
                     {i.severity === "critical" && <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />}
                   </div>
                 </CardHeader>
                 {i.recommended_actions && i.recommended_actions.length > 0 && (
                   <CardContent className="pt-0">
-                    <p className="text-xs font-semibold text-muted-foreground mb-2">إجراءات موصى بها:</p>
+                    <p className="text-xs font-semibold text-primary mb-2">ما الخطوة التالية؟</p>
                     <ul className="space-y-1">
                       {i.recommended_actions.map((a, idx) => (
                         <li key={idx} className="text-sm flex items-start gap-2">
