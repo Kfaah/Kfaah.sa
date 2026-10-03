@@ -803,86 +803,63 @@ export default function OrgInternalDashboard({
         {/* ANALYSIS */}
         <TabsContent value="analysis" className={cn(standaloneTab ? "mt-0 space-y-4" : "mt-6 space-y-4", "analysis-results")} dir="rtl">
           <style>{`
+            .analysis-results { color: #172b24; }
             .analysis-results .analysis-surface {
               background: #fff !important;
-              border: 2px solid #166534 !important;
-              color: #166534;
-              box-shadow: 0 12px 32px rgba(22, 101, 52, .10);
+              border: 1px solid #e1eae4 !important;
+              color: #172b24;
+              box-shadow: 0 8px 28px -18px rgba(18, 54, 35, .3);
             }
             .analysis-results .analysis-surface > [class*="CardHeader"] {
+              background: #fff !important;
+              border-color: #e8eee9 !important;
+              color: #172b24 !important;
+            }
+            .analysis-results .analysis-surface > [class*="CardHeader"] :is(h2, h3, p) { color: #172b24 !important; }
+            .analysis-results .analysis-surface > [class*="CardContent"] { background: #fff !important; color: #33463b; }
+            .analysis-results .analysis-detail-box {
+              border: 1px solid #e9eeeb;
+              border-radius: .85rem;
+              background: #f8faf8;
+              padding: 1rem 1.15rem;
+              color: #33463b;
+              overflow-wrap: anywhere;
+              white-space: pre-wrap;
+            }
+            .analysis-results .analysis-source-link { color: #166534; overflow-wrap: anywhere; word-break: break-word; }
+            .analysis-results .analysis-title-chip,
+            .analysis-results .analysis-surface .analysis-title-chip {
+              background: #edf5ee !important;
+              border-color: #d5e7d9 !important;
+              color: #14532d !important;
+              box-shadow: none !important;
+            }
+            .analysis-results .analysis-title-chip svg { color: #166534 !important; }
+            .analysis-results .analysis-surface > [class*="CardHeader"] button {
+              background: #fff !important;
+              border: 1px solid #cbded0 !important;
+              color: #166534 !important;
+            }
+            .analysis-results .analysis-surface > [class*="CardHeader"] button svg { color: #166534 !important; }
+            .analysis-results .analysis-surface > [class*="CardHeader"] [data-slot="badge"] {
+              background: #edf5ee !important;
+              color: #14532d !important;
+              border-color: #d5e7d9 !important;
+            }
+            .analysis-results .analysis-surface a { text-decoration: underline; text-underline-offset: 3px; }
+            .analysis-results .analysis-title-header > * {
               background: #166534 !important;
               border-color: #166534 !important;
               color: #fff !important;
             }
-            .analysis-results .analysis-surface > [class*="CardHeader"] :is(h2, h3, p, svg) {
-              color: #fff !important;
-            }
-            .analysis-results .analysis-surface > [class*="CardContent"] {
-              background: #fff !important;
-              color: #166534;
-            }
-            .analysis-results .analysis-detail-box {
-              border: 1px solid #bbd7c3;
-              border-radius: 1rem;
-              background: #fff;
-              padding: 1rem;
-              color: #166534;
-              box-shadow: 0 2px 10px rgba(22, 101, 52, .05);
-              overflow-wrap: anywhere;
-              white-space: pre-wrap;
-            }
-            .analysis-results .analysis-source-link {
-              color: #166534;
-              overflow-wrap: anywhere;
-              word-break: break-word;
-            }
-            .analysis-results .analysis-surface .analysis-title-chip {
-              background: #166534 !important;
-              border-color: #fff !important;
-              color: #fff !important;
-            }
-            .analysis-results .analysis-surface > [class*="CardHeader"] .analysis-title-chip {
-              border-color: rgba(255, 255, 255, .55) !important;
-            }
-            .analysis-results .analysis-surface > [class*="CardHeader"] button {
-              background: #fff !important;
-              border-color: #fff !important;
-              color: #166534 !important;
-            }
-            .analysis-results .analysis-surface > [class*="CardHeader"] button svg {
-              color: #166534 !important;
-            }
-            .analysis-results .analysis-surface > [class*="CardHeader"] [data-slot="badge"] {
-              background: #fff !important;
-              color: #166534 !important;
-              border-color: #fff !important;
-            }
-            .analysis-results .analysis-surface .analysis-title-chip svg {
-              color: #fff !important;
-            }
-            .analysis-results .analysis-surface a {
-              text-decoration: underline;
-              text-underline-offset: 3px;
-            }
-            .analysis-results .analysis-title-header > * {
-              background: #166534 !important;
-              border-color: rgba(255, 255, 255, .35) !important;
-              color: #fff !important;
-            }
-            .analysis-results .analysis-title-header [class*="bg-gradient"] {
-              background-image: none !important;
-            }
-            .analysis-results .analysis-title-header :is(h1, h2, h3, p, span, svg) {
-              color: #fff !important;
-            }
+            .analysis-results .analysis-title-header [class*="bg-gradient"] { background-image: none !important; }
+            .analysis-results .analysis-title-header :is(h1, h2, h3, p, span, svg) { color: #fff !important; }
             .analysis-results .analysis-title-header button {
               background: #15803d !important;
               border: 1px solid #fff !important;
               color: #fff !important;
             }
-            .analysis-results .analysis-title-header button:hover {
-              background: #14532d !important;
-            }
+            .analysis-results .analysis-title-header button:hover { background: #14532d !important; }
           `}</style>
           {standaloneTab && (
             <div className="analysis-title-header">
@@ -935,22 +912,20 @@ export default function OrgInternalDashboard({
             </Card>
           ) : (
             <div className="space-y-6">
-              <div className="analysis-surface overflow-hidden rounded-3xl border p-5 shadow-sm sm:p-7">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-white/30 px-3 py-1 text-xs font-bold"><Sparkles className="h-4 w-4" /> لوحة نتائج التحليل</span>
-                    <h2 className="analysis-title-chip mt-3 inline-flex rounded-xl border px-4 py-2 text-xl font-extrabold tracking-tight sm:text-2xl">قراءة واضحة لكل مصدر ونتيجة</h2>
-                    <p className="mt-2 text-sm leading-7">افتح المعاينة داخل كل بطاقة للاطلاع على الشاهد المحفوظ أو رابط المصدر عند توفره.</p>
+              <div className="analysis-surface relative overflow-hidden rounded-3xl border p-6 sm:p-9">
+                <div className="absolute inset-y-0 right-0 w-1.5 bg-[#166534]" aria-hidden="true" />
+                <div className="flex flex-wrap items-end justify-between gap-5">
+                  <div className="max-w-2xl">
+                    <span className="inline-flex items-center gap-2 text-xs font-bold tracking-wide text-[#166534]"><Sparkles className="h-4 w-4" /> التقرير الاستراتيجي · التحليل الذكي</span>
+                    <h2 className="mt-3 text-2xl font-extrabold leading-snug text-[#172b24] sm:text-3xl">من المصادر إلى قرارات واضحة</h2>
+                    <p className="mt-3 text-sm leading-7 text-[#526359]">ابدأ بالتقييم العام، ثم اقرأ تفاصيل كل مصدر والأدلة والتوصيات. تجد رابط كل قناة داخل بطاقتها المعنية فقط.</p>
                   </div>
-                  {analysis.completed_at && <span className="rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-[#166534] shadow-sm">آخر تحليل: {new Date(analysis.completed_at).toLocaleString("ar-SA")}</span>}
-                </div>
-                <div className="mt-5 border-t border-emerald-200 pt-5">
-                  <AnalysisLinks analysis={analysis} profile={profile} />
+                  {analysis.completed_at && <span className="rounded-xl border border-[#e1eae4] bg-[#f8faf8] px-4 py-2 text-xs font-medium text-[#526359]">آخر تحليل: {new Date(analysis.completed_at).toLocaleString("ar-SA")}</span>}
                 </div>
               </div>
               <InsightCard title="التقييم العام ونقاط القوة والفجوات" data={{ summary: analysis.overall_assessment, strengths: analysis.strengths, gaps: analysis.gaps }} toneIndex={0} analysis={analysis} profile={profile} />
               <SourceBreakdownSection analysis={analysis} profile={profile} />
-              <AnalysisEvidenceSection analysis={analysis} profile={profile} />
+              <AnalysisEvidenceSection analysis={analysis} />
               <div className="grid gap-4 md:grid-cols-2">
                 <InsightCard title="تحليل الملفات المرفوعة" data={analysis.document_insights} toneIndex={0} analysis={analysis} profile={profile} />
                 <InsightCard title="رؤى الموقع الإلكتروني" data={analysis.website_insights} toneIndex={1} analysis={analysis} profile={profile} />
@@ -960,7 +935,7 @@ export default function OrgInternalDashboard({
                 <InsightCard title="شرائح المتبرعين" data={analysis.donors_segmentation} toneIndex={1} analysis={analysis} profile={profile} />
                 <InsightCard title="ملخص التبرعات" data={analysis.donations_summary} toneIndex={0} analysis={analysis} profile={profile} />
               </div>
-              <AnalysisRecommendationsSection analysis={analysis} profile={profile} />
+              <AnalysisRecommendationsSection analysis={analysis} />
             </div>
           )}
         </TabsContent>
@@ -1131,7 +1106,7 @@ function ListCard({ title, items, icon, emptyText }: { title: string; items: str
   );
 }
 
-function GapPreview({ evidence }: { evidence: GapEvidence }) {
+function GapPreview({ evidence, showSourceLink = true }: { evidence: GapEvidence; showSourceLink?: boolean }) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageState, setImageState] = useState<"idle" | "loading" | "missing">("idle");
 
@@ -1191,9 +1166,9 @@ function GapPreview({ evidence }: { evidence: GapEvidence }) {
       <div className="flex flex-wrap items-center gap-2 text-xs">
         {evidence.source_label && <Badge variant="secondary">{evidence.source_label}</Badge>}
         {evidence.source_status && <span className="text-muted-foreground">{evidence.source_status}</span>}
-        {evidence.source_url && (
+        {showSourceLink && analysisSourceUrl(evidence.source_url) && (
           <a
-            href={evidence.source_url}
+            href={analysisSourceUrl(evidence.source_url)!}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-1 text-accent hover:underline"
@@ -1259,7 +1234,7 @@ function GapsCard({ gaps, evidence }: { gaps: string[]; evidence: GapEvidence[] 
 }
 
 const ANALYSIS_CARD_TONES = [
-  { border: "border-emerald-200 hover:border-emerald-300", header: "", accent: "text-[#166534]", line: "bg-[#166534]", chip: "border-emerald-200 bg-emerald-50" },
+  { border: "border-[#e1eae4]", header: "", accent: "text-[#14532d]", line: "bg-[#166534]", chip: "border-[#d5e7d9] bg-[#edf5ee]" },
 ] as const;
 
 function BulletBlock({ title, items }: { title: string; items?: string[] | null }) {
@@ -1270,7 +1245,7 @@ function BulletBlock({ title, items }: { title: string; items?: string[] | null 
       {list.length === 0 ? (
         <p className="text-sm leading-7">لا توجد تفاصيل محفوظة لهذا المحور؛ لا يعني ذلك نفي وجوده.</p>
       ) : (
-        <ul className="space-y-3 text-sm leading-7 text-[#166534]">
+        <ul className="space-y-3 text-sm leading-7 text-[#33463b]">
           {list.map((item, i) => (
             <li key={i} className="flex items-start gap-2">
               <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#166534]" />
@@ -1286,6 +1261,8 @@ function BulletBlock({ title, items }: { title: string; items?: string[] | null 
 function SourceBreakdownSection({ analysis, profile }: { analysis: DeepAnalysis; profile: Profile | null }) {
   const [openSource, setOpenSource] = useState<number | null>(null);
   const sources = analysis.source_breakdown ?? [];
+  const storeUrl = channelSourceUrl(analysis, profile, "store");
+  const websiteUrl = channelSourceUrl(analysis, profile, "website");
 
   if (sources.length === 0) {
     return (
@@ -1294,7 +1271,6 @@ function SourceBreakdownSection({ analysis, profile }: { analysis: DeepAnalysis;
           <CardTitle className="flex items-center justify-start gap-2 text-base">
             <Eye className="h-5 w-5 text-accent" /> الشرح التفصيلي لمواقع الجمعية وحساباتها
           </CardTitle>
-          <AnalysisLinks analysis={analysis} profile={profile} />
         </CardHeader>
         <CardContent className="text-right text-sm text-muted-foreground">
           لا تتوفر تفاصيل لمصادر رقمية في هذا التحليل. راجع روابط الموقع والمتجر والحسابات المسجلة، ثم أعد تشغيل التحليل. عدم توفر المصدر هنا لا يعني عدم وجوده لدى الجمعية.
@@ -1313,15 +1289,14 @@ function SourceBreakdownSection({ analysis, profile }: { analysis: DeepAnalysis;
           {sources.length} مصدراً تم شرحه بالتفصيل: الموقع الرسمي والمتجر وجميع الحسابات الرقمية
         </p>
       </div>
-      <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
       {sources.map((source, index) => {
         const isOpen = openSource === source.source_index;
         const tone = ANALYSIS_CARD_TONES[index % ANALYSIS_CARD_TONES.length];
         return (
-          <Card key={source.source_index} className={cn("analysis-surface group relative min-w-0 overflow-hidden rounded-3xl border-2 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none motion-reduce:transition-none", tone.border)}>
+          <Card key={source.source_index} className={cn("analysis-surface relative min-w-0 overflow-hidden rounded-3xl border bg-white", tone.border)}>
             <div className={cn("absolute inset-y-0 right-0 w-1", tone.line)} aria-hidden="true" />
             <CardHeader className={cn("border-b px-5 py-5 text-right sm:px-6", tone.border, tone.header)}>
-              <AnalysisLinks analysis={analysis} profile={profile} extraLinks={[{ label: source.source_name || "مصدر", url: source.source_url }]} />
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <CardTitle className={cn("analysis-title-chip inline-flex max-w-full items-center gap-2 break-words rounded-xl border px-3 py-2 text-lg font-extrabold leading-relaxed shadow-sm", tone.chip, tone.accent)}><Eye className="h-5 w-5 shrink-0" />{source.source_name || "مصدر"}</CardTitle>
@@ -1329,12 +1304,9 @@ function SourceBreakdownSection({ analysis, profile }: { analysis: DeepAnalysis;
                     {source.source_type && <Badge variant="secondary">{source.source_type}</Badge>}
                     {source.source_status && <Badge variant="outline">{source.source_status}</Badge>}
                   </div>
-                  <div className="mt-3 rounded-xl bg-white p-3 text-sm text-[#166534] shadow-sm">
-                    <span className="font-bold">رابط هذا المصدر: </span>
-                    {analysisSourceUrl(source.source_url) ? (
-                      <a className="analysis-source-link mt-1 block underline underline-offset-4" href={analysisSourceUrl(source.source_url)!} target="_blank" rel="noreferrer" dir="ltr">{source.source_url}</a>
-                    ) : <span>{source.source_url ? "الرابط المسجل غير صالح للفتح" : "لا يوجد رابط محفوظ لهذا المصدر"}</span>}
-                  </div>
+                  {source.source_url && ![storeUrl, websiteUrl].some((url) => url && analysisSourceUrl(url) === analysisSourceUrl(source.source_url)) && (
+                    <AnalysisSourceLink label="رابط المصدر" url={source.source_url} />
+                  )}
                 </div>
                 <Button
                   variant="outline"
@@ -1390,6 +1362,7 @@ function SourceBreakdownSection({ analysis, profile }: { analysis: DeepAnalysis;
                     source_status: source.source_status ?? null,
                     screenshot_path: source.screenshot_path ?? null,
                   }}
+                  showSourceLink={false}
                 />
               )}
             </CardContent>
@@ -1401,7 +1374,7 @@ function SourceBreakdownSection({ analysis, profile }: { analysis: DeepAnalysis;
   );
 }
 
-function AnalysisEvidenceSection({ analysis, profile }: { analysis: DeepAnalysis; profile: Profile | null }) {
+function AnalysisEvidenceSection({ analysis }: { analysis: DeepAnalysis }) {
   const [openItem, setOpenItem] = useState<number | null>(null);
   const items = analysis.analysis_evidence ?? [];
   const categories = Array.from(new Set(items.map((item) => item.category || "تحليل عام")));
@@ -1413,7 +1386,6 @@ function AnalysisEvidenceSection({ analysis, profile }: { analysis: DeepAnalysis
           <CardTitle className="flex items-center justify-start gap-2 text-base">
             <Eye className="h-5 w-5 text-accent" /> الأدلة والمعاينات التفصيلية
           </CardTitle>
-          <AnalysisLinks analysis={analysis} profile={profile} />
         </CardHeader>
         <CardContent className="text-right text-sm text-muted-foreground">
           هذا التحليل أُنشئ قبل إضافة الأدلة التفصيلية. اضغط «إعادة تشغيل التحليل» لإظهار كل النتائج مع الصور والمقتطفات.
@@ -1436,11 +1408,10 @@ function AnalysisEvidenceSection({ analysis, profile }: { analysis: DeepAnalysis
       {categories.map((category, categoryIndex) => {
         const tone = ANALYSIS_CARD_TONES[categoryIndex % ANALYSIS_CARD_TONES.length];
         return (
-        <Card key={category} className={cn("analysis-surface relative min-w-0 overflow-hidden rounded-3xl border-2 bg-card shadow-sm transition-all duration-300 hover:shadow-lg motion-reduce:transition-none", tone.border)}>
+        <Card key={category} className={cn("analysis-surface relative min-w-0 overflow-hidden rounded-3xl border bg-white", tone.border)}>
           <div className={cn("absolute inset-y-0 right-0 w-1", tone.line)} aria-hidden="true" />
           <CardHeader className={cn("border-b text-right", tone.border, tone.header)}>
             <CardTitle className={cn("analysis-title-chip inline-flex w-fit items-center gap-2 rounded-xl border px-4 py-2 text-base font-extrabold shadow-sm", tone.chip, tone.accent)}><Quote className="h-4 w-4" />{category}</CardTitle>
-            <AnalysisLinks analysis={analysis} profile={profile} />
           </CardHeader>
           <CardContent className="space-y-3 pt-4">
             {items.map((item, index) => {
@@ -1456,9 +1427,8 @@ function AnalysisEvidenceSection({ analysis, profile }: { analysis: DeepAnalysis
                 screenshot_path: item.screenshot_path,
               };
               return (
-                <article key={`${category}-${index}`} className={cn("rounded-2xl border bg-background/70 p-4 text-right transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none", tone.border)}>
-                  <AnalysisLinks analysis={analysis} profile={profile} extraLinks={[{ label: item.source_label || "مصدر الدليل", url: item.source_url }]} />
-                  <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+                <article key={`${category}-${index}`} className="rounded-2xl border border-[#e8eee9] bg-white p-4 text-right sm:p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="mb-2 flex flex-wrap gap-2">
                         <Badge variant="secondary">{item.finding_type || "ملاحظة"}</Badge>
@@ -1466,11 +1436,8 @@ function AnalysisEvidenceSection({ analysis, profile }: { analysis: DeepAnalysis
                       </div>
                       <h3 className={cn("w-fit max-w-full rounded-lg border px-3 py-1.5 font-bold leading-relaxed", tone.chip, tone.accent)}>{item.title}</h3>
                       <p className="analysis-detail-box mt-3 text-sm leading-8">{item.detail || "لم يُحفظ شرح تفصيلي لهذه النتيجة."}</p>
-                      {(item.source_label || item.source_url) && (
-                        <div className="analysis-detail-box mt-3 text-sm">
-                          <span className="font-bold">المصدر المرتبط بالنتيجة: </span>{item.source_label || "مصدر غير مسمى"}
-                          {analysisSourceUrl(item.source_url) && <a className="analysis-source-link mt-2 block underline underline-offset-4" href={analysisSourceUrl(item.source_url)!} target="_blank" rel="noreferrer" dir="ltr">{item.source_url}</a>}
-                        </div>
+                      {item.source_label && (
+                        <p className="mt-3 text-xs text-[#526359]">المصدر المرتبط بالنتيجة: {item.source_label}</p>
                       )}
                     </div>
                     <Button variant="outline" size="sm" className="shrink-0 gap-1" onClick={() => setOpenItem(isOpen ? null : index)}>
@@ -1483,7 +1450,7 @@ function AnalysisEvidenceSection({ analysis, profile }: { analysis: DeepAnalysis
                   <div className="analysis-detail-box mt-2 text-sm leading-7">
                     <span className="font-bold">الإجراء المقترح: </span>{item.recommendation || "لم يُحفظ إجراء محدد لهذه النتيجة."}
                   </div>
-                  {isOpen && <GapPreview evidence={evidence} />}
+                  {isOpen && <GapPreview evidence={evidence} showSourceLink={false} />}
                 </article>
               );
             })}
@@ -1496,7 +1463,7 @@ function AnalysisEvidenceSection({ analysis, profile }: { analysis: DeepAnalysis
   );
 }
 
-function AnalysisRecommendationsSection({ analysis, profile }: { analysis: DeepAnalysis; profile: Profile | null }) {
+function AnalysisRecommendationsSection({ analysis }: { analysis: DeepAnalysis }) {
   const topRecommendations = Array.isArray(analysis.recommendations) ? analysis.recommendations.filter(Boolean) : [];
   const evidenceActions = (analysis.analysis_evidence ?? [])
     .map((item) => item.recommendation)
@@ -1510,13 +1477,12 @@ function AnalysisRecommendationsSection({ analysis, profile }: { analysis: DeepA
   if (uniqueRecommendations.length === 0 && uniqueActions.length === 0) return null;
 
   return (
-    <Card dir="rtl" className="analysis-surface relative overflow-hidden rounded-3xl border-2 border-white/30 bg-card shadow-sm transition-all duration-300 hover:shadow-lg motion-reduce:transition-none">
-      <div className="absolute inset-y-0 right-0 w-1 bg-white/35" aria-hidden="true" />
-      <CardHeader className="border-b border-white/30 text-right">
+    <Card dir="rtl" className="analysis-surface relative overflow-hidden rounded-3xl border bg-white">
+      <div className="absolute inset-y-0 right-0 w-1 bg-[#166534]" aria-hidden="true" />
+      <CardHeader className="border-b border-[#e8eee9] text-right">
         <CardTitle className="analysis-title-chip inline-flex w-fit items-center gap-2 rounded-xl border px-4 py-2 text-base font-extrabold shadow-sm">
           <Target className="h-5 w-5" /> التوصيات
         </CardTitle>
-        <AnalysisLinks analysis={analysis} profile={profile} />
         <p className="mt-1 text-sm text-muted-foreground">
           خلاصة التوصيات والإجراءات المقترحة المستخلصة من نتائج التحليل كاملة
         </p>
@@ -1646,68 +1612,25 @@ function analysisSourceUrl(raw: string | null | undefined): string | null {
   }
 }
 
-function AnalysisLinks({ analysis, profile, extraLinks = [] }: {
-  analysis: DeepAnalysis;
-  profile: Profile | null;
-  extraLinks?: Array<{ label: string; url?: string | null }>;
-}) {
-  const profileLinks: Array<{ label: string; url?: string | null }> = [
-    { label: "رابط المتجر", url: profile?.store_url },
-    { label: "رابط الموقع", url: profile?.website_url },
-    { label: "رابط حساب X", url: profile?.twitter_url },
-    { label: "رابط Instagram", url: profile?.instagram_url },
-    { label: "رابط TikTok", url: profile?.tiktok_url },
-    { label: "رابط Snapchat", url: profile?.snapchat_url },
-    { label: "رابط YouTube", url: profile?.youtube_url },
-    { label: "رابط Facebook", url: profile?.facebook_url },
-    { label: "رابط LinkedIn", url: profile?.linkedin_url },
-  ];
-  const savedLinks = [
-    ...(analysis.sources ?? []).map((source) => ({
-      label: source.kind === "store" ? "رابط المتجر" : source.kind === "website" ? "رابط الموقع" : source.label || "رابط الحساب الرقمي",
-      url: source.url,
-    })),
-    ...(analysis.source_breakdown ?? []).map((source) => ({ label: source.source_name || "رابط المصدر", url: source.source_url })),
-    ...extraLinks,
-  ];
-  const seen = new Set<string>();
-  const links = [
-    ...profileLinks.map((link) => ({ ...link, origin: "ملف الجمعية الحالي" })),
-    ...savedLinks.map((link) => ({ ...link, origin: "التحليل المحفوظ" })),
-  ].filter((link) => {
-    const value = link.url?.trim();
-    if (!value) return false;
-    const key = analysisSourceUrl(value)?.toLowerCase() ?? value.toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+function channelSourceUrl(analysis: DeepAnalysis, profile: Profile | null, kind: "store" | "website") {
+  const saved = (analysis.sources ?? []).find((source) => source.kind === kind && source.url?.trim())?.url;
+  const breakdown = (analysis.source_breakdown ?? []).find((source) => {
+    const description = `${source.source_type ?? ""} ${source.source_name ?? ""}`;
+    return kind === "store" ? /متجر|store/i.test(description) : /موقع|website/i.test(description);
+  })?.source_url;
+  return (kind === "store" ? profile?.store_url : profile?.website_url) || saved || breakdown || null;
+}
 
+function AnalysisSourceLink({ label, url }: { label: string; url: string }) {
+  const href = analysisSourceUrl(url);
   return (
-    <div className="rounded-xl border border-emerald-200 bg-white p-3 text-right text-[#166534] shadow-sm">
-      <p className="mb-2 text-sm font-bold">روابط المتجر والموقع والحسابات المرتبطة بالتحليل</p>
-      {links.length === 0 ? (
-        <p className="text-sm leading-6">لا توجد روابط مسجلة هنا؛ لا يمكن تحديد عنوان المتجر أو الموقع من هذا التحليل.</p>
-      ) : (
-        <div className="grid gap-2 sm:grid-cols-2">
-          {links.map((link) => {
-            const href = analysisSourceUrl(link.url);
-            return (
-              <div key={`${link.origin}-${link.url}`} className="min-w-0 rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm">
-                <p className="font-bold">{link.label} <span className="text-xs font-normal">({link.origin})</span></p>
-                {href ? (
-                  <a className="analysis-source-link mt-1 block underline underline-offset-4" href={href} target="_blank" rel="noreferrer" dir="ltr">{link.url}</a>
-                ) : (
-                  <p className="mt-1">الرابط المسجل غير صالح للفتح: <span dir="ltr">{link.url}</span></p>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-      {!profile?.store_url && !savedLinks.some((link) => link.label === "رابط المتجر" && link.url?.trim()) && (
-        <p className="mt-2 text-xs">رابط المتجر غير مسجل في ملف الجمعية أو مصادر التحليل المحفوظة.</p>
-      )}
+    <div className="mt-4 min-w-0 rounded-xl border border-[#d5e7d9] bg-[#f4f8f4] px-4 py-3 text-right text-sm">
+      <p className="mb-1 font-semibold text-[#14532d]">{label}</p>
+      {href ? (
+        <a className="analysis-source-link inline-flex max-w-full items-center gap-2" href={href} target="_blank" rel="noreferrer">
+          <ExternalLink className="h-4 w-4 shrink-0" /> <span className="min-w-0 break-all text-left" dir="ltr">{url}</span>
+        </a>
+      ) : <span className="break-all text-[#526359]" dir="ltr">{url} — الرابط المسجل غير صالح للفتح</span>}
     </div>
   );
 }
@@ -1737,7 +1660,7 @@ function InsightValue({ value }: { value: unknown }) {
 
   if (typeof value === "object") {
     return (
-      <div className="space-y-2 rounded-md bg-muted/40 p-3">
+      <div className="space-y-3 rounded-xl border border-[#e8eee9] bg-white p-4">
         {Object.entries(value as Record<string, unknown>).map(([key, item]) => (
           <div key={key} className="text-right">
             <div className="mb-1 text-xs font-semibold text-muted-foreground">{insightFieldLabel(key)}</div>
@@ -1762,18 +1685,20 @@ const HIDDEN_INSIGHT_KEYS = new Set([
 function InsightCard({ title, data, toneIndex, analysis, profile }: { title: string; data: Record<string, unknown> | null | undefined; toneIndex: number; analysis: DeepAnalysis; profile: Profile | null }) {
   const entries = Object.entries(data ?? {}).filter(([k]) => !HIDDEN_INSIGHT_KEYS.has(k));
   const tone = ANALYSIS_CARD_TONES[toneIndex % ANALYSIS_CARD_TONES.length];
+  const channel = title === "رؤى المتجر" ? "store" : title === "رؤى الموقع الإلكتروني" ? "website" : null;
+  const channelUrl = channel ? channelSourceUrl(analysis, profile, channel) : null;
   return (
-    <Card dir="rtl" className={cn("analysis-surface group relative min-w-0 overflow-hidden rounded-3xl border-2 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none motion-reduce:transition-none", tone.border)}>
+    <Card dir="rtl" className={cn("analysis-surface relative min-w-0 overflow-hidden rounded-3xl border bg-white", tone.border)}>
       <div className={cn("absolute inset-y-0 right-0 w-1", tone.line)} aria-hidden="true" />
       <CardHeader className={cn("border-b text-right", tone.border, tone.header)}>
         <CardTitle className={cn("analysis-title-chip inline-flex w-fit max-w-full items-center gap-2 rounded-xl border px-4 py-2 text-base font-extrabold leading-relaxed shadow-sm", tone.chip, tone.accent)}><Sparkles className="h-4 w-4 shrink-0" />{title}</CardTitle>
-        <AnalysisLinks analysis={analysis} profile={profile} />
+        {channelUrl && <AnalysisSourceLink label={channel === "store" ? "رابط المتجر" : "رابط الموقع الإلكتروني"} url={channelUrl} />}
       </CardHeader>
       <CardContent className="pt-5 text-right">
         {entries.length === 0 ? (
           <p className="text-sm text-muted-foreground">لا توجد بيانات</p>
         ) : (
-          <div className="space-y-2 text-sm">
+          <div className="space-y-3 text-sm">
             {entries.map(([k, v]) => (
               <div key={k} className="analysis-detail-box text-right leading-7">
                 <div className="mb-2 text-sm font-bold text-[#166534]">{insightFieldLabel(k)}</div>
