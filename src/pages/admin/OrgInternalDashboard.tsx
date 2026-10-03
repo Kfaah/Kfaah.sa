@@ -801,7 +801,37 @@ export default function OrgInternalDashboard({
         </TabsContent>
 
         {/* ANALYSIS */}
-        <TabsContent value="analysis" className={standaloneTab ? "mt-0 space-y-4" : "mt-6 space-y-4"} dir="rtl">
+        <TabsContent value="analysis" className={cn(standaloneTab ? "mt-0 space-y-4" : "mt-6 space-y-4", "analysis-results")} dir="rtl">
+          <style>{`
+            .analysis-results .analysis-surface {
+              background: #166534 !important;
+              border-color: rgba(255, 255, 255, .35) !important;
+              color: #fff !important;
+            }
+            .analysis-results .analysis-surface :is(div, article, blockquote, li, span, button, a) {
+              background-image: none !important;
+            }
+            .analysis-results .analysis-surface [class*="bg-"] {
+              background-color: transparent !important;
+            }
+            .analysis-results .analysis-surface :is(h1, h2, h3, h4, p, span, li, div, blockquote, a, button, svg) {
+              color: #fff !important;
+            }
+            .analysis-results .analysis-surface :is([class*="border-"], article, blockquote) {
+              border-color: rgba(255, 255, 255, .3) !important;
+            }
+            .analysis-results .analysis-surface button {
+              background-color: rgba(255, 255, 255, .16) !important;
+              border: 1px solid rgba(255, 255, 255, .45) !important;
+            }
+            .analysis-results .analysis-surface button:hover {
+              background-color: rgba(255, 255, 255, .28) !important;
+            }
+            .analysis-results .analysis-surface a {
+              text-decoration: underline;
+              text-underline-offset: 3px;
+            }
+          `}</style>
           {standaloneTab && (
             <PageHeader
               icon={<Sparkles />}
@@ -822,7 +852,7 @@ export default function OrgInternalDashboard({
             />
           )}
           {isDemo ? (
-            <Card>
+            <Card className="analysis-surface">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-right" dir="rtl">
                   <Sparkles className="h-5 w-5 text-muted-foreground" />
@@ -837,7 +867,7 @@ export default function OrgInternalDashboard({
               </CardContent>
             </Card>
           ) : analysisLoading || analysisError || !analysis ? (
-            <Card>
+            <Card className="analysis-surface">
               <CardContent className="py-12">
                 <EmptyState
                   text={
@@ -852,15 +882,14 @@ export default function OrgInternalDashboard({
             </Card>
           ) : (
             <div className="space-y-6">
-              <div className="relative overflow-hidden rounded-3xl border border-primary/25 bg-gradient-to-l from-primary/15 via-background to-accent/15 p-5 shadow-sm sm:p-7">
-                <div className="pointer-events-none absolute -left-10 -top-12 h-36 w-36 rounded-full bg-accent/20 blur-3xl" />
-                <div className="relative flex flex-wrap items-center justify-between gap-4">
+              <div className="analysis-surface overflow-hidden rounded-3xl border p-5 shadow-sm sm:p-7">
+                <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-background/80 px-3 py-1 text-xs font-bold text-primary"><Sparkles className="h-4 w-4" /> لوحة نتائج التحليل</span>
-                    <h2 className="mt-3 text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">قراءة واضحة لكل مصدر ونتيجة</h2>
-                    <p className="mt-2 text-sm leading-7 text-muted-foreground">افتح المعاينة داخل كل بطاقة للاطلاع على الشاهد المحفوظ أو رابط المصدر عند توفره.</p>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-white/30 px-3 py-1 text-xs font-bold"><Sparkles className="h-4 w-4" /> لوحة نتائج التحليل</span>
+                    <h2 className="mt-3 text-xl font-extrabold tracking-tight sm:text-2xl">قراءة واضحة لكل مصدر ونتيجة</h2>
+                    <p className="mt-2 text-sm leading-7">افتح المعاينة داخل كل بطاقة للاطلاع على الشاهد المحفوظ أو رابط المصدر عند توفره.</p>
                   </div>
-                  {analysis.completed_at && <span className="rounded-xl border border-border bg-background/80 px-4 py-2 text-sm font-medium text-foreground shadow-sm">آخر تحليل: {new Date(analysis.completed_at).toLocaleString("ar-SA")}</span>}
+                  {analysis.completed_at && <span className="rounded-xl border border-white/30 px-4 py-2 text-sm font-medium shadow-sm">آخر تحليل: {new Date(analysis.completed_at).toLocaleString("ar-SA")}</span>}
                 </div>
               </div>
               <SourceBreakdownSection analysis={analysis} />
@@ -1173,11 +1202,7 @@ function GapsCard({ gaps, evidence }: { gaps: string[]; evidence: GapEvidence[] 
 }
 
 const ANALYSIS_CARD_TONES = [
-  { border: "border-sky-500/35 hover:border-sky-500/65", header: "from-sky-500/20 via-sky-500/10 to-transparent", accent: "text-sky-700 dark:text-sky-300", line: "bg-sky-500", chip: "border-sky-500/30 bg-sky-500/10" },
-  { border: "border-emerald-500/35 hover:border-emerald-500/65", header: "from-emerald-500/20 via-emerald-500/10 to-transparent", accent: "text-emerald-700 dark:text-emerald-300", line: "bg-emerald-500", chip: "border-emerald-500/30 bg-emerald-500/10" },
-  { border: "border-violet-500/35 hover:border-violet-500/65", header: "from-violet-500/20 via-violet-500/10 to-transparent", accent: "text-violet-700 dark:text-violet-300", line: "bg-violet-500", chip: "border-violet-500/30 bg-violet-500/10" },
-  { border: "border-amber-500/35 hover:border-amber-500/65", header: "from-amber-500/20 via-amber-500/10 to-transparent", accent: "text-amber-700 dark:text-amber-300", line: "bg-amber-500", chip: "border-amber-500/30 bg-amber-500/10" },
-  { border: "border-rose-500/35 hover:border-rose-500/65", header: "from-rose-500/20 via-rose-500/10 to-transparent", accent: "text-rose-700 dark:text-rose-300", line: "bg-rose-500", chip: "border-rose-500/30 bg-rose-500/10" },
+  { border: "border-white/30 hover:border-white/50", header: "", accent: "text-white", line: "bg-white/35", chip: "border-white/30 bg-white/10" },
 ] as const;
 
 function BulletBlock({ title, items }: { title: string; items?: string[] | null }) {
@@ -1204,7 +1229,7 @@ function SourceBreakdownSection({ analysis }: { analysis: DeepAnalysis }) {
 
   if (sources.length === 0) {
     return (
-      <Card dir="rtl" className="border-border bg-card">
+      <Card dir="rtl" className="analysis-surface border-border bg-card">
         <CardHeader className="text-right">
           <CardTitle className="flex items-center justify-start gap-2 text-base">
             <Eye className="h-5 w-5 text-accent" /> الشرح التفصيلي لمواقع الجمعية وحساباتها
@@ -1232,9 +1257,9 @@ function SourceBreakdownSection({ analysis }: { analysis: DeepAnalysis }) {
         const isOpen = openSource === source.source_index;
         const tone = ANALYSIS_CARD_TONES[index % ANALYSIS_CARD_TONES.length];
         return (
-          <Card key={source.source_index} className={cn("group relative min-w-0 overflow-hidden rounded-3xl border-2 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none motion-reduce:transition-none", tone.border)}>
+          <Card key={source.source_index} className={cn("analysis-surface group relative min-w-0 overflow-hidden rounded-3xl border-2 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none motion-reduce:transition-none", tone.border)}>
             <div className={cn("absolute inset-y-0 right-0 w-1", tone.line)} aria-hidden="true" />
-            <CardHeader className={cn("border-b px-5 py-5 text-right sm:px-6 bg-gradient-to-l", tone.border, tone.header)}>
+            <CardHeader className={cn("border-b px-5 py-5 text-right sm:px-6", tone.border, tone.header)}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <CardTitle className={cn("inline-flex max-w-full items-center gap-2 break-words rounded-xl border bg-background/80 px-3 py-2 text-lg font-extrabold leading-relaxed shadow-sm", tone.chip, tone.accent)}><Eye className="h-5 w-5 shrink-0" />{source.source_name || "مصدر"}</CardTitle>
@@ -1320,7 +1345,7 @@ function AnalysisEvidenceSection({ analysis }: { analysis: DeepAnalysis }) {
 
   if (items.length === 0) {
     return (
-      <Card dir="rtl" className="border-border bg-card">
+      <Card dir="rtl" className="analysis-surface border-border bg-card">
         <CardHeader className="text-right">
           <CardTitle className="flex items-center justify-start gap-2 text-base">
             <Eye className="h-5 w-5 text-accent" /> الأدلة والمعاينات التفصيلية
@@ -1343,12 +1368,13 @@ function AnalysisEvidenceSection({ analysis }: { analysis: DeepAnalysis }) {
           <p className="mt-1 text-sm text-muted-foreground">{items.length} نتيجة موثقة من جميع البيانات والمصادر</p>
         </div>
       </div>
+      <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-2">
       {categories.map((category, categoryIndex) => {
         const tone = ANALYSIS_CARD_TONES[categoryIndex % ANALYSIS_CARD_TONES.length];
         return (
-        <Card key={category} className={cn("relative overflow-hidden rounded-3xl border-2 bg-card shadow-sm transition-all duration-300 hover:shadow-lg motion-reduce:transition-none", tone.border)}>
+        <Card key={category} className={cn("analysis-surface relative min-w-0 overflow-hidden rounded-3xl border-2 bg-card shadow-sm transition-all duration-300 hover:shadow-lg motion-reduce:transition-none", tone.border)}>
           <div className={cn("absolute inset-y-0 right-0 w-1", tone.line)} aria-hidden="true" />
-          <CardHeader className={cn("border-b bg-gradient-to-l text-right", tone.border, tone.header)}>
+          <CardHeader className={cn("border-b text-right", tone.border, tone.header)}>
             <CardTitle className={cn("inline-flex w-fit items-center gap-2 rounded-xl border bg-background/80 px-4 py-2 text-base font-extrabold shadow-sm", tone.chip, tone.accent)}><Quote className="h-4 w-4" />{category}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 pt-4">
@@ -1397,6 +1423,7 @@ function AnalysisEvidenceSection({ analysis }: { analysis: DeepAnalysis }) {
         </Card>
         );
       })}
+      </div>
     </section>
   );
 }
@@ -1415,10 +1442,10 @@ function AnalysisRecommendationsSection({ analysis }: { analysis: DeepAnalysis }
   if (uniqueRecommendations.length === 0 && uniqueActions.length === 0) return null;
 
   return (
-    <Card dir="rtl" className="relative overflow-hidden rounded-3xl border-2 border-emerald-500/35 bg-card shadow-sm transition-all duration-300 hover:shadow-lg motion-reduce:transition-none">
-      <div className="absolute inset-y-0 right-0 w-1 bg-emerald-500" aria-hidden="true" />
-      <CardHeader className="border-b border-emerald-500/25 bg-gradient-to-l from-emerald-500/20 via-emerald-500/10 to-transparent text-right">
-        <CardTitle className="inline-flex w-fit items-center gap-2 rounded-xl border border-emerald-500/30 bg-background/80 px-4 py-2 text-base font-extrabold text-emerald-700 shadow-sm dark:text-emerald-300">
+    <Card dir="rtl" className="analysis-surface relative overflow-hidden rounded-3xl border-2 border-white/30 bg-card shadow-sm transition-all duration-300 hover:shadow-lg motion-reduce:transition-none">
+      <div className="absolute inset-y-0 right-0 w-1 bg-white/35" aria-hidden="true" />
+      <CardHeader className="border-b border-white/30 text-right">
+        <CardTitle className="inline-flex w-fit items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-base font-extrabold text-white shadow-sm">
           <Target className="h-5 w-5" /> التوصيات
         </CardTitle>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -1429,7 +1456,7 @@ function AnalysisRecommendationsSection({ analysis }: { analysis: DeepAnalysis }
         {uniqueRecommendations.length > 0 && (
           <div>
             <p className="mb-2 text-sm font-semibold text-foreground">توصيات التحليل الشامل</p>
-            <ul className="space-y-2">
+            <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
               {uniqueRecommendations.map((rec, index) => (
                 <li key={`rec-${index}`} className="flex items-start gap-2 rounded-md bg-muted/40 p-3 text-sm leading-relaxed">
                   <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/15 text-[11px] font-bold text-accent">{index + 1}</span>
@@ -1442,7 +1469,7 @@ function AnalysisRecommendationsSection({ analysis }: { analysis: DeepAnalysis }
         {uniqueActions.length > 0 && (
           <div>
             <p className="mb-2 text-sm font-semibold text-foreground">إجراءات مقترحة من النتائج الموثقة</p>
-            <ul className="space-y-2">
+            <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
               {uniqueActions.map((rec, index) => (
                 <li key={`act-${index}`} className="flex items-start gap-2 rounded-md border border-accent/30 p-3 text-sm leading-relaxed">
                   <Target className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
@@ -1592,9 +1619,9 @@ function InsightCard({ title, data, toneIndex }: { title: string; data: Record<s
   const entries = Object.entries(data ?? {}).filter(([k]) => !HIDDEN_INSIGHT_KEYS.has(k));
   const tone = ANALYSIS_CARD_TONES[toneIndex % ANALYSIS_CARD_TONES.length];
   return (
-    <Card dir="rtl" className={cn("group relative min-w-0 overflow-hidden rounded-3xl border-2 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none motion-reduce:transition-none", tone.border)}>
+    <Card dir="rtl" className={cn("analysis-surface group relative min-w-0 overflow-hidden rounded-3xl border-2 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none motion-reduce:transition-none", tone.border)}>
       <div className={cn("absolute inset-y-0 right-0 w-1", tone.line)} aria-hidden="true" />
-      <CardHeader className={cn("border-b bg-gradient-to-l text-right", tone.border, tone.header)}>
+      <CardHeader className={cn("border-b text-right", tone.border, tone.header)}>
         <CardTitle className={cn("inline-flex w-fit max-w-full items-center gap-2 rounded-xl border bg-background/80 px-4 py-2 text-base font-extrabold leading-relaxed shadow-sm", tone.chip, tone.accent)}><Sparkles className="h-4 w-4 shrink-0" />{title}</CardTitle>
       </CardHeader>
       <CardContent className="pt-5 text-right">
