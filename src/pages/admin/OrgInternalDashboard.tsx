@@ -805,13 +805,57 @@ export default function OrgInternalDashboard({
           <style>{`
             .analysis-results .analysis-surface {
               background: #fff !important;
-              border-color: #d1e5d7 !important;
-              color: #1f2937;
+              border: 2px solid #166534 !important;
+              color: #166534;
+              box-shadow: 0 12px 32px rgba(22, 101, 52, .10);
             }
-            .analysis-results .analysis-surface .analysis-title-chip {
+            .analysis-results .analysis-surface > [class*="CardHeader"] {
               background: #166534 !important;
               border-color: #166534 !important;
               color: #fff !important;
+            }
+            .analysis-results .analysis-surface > [class*="CardHeader"] :is(h2, h3, p, svg) {
+              color: #fff !important;
+            }
+            .analysis-results .analysis-surface > [class*="CardContent"] {
+              background: #fff !important;
+              color: #166534;
+            }
+            .analysis-results .analysis-detail-box {
+              border: 1px solid #bbd7c3;
+              border-radius: 1rem;
+              background: #fff;
+              padding: 1rem;
+              color: #166534;
+              box-shadow: 0 2px 10px rgba(22, 101, 52, .05);
+              overflow-wrap: anywhere;
+              white-space: pre-wrap;
+            }
+            .analysis-results .analysis-source-link {
+              color: #166534;
+              overflow-wrap: anywhere;
+              word-break: break-word;
+            }
+            .analysis-results .analysis-surface .analysis-title-chip {
+              background: #166534 !important;
+              border-color: #fff !important;
+              color: #fff !important;
+            }
+            .analysis-results .analysis-surface > [class*="CardHeader"] .analysis-title-chip {
+              border-color: rgba(255, 255, 255, .55) !important;
+            }
+            .analysis-results .analysis-surface > [class*="CardHeader"] button {
+              background: #fff !important;
+              border-color: #fff !important;
+              color: #166534 !important;
+            }
+            .analysis-results .analysis-surface > [class*="CardHeader"] button svg {
+              color: #166534 !important;
+            }
+            .analysis-results .analysis-surface > [class*="CardHeader"] [data-slot="badge"] {
+              background: #fff !important;
+              color: #166534 !important;
+              border-color: #fff !important;
             }
             .analysis-results .analysis-surface .analysis-title-chip svg {
               color: #fff !important;
@@ -898,9 +942,24 @@ export default function OrgInternalDashboard({
                     <h2 className="analysis-title-chip mt-3 inline-flex rounded-xl border px-4 py-2 text-xl font-extrabold tracking-tight sm:text-2xl">قراءة واضحة لكل مصدر ونتيجة</h2>
                     <p className="mt-2 text-sm leading-7">افتح المعاينة داخل كل بطاقة للاطلاع على الشاهد المحفوظ أو رابط المصدر عند توفره.</p>
                   </div>
-                  {analysis.completed_at && <span className="rounded-xl border border-white/30 px-4 py-2 text-sm font-medium shadow-sm">آخر تحليل: {new Date(analysis.completed_at).toLocaleString("ar-SA")}</span>}
+                  {analysis.completed_at && <span className="rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-[#166534] shadow-sm">آخر تحليل: {new Date(analysis.completed_at).toLocaleString("ar-SA")}</span>}
                 </div>
+                {(analysis.sources ?? []).length > 0 && (
+                  <div className="mt-5 grid gap-3 border-t border-emerald-200 pt-5 md:grid-cols-2">
+                    {(analysis.sources ?? []).map((source, index) => {
+                      const url = analysisSourceUrl(source.url);
+                      return (
+                        <div key={`${source.kind ?? "source"}-${index}`} className="analysis-detail-box text-sm">
+                          <p className="font-bold">{source.kind === "store" ? "رابط المتجر" : source.kind === "website" ? "رابط الموقع" : source.kind === "social" ? "رابط الحساب الرقمي" : "رابط المصدر"}: {source.label || "مصدر رقمي"}</p>
+                          {url ? <a className="analysis-source-link mt-2 block underline underline-offset-4" href={url} target="_blank" rel="noreferrer" dir="ltr">{source.url}</a> : <p className="mt-2">{source.url ? "الرابط المسجل غير صالح للفتح" : "لم يُحفظ رابط لهذا المصدر"}</p>}
+                          {source.status && <p className="mt-2 text-xs">حالة المصدر: {source.status}</p>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
+              <InsightCard title="التقييم العام ونقاط القوة والفجوات" data={{ summary: analysis.overall_assessment, strengths: analysis.strengths, gaps: analysis.gaps }} toneIndex={0} />
               <SourceBreakdownSection analysis={analysis} />
               <AnalysisEvidenceSection analysis={analysis} />
               <div className="grid gap-4 md:grid-cols-2">
@@ -1216,18 +1275,21 @@ const ANALYSIS_CARD_TONES = [
 
 function BulletBlock({ title, items }: { title: string; items?: string[] | null }) {
   const list = (items ?? []).filter(Boolean);
-  if (list.length === 0) return null;
   return (
-    <div className="min-w-0 space-y-2 text-right">
-      <p className="text-base font-bold text-foreground">{title}</p>
-      <ul className="space-y-2 text-sm leading-7 text-foreground/85">
-        {list.map((item, i) => (
-          <li key={i} className="flex items-start gap-2">
-            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-            <span className="min-w-0">{item}</span>
-          </li>
-        ))}
-      </ul>
+    <div className="analysis-detail-box min-w-0 space-y-3 text-right">
+      <p className="text-base font-bold text-[#166534]">{title}</p>
+      {list.length === 0 ? (
+        <p className="text-sm leading-7">لا توجد تفاصيل محفوظة لهذا المحور؛ لا يعني ذلك نفي وجوده.</p>
+      ) : (
+        <ul className="space-y-3 text-sm leading-7 text-[#166534]">
+          {list.map((item, i) => (
+            <li key={i} className="flex items-start gap-2">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#166534]" />
+              <span className="min-w-0">{item}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -1276,6 +1338,12 @@ function SourceBreakdownSection({ analysis }: { analysis: DeepAnalysis }) {
                     {source.source_type && <Badge variant="secondary">{source.source_type}</Badge>}
                     {source.source_status && <Badge variant="outline">{source.source_status}</Badge>}
                   </div>
+                  <div className="mt-3 rounded-xl bg-white p-3 text-sm text-[#166534] shadow-sm">
+                    <span className="font-bold">رابط هذا المصدر: </span>
+                    {analysisSourceUrl(source.source_url) ? (
+                      <a className="analysis-source-link mt-1 block underline underline-offset-4" href={analysisSourceUrl(source.source_url)!} target="_blank" rel="noreferrer" dir="ltr">{source.source_url}</a>
+                    ) : <span>{source.source_url ? "الرابط المسجل غير صالح للفتح" : "لا يوجد رابط محفوظ لهذا المصدر"}</span>}
+                  </div>
                 </div>
                 <Button
                   variant="outline"
@@ -1289,27 +1357,21 @@ function SourceBreakdownSection({ analysis }: { analysis: DeepAnalysis }) {
               </div>
             </CardHeader>
             <CardContent className="space-y-5 px-5 py-6 text-base leading-7 sm:px-6">
-              {source.purpose && (
-                <p className="text-right text-base leading-7 text-muted-foreground">
-                  <span className="font-semibold text-foreground">الغرض: </span>{source.purpose}
-                </p>
-              )}
-              {source.overview && (
-                <p className="text-right text-base leading-7 text-foreground">{source.overview}</p>
-              )}
+              <div className="analysis-detail-box text-right text-base leading-8">
+                <span className="font-bold">الغرض من المصدر: </span>{source.purpose || "لم يُذكر الغرض في التحليل المحفوظ."}
+              </div>
+              <div className="analysis-detail-box text-right text-base leading-8">
+                <span className="font-bold">قراءة محتوى المصدر: </span>{source.overview || "لم تُحفظ قراءة تفصيلية لهذا المصدر؛ لا يمكن استنتاجها من الرابط وحده."}
+              </div>
               <BulletBlock title="تفاصيل ما ظهر في المصدر" items={source.content_details} />
-              {source.donation_experience && (
-                <div className="rounded-md bg-muted/40 p-3 text-right text-sm leading-relaxed">
-                  <span className="font-semibold">تجربة التبرع والدعوة إلى الإجراء: </span>
-                  {source.donation_experience}
-                </div>
-              )}
-              {source.audience_engagement && (
-                <div className="rounded-md bg-muted/40 p-3 text-right text-sm leading-relaxed">
-                  <span className="font-semibold">الجمهور والتفاعل: </span>
-                  {source.audience_engagement}
-                </div>
-              )}
+              <div className="analysis-detail-box text-right text-sm leading-8">
+                <span className="font-bold">تجربة التبرع والدعوة إلى الإجراء: </span>
+                {source.donation_experience || "لا توجد تفاصيل محفوظة عن مسار التبرع لهذا المصدر؛ لا يُعد ذلك حكمًا على جودة التجربة."}
+              </div>
+              <div className="analysis-detail-box text-right text-sm leading-8">
+                <span className="font-bold">الجمهور والتفاعل: </span>
+                {source.audience_engagement || "لم تُحفظ بيانات كافية لتقييم الجمهور أو التفاعل في هذا المصدر."}
+              </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <BulletBlock title="نقاط القوة" items={source.strengths} />
                 <BulletBlock title="الفجوات والأخطاء" items={source.gaps} />
@@ -1409,22 +1471,24 @@ function AnalysisEvidenceSection({ analysis }: { analysis: DeepAnalysis }) {
                         {item.priority && <Badge variant="outline">الأولوية: {item.priority}</Badge>}
                       </div>
                       <h3 className={cn("w-fit max-w-full rounded-lg border px-3 py-1.5 font-bold leading-relaxed", tone.chip, tone.accent)}>{item.title}</h3>
-                      {item.detail && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.detail}</p>}
+                      <p className="analysis-detail-box mt-3 text-sm leading-8">{item.detail || "لم يُحفظ شرح تفصيلي لهذه النتيجة."}</p>
+                      {(item.source_label || item.source_url) && (
+                        <div className="analysis-detail-box mt-3 text-sm">
+                          <span className="font-bold">المصدر المرتبط بالنتيجة: </span>{item.source_label || "مصدر غير مسمى"}
+                          {analysisSourceUrl(item.source_url) && <a className="analysis-source-link mt-2 block underline underline-offset-4" href={analysisSourceUrl(item.source_url)!} target="_blank" rel="noreferrer" dir="ltr">{item.source_url}</a>}
+                        </div>
+                      )}
                     </div>
                     <Button variant="outline" size="sm" className="shrink-0 gap-1" onClick={() => setOpenItem(isOpen ? null : index)}>
                       <Eye className="h-4 w-4" /> {isOpen ? "إخفاء الدليل" : "عرض الدليل"}
                     </Button>
                   </div>
-                  {item.impact && (
-                    <div className="mt-3 rounded-md bg-muted/40 p-3 text-sm">
-                      <span className="font-semibold">الأثر: </span>{item.impact}
-                    </div>
-                  )}
-                  {item.recommendation && (
-                    <div className="mt-2 rounded-md border border-accent/30 p-3 text-sm">
-                      <span className="font-semibold text-accent">الإجراء المقترح: </span>{item.recommendation}
-                    </div>
-                  )}
+                  <div className="analysis-detail-box mt-3 text-sm leading-7">
+                    <span className="font-bold">الأثر: </span>{item.impact || "لم يُحدد أثر هذه النتيجة في التحليل المحفوظ."}
+                  </div>
+                  <div className="analysis-detail-box mt-2 text-sm leading-7">
+                    <span className="font-bold">الإجراء المقترح: </span>{item.recommendation || "لم يُحفظ إجراء محدد لهذه النتيجة."}
+                  </div>
                   {isOpen && <GapPreview evidence={evidence} />}
                 </article>
               );
@@ -1573,7 +1637,18 @@ const INSIGHT_VALUE_LABELS: Record<string, string> = {
 };
 
 function insightFieldLabel(key: string) {
-  return INSIGHT_FIELD_LABELS[key] ?? "تفاصيل إضافية";
+  return INSIGHT_FIELD_LABELS[key] ?? key.replace(/_/g, " ");
+}
+
+function analysisSourceUrl(raw: string | null | undefined): string | null {
+  const value = raw?.trim();
+  if (!value || /^(?!https?:\/\/)[a-z][a-z\d+.-]*:/i.test(value)) return null;
+  try {
+    const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
+    return /^https?:$/.test(url.protocol) && url.hostname ? url.href : null;
+  } catch {
+    return null;
+  }
 }
 
 function insightText(value: string) {
@@ -1616,8 +1691,6 @@ function InsightValue({ value }: { value: unknown }) {
 }
 
 const HIDDEN_INSIGHT_KEYS = new Set([
-  "file_reviews",
-  "source_reviews",
   "uploaded_documents",
   "uploaded_documents_coverage",
   "sources",
@@ -1640,9 +1713,9 @@ function InsightCard({ title, data, toneIndex }: { title: string; data: Record<s
         ) : (
           <div className="space-y-2 text-sm">
             {entries.map(([k, v]) => (
-              <div key={k} className={cn("rounded-xl border bg-background/70 p-3 text-right transition-colors hover:bg-muted/30", tone.border)}>
-                <div className={cn("mb-1 text-xs font-bold", tone.accent)}>{insightFieldLabel(k)}</div>
-                <div className="text-foreground/90">
+              <div key={k} className="analysis-detail-box text-right leading-7">
+                <div className="mb-2 text-sm font-bold text-[#166534]">{insightFieldLabel(k)}</div>
+                <div className="text-[#166534]">
                   <InsightValue value={v} />
                 </div>
               </div>
