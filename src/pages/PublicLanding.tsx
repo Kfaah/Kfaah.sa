@@ -192,6 +192,7 @@ export default function PublicLanding() {
               <Button
                 type="submit"
                 className="w-full h-12 sm:h-13 gap-2 text-base sm:text-lg bg-gradient-to-l from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-white font-bold shadow-lg shadow-cyan-500/40 border-0"
+                aria-busy={loading}
                 disabled={loading}
               >
                 {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogIn className="h-5 w-5" />}
