@@ -1302,11 +1302,15 @@ function SourceBreakdownSection({ analysis, profile }: { analysis: DeepAnalysis;
                   <CardTitle className={cn("analysis-title-chip inline-flex max-w-full items-center gap-2 break-words rounded-xl border px-3 py-2 text-lg font-extrabold leading-relaxed shadow-sm", tone.chip, tone.accent)}><Eye className="h-5 w-5 shrink-0" />{source.source_name || "مصدر"}</CardTitle>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {source.source_type && <Badge variant="secondary">{source.source_type}</Badge>}
-                    {source.source_status && <Badge variant="outline">{source.source_status}</Badge>}
+                    {source.source_status && <Badge variant="outline" className="analysis-title-chip inline-flex items-center gap-2 rounded-xl border px-3 py-2 font-bold"><CheckCircle2 className="h-4 w-4 shrink-0" />{source.source_status}</Badge>}
                   </div>
-                  {source.source_url && ![storeUrl, websiteUrl].some((url) => url && analysisSourceUrl(url) === analysisSourceUrl(source.source_url)) && (
-                    <AnalysisSourceLink label="رابط المصدر" url={source.source_url} />
-                  )}
+                  {(() => {
+                    const description = `${source.source_type ?? ""} ${source.source_name ?? ""}`;
+                    const isStore = /متجر|store/i.test(description);
+                    const isWebsite = !isStore && /موقع|website/i.test(description);
+                    const url = (isStore ? storeUrl : isWebsite ? websiteUrl : null) || source.source_url;
+                    return url ? <AnalysisSourceLink label={isStore ? "رابط مصدر المتجر الإلكتروني" : "رابط المصدر"} url={url} /> : null;
+                  })()}
                 </div>
                 <Button
                   variant="outline"
