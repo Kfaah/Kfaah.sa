@@ -849,12 +849,12 @@ export default function OrgInternalDashboard({
             .analysis-results .analysis-source-link { color: #166534; overflow-wrap: anywhere; word-break: break-word; }
             .analysis-results .analysis-title-chip,
             .analysis-results .analysis-surface .analysis-title-chip {
-              background: #edf5ee !important;
-              border-color: #d5e7d9 !important;
-              color: #14532d !important;
+              background: #166534 !important;
+              border-color: #166534 !important;
+              color: #fff !important;
               box-shadow: none !important;
             }
-            .analysis-results .analysis-title-chip svg { color: #166534 !important; }
+            .analysis-results .analysis-title-chip svg { color: #fff !important; }
             .analysis-results .analysis-surface > [class*="CardHeader"] button {
               background: #fff !important;
               border: 1px solid #cbded0 !important;
@@ -868,18 +868,18 @@ export default function OrgInternalDashboard({
             }
             .analysis-results .analysis-surface a { text-decoration: underline; text-underline-offset: 3px; }
             .analysis-results .analysis-title-header > * {
-              background: #166534 !important;
-              border-color: #166534 !important;
-              color: #fff !important;
+              background: #fff1e6 !important;
+              border-color: #f3c9a5 !important;
+              color: #7c3f16 !important;
             }
             .analysis-results .analysis-title-header [class*="bg-gradient"] { background-image: none !important; }
-            .analysis-results .analysis-title-header :is(h1, h2, h3, p, span, svg) { color: #fff !important; }
+            .analysis-results .analysis-title-header :is(h1, h2, h3, p, span, svg) { color: #7c3f16 !important; }
             .analysis-results .analysis-title-header button {
-              background: #15803d !important;
-              border: 1px solid #fff !important;
+              background: #c66b24 !important;
+              border: 1px solid #a95017 !important;
               color: #fff !important;
             }
-            .analysis-results .analysis-title-header button:hover { background: #14532d !important; }
+            .analysis-results .analysis-title-header button:hover { background: #a95017 !important; }
           `}</style>
           {standaloneTab && (
             <div className="analysis-title-header">
