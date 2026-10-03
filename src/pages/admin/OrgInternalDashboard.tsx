@@ -1281,6 +1281,7 @@ function SourceBreakdownSection({ analysis }: { analysis: DeepAnalysis }) {
                   variant="outline"
                   size="sm"
                   className="shrink-0 gap-1"
+                  aria-label="معاينة مصدر التحليل"
                   onClick={() => setOpenSource(isOpen ? null : source.source_index)}
                 >
                   <Eye className="h-4 w-4" /> {isOpen ? "إخفاء المعاينة" : "عرض المعاينة"}
