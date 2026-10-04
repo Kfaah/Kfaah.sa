@@ -60,7 +60,8 @@ export default function InternalDashboard() {
           .maybeSingle();
         resolvedOrgId = data?.id ?? null;
       }
-      if (!resolvedOrgId) {
+      // A requested slug must never silently fall back to another organization.
+      if (!slug && !resolvedOrgId) {
         const { data } = await supabase.rpc("get_user_organization_id", { _user_id: user.id });
         resolvedOrgId = (data as string | null) ?? null;
       }

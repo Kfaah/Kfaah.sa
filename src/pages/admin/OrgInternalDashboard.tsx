@@ -292,7 +292,7 @@ export default function OrgInternalDashboard({
   const params = useParams<{ orgId: string }>();
   const orgId = orgIdProp ?? params.orgId;
   const navigate = useNavigate();
-  const { isSuperAdmin } = useOrganization();
+  const { isSuperAdmin, availableOrgs } = useOrganization();
   const { isDemo } = useIsDemo();
 
   const [org, setOrg] = useState<OrgInfo | null>(null);
@@ -300,6 +300,8 @@ export default function OrgInternalDashboard({
   const [analysis, setAnalysis] = useState<DeepAnalysis | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(true);
   const [analysisError, setAnalysisError] = useState(false);
+  const [analysisOrgId, setAnalysisOrgId] = useState<string | null>(null);
+  const [registeredSourceUrls, setRegisteredSourceUrls] = useState<string[]>([]);
   const [questions, setQuestions] = useState<AccountabilityQuestion[]>([]);
   const [aTasks, setATasks] = useState<AccountabilityTask[]>([]);
   const [employees, setEmployees] = useState<Array<{ id: string; full_name: string; job_role: string | null; email: string | null; phone: string | null; avatar_url: string | null; title: string | null; user_id: string | null }>>([]);
@@ -429,12 +431,21 @@ export default function OrgInternalDashboard({
     // available. Heavier data (analysis, accountability, employees) streams
     // in afterwards so the UI never feels frozen behind a giant spinner.
     // Wave 1 — fast, unblocks the shell immediately.
+    setAnalysis(null);
+    setAnalysisOrgId(null);
+    setRegisteredSourceUrls([]);
     const wave1 = Promise.all([
       supabase.from("organizations").select("id,name,slug,logo_url").eq("id", orgId).maybeSingle(),
       supabase.from("organization_profiles").select("about,goals,website_url,store_url,twitter_url,instagram_url,tiktok_url,snapchat_url,youtube_url,facebook_url,linkedin_url").eq("organization_id", orgId).maybeSingle(),
-    ]).then(([orgRes, profRes]) => {
+      supabase.from("org_external_sources" as any).select("url").eq("organization_id", orgId),
+    ]).then(([orgRes, profRes, sourceRes]) => {
       if (orgRes.data) setOrg(orgRes.data as OrgInfo);
-      setProfile((profRes.data as Profile) ?? null);
+      const orgProfile = (profRes.data as Profile) ?? null;
+      setProfile(orgProfile);
+      setRegisteredSourceUrls([
+        ...Object.entries(orgProfile ?? {}).filter(([key]) => key.endsWith("_url")).map(([, value]) => value).filter((value): value is string => typeof value === "string" && !!value.trim()),
+        ...((sourceRes.data ?? []) as Array<{ url?: string | null }>).map((source) => source.url).filter((url): url is string => typeof url === "string" && !!url.trim()),
+      ]);
       setLoading(false); // hide the giant spinner ASAP
     });
 
@@ -476,6 +487,7 @@ export default function OrgInternalDashboard({
       const bestAnalysis = analysisRows.find((row) => row.status === "completed") ?? analysisRows[0] ?? null;
       setAnalysisError(!!analysisRes.error);
       setAnalysis(bestAnalysis);
+      setAnalysisOrgId(orgId);
       setAnalysisLoading(false);
       setQuestions((qRes.data as unknown as AccountabilityQuestion[]) ?? []);
       setATasks((tRes.data as unknown as AccountabilityTask[]) ?? []);
@@ -522,6 +534,7 @@ export default function OrgInternalDashboard({
           .from("deep_analyses")
           .select("status,questions_generated,error_message")
           .eq("id", analysisId)
+          .eq("organization_id", orgId)
           .maybeSingle();
         if (row?.status && row.status !== "running") {
           finalStatus = row.status;
@@ -546,6 +559,37 @@ export default function OrgInternalDashboard({
       setAnalyzing(false);
     }
   };
+
+  // Do not present a saved narrative as this organization's analysis when its
+  // documented digital sources belong to another organization. No links or
+  // findings from that run are displayed until its provenance is corrected.
+  const sourceMatchesOrg = (raw: string) => {
+    const candidate = analysisSourceUrl(raw);
+    if (!candidate) return false;
+    const target = new URL(candidate);
+    return registeredSourceUrls.some((registered) => {
+      const parsed = analysisSourceUrl(registered);
+      if (!parsed) return false;
+      const known = new URL(parsed);
+      const host = (url: URL) => url.hostname.toLowerCase().replace(/^www\./, "");
+      const base = known.pathname.replace(/\/+$/, "");
+      return host(target) === host(known) &&
+        (target.pathname.replace(/\/+$/, "") === base || target.pathname.startsWith(`${base}/`));
+    });
+  };
+  const citedUrls = analysis ? [
+    ...(analysis.sources ?? []).map((source) => source.url),
+    ...(analysis.source_breakdown ?? []).map((source) => source.source_url),
+    ...(analysis.analysis_evidence ?? []).map((item) => item.source_url),
+    ...(analysis.gap_evidence ?? []).map((item) => item.source_url),
+  ].filter((url): url is string => typeof url === "string" && !!url.trim()) : [];
+  const mentionsOtherOrg = !!analysis && availableOrgs.some((other) =>
+    other.id !== orgId && other.name.trim().length > 4 &&
+    JSON.stringify(analysis).includes(other.name.trim())
+  );
+  const analysisScopeMismatch = !!analysis &&
+    (analysisOrgId !== orgId || citedUrls.some((url) => !sourceMatchesOrg(url)) || mentionsOtherOrg);
+  const visibleAnalysis = analysisScopeMismatch ? null : analysis;
 
   const empMap = new Map(employees.map((e) => [e.id, e]));
 
@@ -916,7 +960,16 @@ export default function OrgInternalDashboard({
                 للحصول على نسخة كاملة من النظام مع تحليل ذكي حقيقي لبيانات جمعيتك، تواصل مع فريق المنصة.
               </CardContent>
             </Card>
-          ) : analysisLoading || analysisError || !analysis ? (
+          ) : analysisScopeMismatch ? (
+            <Card className="analysis-surface" role="alert" dir="rtl">
+              <CardHeader className="text-right">
+                <CardTitle>تعذّر تأكيد تبعية التحليل لهذه الجمعية</CardTitle>
+              </CardHeader>
+              <CardContent className="text-right text-sm leading-7">
+                يتضمن التحليل المحفوظ مصادر لا تطابق مصادر {org?.name ?? "الجمعية الحالية"} المسجلة، أو إشارات إلى جمعية أخرى. حُجبت النتائج حتى لا تُنسب بيانات جمعية إلى أخرى. راجع روابط الجمعية ومصادرها، ثم أعد تشغيل التحليل؛ وإذا استمرت المشكلة فلا تعتمد على نتائجه حتى يُصحَّح مصدر توليد التحليل.
+              </CardContent>
+            </Card>
+          ) : analysisLoading || analysisError || !visibleAnalysis ? (
             <Card className="analysis-surface">
               <CardContent className="py-12">
                 <EmptyState
