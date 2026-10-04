@@ -121,16 +121,16 @@ const TAB_GUIDES: Record<string, { description: string; features: string[] }> = 
     ],
   },
   analysis: {
-    description: "العقل الذكي للجمعية. يقوم بفحص كافة بيانات الجمعية وملفاتها المرفوعة، بما فيها اللوائح والمحاضر والخطط والتقارير، إلى جانب الموقع والمتجر والحسابات الرقمية والحملات والمتبرعين، ثم يستخرج تقييماً عاماً وتوصيات تنفيذية.",
+    description: "ابدأ بأولويات سد النقص: اعرف الثغرة وأثرها ودليلها والإجراء المقترح من نتائج جمعيتك. راجع نطاق المصادر والملفات التي أمكن تحليلها قبل اعتبار النتائج تقييماً لاكتمال الجمعية.",
     features: [
-      "تحليل آلي شامل لكل الملفات والقنوات ومصادر البيانات",
-      "تقييم عام للأداء مع نقاط القوة والفجوات",
-      "توصيات تنفيذية قابلة للتحويل إلى خطط عمل",
-      "رؤى تفصيلية عن الملفات والموقع والمتجر والحسابات والحملات",
-      "تحليل شرائح المتبرعين وملخص التبرعات",
-      "إعادة تشغيل التحليل في أي وقت لتحديث النتائج",
+      "أولويات عملية مستخرجة من الفجوات والنتائج الموثقة للجمعية",
+      "إظهار أثر النتيجة وإجرائها ودليلها عند توفرها",
+      "تمييز المصادر المفحوصة عن البيانات غير المتاحة للتحقق",
+      "عرض نقاط القوة التي يمكن البناء عليها",
+      "رؤى تفصيلية للملفات والموقع والمتجر والحملات والمتبرعين",
+      "إعادة تشغيل التحليل بعد استكمال المصادر والملفات",
     ],
-  },
+  }, 
 };
 
 // اسم مختصر لكل جمعية (سطران × 3-4 كلمات) للعرض في رأس اللوحة الداخلية
@@ -987,6 +987,7 @@ export default function OrgInternalDashboard({
             <div className="space-y-6">
               <div className="space-y-2">
                 {analysis.completed_at && <p className="text-xs font-medium text-[#526359]">آخر تحليل: {new Date(analysis.completed_at).toLocaleString("ar-SA")}</p>}
+                <AnalysisImprovementSection analysis={analysis} profile={profile} onOpenUploads={() => standaloneTab ? navigate(`${window.location.pathname}?tab=uploads`) : setActiveTab("uploads")} />
                 <InsightCard title="التقييم العام ونقاط القوة والفجوات" data={{ summary: analysis.overall_assessment, strengths: analysis.strengths, gaps: analysis.gaps }} toneIndex={0} analysis={analysis} profile={profile} />
               </div>
               <SourceBreakdownSection analysis={analysis} profile={profile} />
@@ -1523,6 +1524,130 @@ function AnalysisEvidenceSection({ analysis }: { analysis: DeepAnalysis }) {
         </Card>
         );
       })}
+      </div>
+    </section>
+  );
+}
+
+function AnalysisImprovementSection({ analysis, profile, onOpenUploads }: { analysis: DeepAnalysis; profile: Profile | null; onOpenUploads: () => void }) {
+  const [openFinding, setOpenFinding] = useState<string | null>(null);
+  const normalize = (value: string) => value.trim().replace(/\s+/g, " ").toLowerCase();
+  const evidence = (analysis.analysis_evidence ?? []).filter((item) => {
+    const type = item.finding_type ?? "";
+    return !/قوة|إيجاب|strength|positive/i.test(type) &&
+      (/فجوة|نقص|ضعف|ثغر|مشكلة|خطر|تحسين|gap|risk|weak|issue/i.test(type) || !!item.recommendation?.trim());
+  });
+  const findings: Array<{ id: string; title: string; category: string; priority?: string | null; impact?: string | null; action?: string | null; evidence?: GapEvidence }> = [];
+  const seen = new Set<string>();
+  const add = (finding: (typeof findings)[number]) => {
+    const key = normalize(finding.title);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    findings.push(finding);
+  };
+  evidence.forEach((item, index) => add({
+    id: `e-${index}`, title: item.title, category: item.category || "نتيجة التحليل",
+    priority: item.priority, impact: item.impact, action: item.recommendation,
+    evidence: { gap: item.title, quote: item.quote, explanation: item.detail, source_label: item.source_label, source_url: item.source_url, source_status: item.source_status, screenshot_path: item.screenshot_path },
+  }));
+  (analysis.gaps ?? []).forEach((gap, index) => {
+    const match = (analysis.gap_evidence ?? []).find((item) => normalize(item.gap) === normalize(gap) || normalize(item.gap).slice(0, 60) === normalize(gap).slice(0, 60));
+    add({ id: `g-${index}`, title: gap, category: "فجوات الجمعية", evidence: match });
+  });
+  (analysis.source_breakdown ?? []).forEach((source, index) => (source.gaps ?? []).forEach((gap, gapIndex) => add({
+    id: `s-${index}-${gapIndex}`, title: gap, category: source.source_name || "مصدر رقمي",
+    evidence: { gap, source_label: source.source_name, source_url: source.source_url, source_status: source.source_status, screenshot_path: source.screenshot_path },
+  })));
+  const rank = (priority?: string | null) => ({ critical: 0, high: 1, medium: 2, low: 3 }[priority?.toLowerCase() ?? ""] ?? 4);
+  findings.sort((a, b) => rank(a.priority) - rank(b.priority));
+
+  const registered = [
+    { label: "الموقع الإلكتروني", url: profile?.website_url, kind: "website" },
+    { label: "المتجر الإلكتروني", url: profile?.store_url, kind: "store" },
+    { label: "حساب X", url: profile?.twitter_url, kind: "twitter" },
+    { label: "Instagram", url: profile?.instagram_url, kind: "instagram" },
+    { label: "TikTok", url: profile?.tiktok_url, kind: "tiktok" },
+    { label: "Snapchat", url: profile?.snapchat_url, kind: "snapchat" },
+    { label: "YouTube", url: profile?.youtube_url, kind: "youtube" },
+    { label: "Facebook", url: profile?.facebook_url, kind: "facebook" },
+    { label: "LinkedIn", url: profile?.linkedin_url, kind: "linkedin" },
+  ].filter((source) => !!source.url?.trim());
+  const fileReviews = analysis.document_insights?.file_reviews;
+  const reviewedFiles = Array.isArray(fileReviews) ? fileReviews.length : null;
+  const breakdown = analysis.source_breakdown ?? [];
+
+  return (
+    <section className="space-y-4" dir="rtl" aria-label="أولويات تطوير الجمعية">
+      <div className="rounded-3xl border border-[#d5e7d9] bg-[#f3f8f3] p-5 sm:p-7">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-3xl text-right">
+            <p className="text-xs font-bold text-[#a95017]">من النتائج إلى العمل</p>
+            <h2 className="mt-1 text-2xl font-extrabold text-[#14532d]">ما الذي تحتاج الجمعية إلى استكماله؟</h2>
+            <p className="mt-2 text-sm leading-7 text-[#33463b]">هذه أولويات مستخرجة من نتائج التحليل المحفوظ لهذه الجمعية، وليست قائمة متطلبات مفترضة. افتح الدليل لكل نتيجة، عالج النقص ثم أعد التحليل للتحقق من التحسن.</p>
+          </div>
+          <div className="rounded-2xl border border-[#d5e7d9] bg-white px-5 py-3 text-center">
+            <span className="block text-2xl font-extrabold text-[#14532d]">{findings.length}</span>
+            <span className="text-xs text-[#526359]">نقاط تحتاج مراجعة</span>
+          </div>
+        </div>
+        <p className="mt-4 rounded-xl border border-[#f3c9a5] bg-[#fff8f1] px-4 py-3 text-sm leading-7 text-[#754119]">
+          لا يمكن إثبات اكتمال الجمعية بنسبة 100% من تحليل واحد؛ غياب نتيجة أو ملف أو تعذّر الوصول لمصدر لا يعني عدم وجود ثغرات. يعتمد الحكم على ما توفر من بيانات وأدلة وقت التحليل.
+        </p>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(270px,1fr)]">
+        <div className="space-y-3">
+          <h3 className="text-lg font-bold text-[#14532d]">أولويات سد النقص</h3>
+          {findings.length === 0 ? (
+            <div className="analysis-surface rounded-2xl p-5 text-sm leading-7">لم تُحفظ فجوات قابلة للعرض في هذا التحليل. لا يُعدّ ذلك إثباتاً لاكتمال الجمعية؛ راجع تغطية المصادر والملفات وأعد التحليل بعد استكمالها.</div>
+          ) : findings.map((finding, index) => (
+            <article key={finding.id} className="analysis-surface rounded-2xl p-4 sm:p-5">
+              <div className="flex flex-wrap items-start gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#166534] font-bold text-white">{index + 1}</span>
+                <div className="min-w-0 flex-1 space-y-2 text-right">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-[#526359]">
+                    <span>{finding.category}</span>
+                    {finding.priority && <Badge className={PRIORITY_STYLE[finding.priority.toLowerCase()] ?? ""}>الأولوية: {PRIORITY_LABEL[finding.priority.toLowerCase()] ?? finding.priority}</Badge>}
+                  </div>
+                  <h4 className="font-bold leading-7 text-[#172b24]">{finding.title}</h4>
+                  {finding.impact && <p className="text-sm leading-7"><strong>الأثر المرصود: </strong>{finding.impact}</p>}
+                  <div className="rounded-xl border border-[#d5e7d9] bg-[#f3f8f3] p-3 text-sm leading-7">
+                    <strong className="text-[#14532d]">الخطوة التالية: </strong>
+                    {finding.action?.trim() || "راجع النتيجة ومصدرها، وحدّد إجراء المعالجة والمسؤول عنه؛ لم يُحفظ إجراء محدد لهذه النقطة."}
+                  </div>
+                  {finding.evidence && (finding.evidence.quote || finding.evidence.explanation || finding.evidence.source_label || finding.evidence.source_url) ? (
+                    <>
+                      <Button variant="outline" size="sm" className="gap-2" onClick={() => setOpenFinding(openFinding === finding.id ? null : finding.id)} aria-expanded={openFinding === finding.id}>
+                        <Eye className="h-4 w-4" /> {openFinding === finding.id ? "إخفاء الدليل" : "عرض الدليل والمصدر"}
+                      </Button>
+                      {openFinding === finding.id && <GapPreview evidence={finding.evidence} />}
+                    </>
+                  ) : <p className="text-xs text-[#754119]">لا يوجد دليل مفصل محفوظ لهذه النقطة؛ تحقق منها قبل اتخاذ قرار نهائي.</p>}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+        <aside className="space-y-4">
+          <div className="analysis-surface rounded-2xl p-5 text-right">
+            <h3 className="flex items-center gap-2 font-bold text-[#14532d]"><Search className="h-5 w-5" /> نطاق الفحص المتاح</h3>
+            <p className="mt-2 text-xs leading-6 text-[#526359]">الرابط المسجل لا يثبت وحده أن محتواه قُرئ. اعتمد على تفاصيل المصدر والأدلة أدناه لمعرفة ما أمكن فحصه فعلاً.</p>
+            <ul className="mt-3 space-y-2 text-sm leading-6">
+              <li>مصادر رقمية لها شرح محفوظ: <strong>{breakdown.length}</strong></li>
+              <li>روابط مسجلة في ملف الجمعية: <strong>{registered.length}</strong></li>
+              <li>مراجعات ملفات مفردة محفوظة: <strong>{reviewedFiles === null ? "غير موضحة" : reviewedFiles}</strong></li>
+            </ul>
+            {breakdown.length > 0 && <div className="mt-3 space-y-2 border-t pt-3">{breakdown.map((source, index) => <p key={`${source.source_index}-${index}`} className="text-xs leading-6"><strong>{source.source_name || "مصدر رقمي"}</strong>{source.source_status ? ` — ${source.source_status}` : " — حالة الوصول غير موضحة"}</p>)}</div>}
+            {registered.length === 0 && breakdown.length === 0 && <p className="mt-3 text-sm text-[#754119]">لم تظهر مصادر رقمية مسجلة أو مشروحة في هذا العرض؛ راجع مصادر الجمعية قبل الاعتماد على تقييم حضورها الرقمي.</p>}
+          </div>
+          <div className="analysis-surface rounded-2xl p-5 text-right">
+            <h3 className="flex items-center gap-2 font-bold text-[#14532d]"><CheckCircle2 className="h-5 w-5" /> نقاط قوة يمكن البناء عليها</h3>
+            {(analysis.strengths ?? []).length ? <ul className="mt-3 list-disc space-y-2 pr-5 text-sm leading-7">{analysis.strengths!.map((strength, index) => <li key={index}>{strength}</li>)}</ul> : <p className="mt-2 text-sm text-[#526359]">لا توجد نقاط قوة محفوظة؛ لا يعني ذلك عدم وجودها.</p>}
+          </div>
+          <Button variant="outline" className="w-full gap-2 border-[#166534] text-[#14532d]" onClick={onOpenUploads}>
+            <Upload className="h-4 w-4" /> مراجعة ورفع ملفات الجمعية
+          </Button>
+        </aside>
       </div>
     </section>
   );
