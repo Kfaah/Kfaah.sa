@@ -4,6 +4,7 @@ import { Menu, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useOrgBranding } from "@/contexts/OrgBrandingContext";
 import namozajLogo from "@/assets/namozaj-logo.png";
+import { AutomationModeNotice } from "@/components/automation/AutomationModeNotice";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -108,9 +109,10 @@ export function DashboardLayout({ children, embedded = false }: DashboardLayoutP
       {/* Main content */}
       <div className="lg:mr-[320px] transition-all duration-300">
         <main className="px-3 py-4 sm:px-5 sm:py-6 lg:px-6 lg:py-8">
-          <div className="w-full">{children}</div>
+          <div className="w-full">{!isDemoRoute && <AutomationModeNotice />}{children}</div>
         </main>
       </div>
     </div>
   );
 }
+

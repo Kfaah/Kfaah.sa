@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 // Edge function: donor-insights
 // Receives anonymized aggregated donor activity stats and returns AI-generated
 // creative engagement ideas via Lovable AI Gateway with structured tool-calling.
@@ -96,7 +97,7 @@ const TOOL_SCHEMA = {
   },
 };
 
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("donor-insights", async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -186,4 +187,4 @@ ${JSON.stringify(payload.elite_breakdown, null, 2)}
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}));

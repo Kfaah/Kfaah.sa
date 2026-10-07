@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -8,7 +9,7 @@ const KFAAH_AI_API_KEY = Deno.env.get("KFAAH_AI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("generate-smart-report", async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const { suggestion_id, organization_id } = await req.json();
@@ -134,4 +135,4 @@ ${summary}
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}));

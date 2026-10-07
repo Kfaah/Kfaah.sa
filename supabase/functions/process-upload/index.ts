@@ -1,10 +1,15 @@
+import { automationMode } from "../_shared/automation-policy.ts";
+import { RulePlatform } from "../_shared/rule-platform.ts";
 // Edge Function: process-upload
 // Receives an Excel file, auto-detects its type, parses it, and inserts rows
 // into the appropriate table (donations, abandoned_carts, campaigns, etc.).
 // Logs everything in data_uploads_log.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import * as XLSX from "https://esm.sh/xlsx@0.18.5";
+import * as XLSX from "../_shared/vendor/sheetjs-0.20.3.mjs";
+import * as cptable from "../_shared/vendor/sheetjs-cpexcel-0.20.3.mjs";
+import { parseLocalDocument } from "../_shared/local-document-parser.ts";
+XLSX.set_cptable(cptable);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -260,6 +265,13 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (automationMode(Deno.env.get("KFAAH_AUTOMATION_MODE")) === "rules") {
+      const scope = new RulePlatform(supabaseUrl, anonKey, authHeader);
+      await scope.authenticate(targetOrgId || organizationId);
+      scope.requireManager();
+      organizationId = scope.organizationId;
+    }
+
     if (!organizationId) {
       return new Response(JSON.stringify({ error: "User has no organization" }), {
         status: 400,
@@ -267,7 +279,13 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (file.size > 30 * 1024 * 1024) throw new Error("حجم الملف أكبر من الحد المسموح (30MB).");
     const buf = new Uint8Array(await file.arrayBuffer());
+    if (automationMode(Deno.env.get("KFAAH_AUTOMATION_MODE")) === "rules") {
+      const preview = await parseLocalDocument({ fileName: file.name, bytes: buf }, { limits: { maxRows: 10000 } });
+      if (preview.truncated) throw new Error("تجاوز الملف حدود الاستخراج الآمن. قسّمه إلى ملفات أصغر؛ لم تُستورد أي صفوف.");
+      if (!["xlsx", "xls", "csv"].includes(preview.format)) throw new Error("يرجى رفع جدول Excel أو CSV.");
+    }
     const wb = XLSX.read(buf, { type: "array", cellDates: false });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: null });
@@ -308,11 +326,17 @@ Deno.serve(async (req) => {
     const uploadId = logRow.id;
 
     // Upload original file to storage
-    const storagePath = `${organizationId}/${uploadId}_${file.name}`;
-    await admin.storage.from("data-uploads").upload(storagePath, buf, {
+    const safeFileName = Array.from(file.name).map(character => character.charCodeAt(0) < 32 || character === "/" || character === String.fromCharCode(92) ? "_" : character).join("").slice(0, 180);
+    const storagePath = `${organizationId}/${uploadId}_${safeFileName}`;
+    const { error: storageError } = await admin.storage.from("data-uploads").upload(storagePath, buf, {
       contentType: file.type || "application/octet-stream",
       upsert: false,
     });
+    if (storageError) throw new Error("تعذر حفظ أصل الملف؛ لم يبدأ استيراد الصفوف.");
+    const { error: archiveError } = await admin.from("data_uploads_log").update({
+      file_path: storagePath, storage_bucket: "data-uploads", file_size_bytes: buf.byteLength,
+    }).eq("id", uploadId).eq("organization_id", organizationId);
+    if (archiveError) throw new Error("تعذر تسجيل مسار أصل الملف؛ لم يبدأ استيراد الصفوف.");
 
     if (detected === "unknown") {
       await admin
@@ -375,7 +399,7 @@ Deno.serve(async (req) => {
 
     // Fire-and-forget: trigger innovation suggestions based on this fresh data.
     // We don't await it so the upload response stays fast.
-    if (inserted > 0) {
+    if (inserted > 0 && automationMode(Deno.env.get("KFAAH_AUTOMATION_MODE")) === "legacy_ai") {
       try {
         // 1) Invalidate cached deep-analysis & comparison insights for this org
         //    so the next visit to "النظرة العامة / التحليل العميق / المقارنة"
@@ -481,3 +505,4 @@ Deno.serve(async (req) => {
     );
   }
 });
+

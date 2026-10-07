@@ -1,0 +1,36 @@
+{
+  "name": "SheetJS Community Edition",
+  "package": "xlsx",
+  "version": "0.20.3",
+  "license": "Apache-2.0",
+  "source": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+  "retrieved_at": "2026-10-07",
+  "archive_sha256": "8dc73fc3b00203e72d176e85b50938627c7b086e607c682e8d3c22c02bb99fe8",
+  "archive_integrity": "sha512-oLDq3jw7AcLqKWH2AhCpVTZl8mf6X2YReP+Neh0SJUzV/BdZYjth94tG5toiMB1PPrYtxOCfaoUCkvtuH+3AJA==",
+  "documentation": "https://docs.sheetjs.com/docs/getting-started/installation/deno/",
+  "files": [
+    {
+      "path": "sheetjs-0.20.3.mjs",
+      "archive_path": "package/xlsx.mjs",
+      "sha256": "1a0fb062ee9781b13f6687371b202aaefc53b6ce55b530c027e01f9c087b77db",
+      "modified": false
+    },
+    {
+      "path": "sheetjs-cpexcel-0.20.3.mjs",
+      "archive_path": "package/dist/cpexcel.full.mjs",
+      "sha256": "7a7bba23b6b6f23b5c69fbb631f78d1d455f74b57e4aa54e9a2f81a8ab844964",
+      "modified": false
+    }
+  ],
+  "security_advisories_addressed": [
+    "https://cdn.sheetjs.com/advisories/CVE-2023-30533",
+    "https://cdn.sheetjs.com/advisories/CVE-2024-22363"
+  ],
+  "notes": [
+    "The two runtime modules are unmodified bytes from the official vendor archive; no third-party fork is used.",
+    "The adjacent d.mts files are project-authored integration declarations, not vendor runtime code.",
+    "The rules parser imports these local modules and does not use the legacy npm xlsx dependency.",
+    "Pinned byte integrity and runtime version are checked by tests/local-document-parser.test.ts.",
+    "Input/output limits do not replace process CPU and memory limits for arbitrary document parsing."
+  ]
+}

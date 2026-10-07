@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import PptxGenJS from "npm:pptxgenjs@4.0.1";
@@ -659,7 +660,7 @@ async function generateInsight(admin: any, apiKey: string, metrics: OrgMetrics, 
   return saved;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("generate-action-plan", async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -961,4 +962,4 @@ Deno.serve(async (req) => {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}));

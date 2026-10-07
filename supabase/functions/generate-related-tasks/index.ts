@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -72,7 +73,7 @@ function normalizeArabicText(value: unknown): string {
     .toLowerCase();
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("generate-related-tasks", async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -560,4 +561,4 @@ ${JSON.stringify(allOrgEmployees, null, 2)}
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}));

@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -288,7 +289,7 @@ function findDocumentPages(html: string, baseUrl: string): string[] {
   return [...pages].slice(0, 10);
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("extract-website-info", async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const { url } = await req.json();
@@ -409,4 +410,4 @@ Deno.serve(async (req) => {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}));

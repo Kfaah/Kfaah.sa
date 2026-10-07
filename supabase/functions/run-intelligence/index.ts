@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 // Edge Function: run-intelligence
 // محرك CRM الذكي: يستقرئ كل بيانات الجمعية، يولّد رؤى عميقة،
 // مهام شكر/ذكريات/استرداد/متابعة، وأفكار تسويقية إبداعية،
@@ -407,7 +408,7 @@ async function generateMessage(donorName: string, context: string) {
 }
 
 // ===== الدالة الرئيسية =====
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("run-intelligence", async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const startTime = Date.now();
 
@@ -580,4 +581,5 @@ Deno.serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
-});
+}));
+

@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 // Edge function: generate-plan-from-excel
 // Takes an uploaded Excel plan (columns + rows + plan name) and generates
 // a complete, professional operational plan using Lovable AI.
@@ -91,7 +92,7 @@ const TOOL_SCHEMA = {
   },
 };
 
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("generate-plan-from-excel", async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -220,7 +221,7 @@ function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+  }));
 }
 
 function cleanText(value: unknown) {

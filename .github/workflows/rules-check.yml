@@ -1,0 +1,21 @@
+name: Deterministic rules checks
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [codex/no-external-ai-rule-engine]
+permissions:
+  contents: read
+jobs:
+  rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run test:rules
+      - run: npm run typecheck:rules
+      - run: npx tsc --noEmit -p tsconfig.app.json

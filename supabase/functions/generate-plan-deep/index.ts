@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 // Edge function: generate-plan-deep
 // Deep AI-powered operational plan generation.
 // Studies: organization data + uploaded reference files + previous plans + tasks
@@ -195,7 +196,7 @@ const planTool = {
   },
 };
 
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("generate-plan-deep", async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -481,4 +482,4 @@ ${fileSummaries.length ? fileSummaries.join("\n\n---\n\n") : "(لم يتم رف�
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}));

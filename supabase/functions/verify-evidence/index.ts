@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 // Strict + comprehensive evidence verification engine.
 // Flow: take an evidence URL → scrape (Firecrawl) → ask Gemini to judge it
 // strictly against the question + expected_evidence → store findings in
@@ -21,7 +22,7 @@ interface VerifyBody {
   answer_yes_no?: "yes" | "no";
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("verify-evidence", async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -362,7 +363,7 @@ ${params.scrapedMarkdown || "(لا محتوى — قد يكون الرابط ل�
       tools: [tool],
       tool_choice: { type: "function", function: { name: "submit_evidence_judgement" } },
     }),
-  });
+  }));
   if (!res.ok) {
     const t = await res.text();
     throw new Error(`AI judge error ${res.status}: ${t}`);

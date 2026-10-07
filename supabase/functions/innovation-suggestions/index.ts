@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 // deno-lint-ignore-file no-explicit-any
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,7 +10,7 @@ const corsHeaders = {
  * Generates innovation suggestions: creative, actionable improvements
  * personalized to the org's data. Returns structured JSON.
  */
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("innovation-suggestions", async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -95,4 +96,4 @@ ${focus ? `تركيز خاص هذه المرة على: ${focus}` : ""}
     console.error("innovation-suggestions error:", e);
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
-});
+}));

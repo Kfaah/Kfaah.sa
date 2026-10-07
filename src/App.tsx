@@ -68,6 +68,7 @@ import { NotificationListener } from "@/components/NotificationListener";
 const BackupSettings = lazyWithRetry(() => import("./pages/settings/BackupSettings"));
 import SettingsAccessGuard from "./components/settings/SettingsAccessGuard";
 const Uploads = lazyWithRetry(() => import("./pages/Uploads"));
+const AutomationPreview = lazyWithRetry(() => import("./pages/AutomationPreview"));
 const Organizations = lazyWithRetry(() => import("./pages/Organizations"));
 const Intelligence = lazyWithRetry(() => import("./pages/Intelligence"));
 const AdminCompare = lazyWithRetry(() => import("./pages/admin/AdminCompare"));
@@ -99,7 +100,7 @@ const PROTECTED_ROOTS = new Set([
   "operational-plans", "action-plans", "profile", "settings", "uploads", "intelligence",
   "internal-dashboard", "my-accountability", "my-performance", "employee-onboarding",
   "staff-duties-upload", "my-assistant", "performance", "organizations",
-  "messages", "inbox", "platform-mail", "internal-inbox",
+  "messages", "inbox", "platform-mail", "internal-inbox", "automation-preview",
 ]);
 
 function isPublicEntryPath(pathname: string) {
@@ -515,6 +516,7 @@ function AppRoutes() {
       <Route path="/settings/members" element={<ProtectedRoute><SettingsAccessGuard><MembersSettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/settings/member-roles" element={<ProtectedRoute><SettingsAccessGuard><MemberRolesSettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
+      <Route path="/automation-preview" element={<ProtectedRoute><AutomationPreview /></ProtectedRoute>} />
       <Route path="/intelligence" element={<ProtectedRoute><Intelligence /></ProtectedRoute>} />
       <Route path="/internal-dashboard" element={<ProtectedRoute><InternalDashboard /></ProtectedRoute>} />
       <Route path="/action-plans/:planId" element={<ProtectedRoute><InternalDashboard /></ProtectedRoute>} />
@@ -560,6 +562,7 @@ function AppRoutes() {
       <Route path="/:slug/settings/members" element={<ProtectedRoute><SettingsAccessGuard><MembersSettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/:slug/settings/member-roles" element={<ProtectedRoute><SettingsAccessGuard><MemberRolesSettings /></SettingsAccessGuard></ProtectedRoute>} />
       <Route path="/:slug/uploads" element={<ProtectedRoute><Uploads /></ProtectedRoute>} />
+      <Route path="/:slug/automation-preview" element={<ProtectedRoute><AutomationPreview /></ProtectedRoute>} />
       <Route path="/:slug/intelligence" element={<ProtectedRoute><Intelligence /></ProtectedRoute>} />
       <Route path="/:slug/internal-dashboard" element={<ProtectedRoute><InternalDashboard /></ProtectedRoute>} />
       <Route path="/:slug/my-accountability" element={<ProtectedRoute><MyAccountability /></ProtectedRoute>} />
@@ -625,3 +628,4 @@ const App = () => (
 );
 
 export default App;
+

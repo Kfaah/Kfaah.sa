@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 // Top-Up Employee Tasks
 // Adaptive filler: for each active employee in an org, computes today's used
 // minutes (estimated for open tasks + actual for completed today), and if
@@ -24,7 +25,7 @@ const MAX_MIN = 300;
 const MIN_FILL = 30; // require at least 30 min free before topping up
 const HARD_TASKS_CAP = 14; // never dispatch more than this in a single day, even for fast employees
 
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("top-up-employee-tasks", async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -206,4 +207,4 @@ Deno.serve(async (req) => {
     console.error("top-up-employee-tasks error", e);
     return json({ error: e?.message || "خطأ غير متوقع" }, 500);
   }
-});
+}));

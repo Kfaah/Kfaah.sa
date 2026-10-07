@@ -33,7 +33,7 @@ const SUB_TABS: { key: SubKey; label: string; Icon: any; desc: string }[] = [
   { key: "gifts", label: "الإهداءات", Icon: Gift, desc: "المهدون وتكرار الإهداء" },
   { key: "failed", label: "تبرعات فاشلة", Icon: XCircle, desc: "محاولات لم تكتمل" },
   { key: "abandoned", label: "السلال المتروكة", Icon: ShoppingCart, desc: "تنبيهات استرداد" },
-  { key: "elite", label: "النخبة + AI", Icon: Crown, desc: "متبرعون متعدّدو الأنشطة + رؤى ذكاء اصطناعي" },
+  { key: "elite", label: "النخبة والرؤى", Icon: Crown, desc: "متبرعون متعدّدو الأنشطة ورؤى موثقة" },
   { key: "intelligence", label: "العقل اليومي", Icon: Brain, desc: "تحليل عميق يومي + مهام ذكية تنزل للموظفين" },
 ];
 
@@ -337,10 +337,12 @@ function buildPanelContext(
 }
 
 function PanelAIInsights({
+  orgId,
   panelKey,
   panelLabel,
   payload,
 }: {
+  orgId: string;
   panelKey: SubKey;
   panelLabel: string;
   payload: any;
@@ -356,7 +358,7 @@ function PanelAIInsights({
     setAiInsights(null);
     try {
       const { data, error } = await supabase.functions.invoke("donor-insights", {
-        body: { panel: panelKey, panel_label: panelLabel, context: payload },
+        body: { organization_id: orgId, panel: panelKey, panel_label: panelLabel, context: payload },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -648,6 +650,7 @@ export function DonorsHub({ orgId }: { orgId: string }) {
           {active !== "elite" && active !== "intelligence" && (
             <div className="mt-6">
               <PanelAIInsights
+                orgId={orgId}
                 panelKey={active}
                 panelLabel={SUB_TABS.find((t) => t.key === active)?.label || active}
                 payload={buildPanelContext(active, { donations, donors, campaigns, failed, abandoned, subs, gifts })}
@@ -1668,7 +1671,7 @@ function ElitePanel({
     try {
       // Anonymized aggregate sent to AI — no names or phones, only counts.
       const payload = {
-        org_id: orgId,
+        organization_id: orgId,
         elite_count: aggregated.length,
         total_donations_count: donations.length,
         total_donations_amount: donations.reduce((s, d) => s + Number(d.amount || 0), 0),
@@ -1924,6 +1927,7 @@ function IntelligencePanel({ orgId, brand }: { orgId: string; brand: string }) {
   const [latest, setLatest] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
+  const [rulePreview, setRulePreview] = useState<{ daily_brief: string; insights: {rule_id?:string;title:string;summary:string}[]; summary?: {quality?:unknown;evidence?:unknown} } | null>(null);
   const [employeeLoad, setEmployeeLoad] = useState<{ name: string; tasks: number; minutes: number }[]>([]);
   const [dispatcherStats, setDispatcherStats] = useState<{ scheduled: number; overflow: number; dupes: number } | null>(null);
   const [dispatching, setDispatching] = useState(false);
@@ -2017,7 +2021,7 @@ function IntelligencePanel({ orgId, brand }: { orgId: string; brand: string }) {
     }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [orgId]);
+  useEffect(() => { setRulePreview(null); load(); /* eslint-disable-next-line */ }, [orgId]);
 
   const runAnalysis = async () => {
     setRunning(true);
@@ -2028,6 +2032,11 @@ function IntelligencePanel({ orgId, brand }: { orgId: string; brand: string }) {
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
+      if (data?.preview_only && data?.source === "rules-v1") {
+        setRulePreview(data);
+        toast.success("اكتملت المعاينة الآلية. لم تُنشأ مهام أو رسائل.");
+        return;
+      }
       const stats = (data as any)?.stats || {};
       toast.success(`✨ تحليل اكتمل: ${stats.insights_saved || 0} رؤية و ${stats.tasks_saved || 0} مهمة جديدة`);
       await load();
@@ -2086,6 +2095,14 @@ function IntelligencePanel({ orgId, brand }: { orgId: string; brand: string }) {
 
   return (
     <div className="space-y-6" dir="rtl">
+      {rulePreview && <section className="rounded-xl border border-teal-200 bg-teal-50 p-5 space-y-3" aria-live="polite">
+        <h3 className="font-bold">معاينة التحليل الآلي بالقواعد</h3>
+        <p className="text-sm">لم تتغير الرؤى السابقة، ولم تُنشأ مهام أو تُرسل رسائل.</p>
+        <p className="whitespace-pre-wrap">{rulePreview.daily_brief}</p>
+        {(rulePreview.insights || []).map((item,index)=><div key={item.rule_id||index} className="rounded-lg bg-white p-3"><strong>{item.title}</strong><p>{item.summary}</p></div>)}
+        <details><summary>الأدلة وحدود البيانات</summary><pre className="overflow-auto text-xs" dir="ltr">{JSON.stringify({quality:rulePreview.summary?.quality,evidence:rulePreview.summary?.evidence},null,2)}</pre></details>
+        <Button variant="outline" onClick={()=>setRulePreview(null)}>إغلاق المعاينة</Button>
+      </section>}
       {/* Hero */}
       <div
         className="relative overflow-hidden rounded-2xl border p-6 shadow-sm"
@@ -2340,3 +2357,4 @@ function MiniIntelKpi({ color, icon, label, value }: { color: "violet" | "emeral
     </div>
   );
 }
+

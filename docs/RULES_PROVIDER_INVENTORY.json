@@ -1,0 +1,307 @@
+{
+  "source_commit": "2841fed3f6e5ce010984b2b8444d94b6d9b2313c",
+  "observed_provider_routes": 32,
+  "rules_provider_calls": 0,
+  "cost_scope": "Covered rules-mode operations only; hosting/database/email/developer workflows are not included.",
+  "routes": [
+    {
+      "route": "admin-insights",
+      "path": "supabase/functions/admin-insights/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "deterministic_preview",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "analyze-organization",
+      "path": "supabase/functions/analyze-organization/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "explicitly_unavailable",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "analyze-uploaded-file",
+      "path": "supabase/functions/analyze-uploaded-file/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "deterministic_preview",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "classify-expense-batch",
+      "path": "supabase/functions/classify-expense-batch/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "deterministic_preview",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "daily-donor-intelligence",
+      "path": "supabase/functions/daily-donor-intelligence/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "deterministic_preview",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "deep-org-analysis",
+      "path": "supabase/functions/deep-org-analysis/index.ts",
+      "legacy_providers": [
+        "configured_responses_model_endpoint",
+        "Firecrawl",
+        "thum.io"
+      ],
+      "rules_mode": "explicitly_unavailable",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "discover-org-accounts",
+      "path": "supabase/functions/discover-org-accounts/index.ts",
+      "legacy_providers": [
+        "Firecrawl"
+      ],
+      "rules_mode": "explicitly_unavailable",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "donor-insights",
+      "path": "supabase/functions/donor-insights/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "deterministic_preview",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "employee-assistant",
+      "path": "supabase/functions/employee-assistant/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint",
+        "Firecrawl"
+      ],
+      "rules_mode": "deterministic_preview",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "evaluate-task-quality",
+      "path": "supabase/functions/evaluate-task-quality/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "human_review_required",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "executive-report",
+      "path": "supabase/functions/executive-report/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "deterministic_preview",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "extract-website-info",
+      "path": "supabase/functions/extract-website-info/index.ts",
+      "legacy_providers": [
+        "Firecrawl"
+      ],
+      "rules_mode": "explicitly_unavailable",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "generate-action-plan",
+      "path": "supabase/functions/generate-action-plan/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "prepared_preview_requires_review",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "generate-executive-plans",
+      "path": "supabase/functions/generate-executive-plans/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "prepared_preview_requires_review",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "generate-plan-deep",
+      "path": "supabase/functions/generate-plan-deep/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "prepared_preview_requires_review",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "generate-plan-from-excel",
+      "path": "supabase/functions/generate-plan-from-excel/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "deterministic_preview",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "generate-related-tasks",
+      "path": "supabase/functions/generate-related-tasks/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "explicitly_unavailable",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "generate-smart-report",
+      "path": "supabase/functions/generate-smart-report/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "explicitly_unavailable",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "generate-tasks",
+      "path": "supabase/functions/generate-tasks/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "prepared_preview_requires_review",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "innovation-chat",
+      "path": "supabase/functions/innovation-chat/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "deterministic_preview",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "innovation-suggestions",
+      "path": "supabase/functions/innovation-suggestions/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "deterministic_preview",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "marketing-design-brief",
+      "path": "supabase/functions/marketing-design-brief/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "deterministic_preview",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "marketing-evaluate-campaign",
+      "path": "supabase/functions/marketing-evaluate-campaign/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "deterministic_preview",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "marketing-generate-content",
+      "path": "supabase/functions/marketing-generate-content/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "deterministic_preview",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "marketing-suggest-campaigns",
+      "path": "supabase/functions/marketing-suggest-campaigns/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "deterministic_preview",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "report-suggestions",
+      "path": "supabase/functions/report-suggestions/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "deterministic_preview",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "run-intelligence",
+      "path": "supabase/functions/run-intelligence/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "deterministic_preview",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "store-deep-analysis",
+      "path": "supabase/functions/store-deep-analysis/index.ts",
+      "legacy_providers": [
+        "configured_responses_model_endpoint",
+        "Firecrawl",
+        "thum.io"
+      ],
+      "rules_mode": "explicitly_unavailable",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "suggest-finance-reports",
+      "path": "supabase/functions/suggest-finance-reports/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint"
+      ],
+      "rules_mode": "deterministic_preview",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "sync-external-source",
+      "path": "supabase/functions/sync-external-source/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint",
+        "Firecrawl"
+      ],
+      "rules_mode": "explicitly_unavailable",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "tts-arabic",
+      "path": "supabase/functions/tts-arabic/index.ts",
+      "legacy_providers": [
+        "ElevenLabs"
+      ],
+      "rules_mode": "explicitly_unavailable",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    },
+    {
+      "route": "verify-evidence",
+      "path": "supabase/functions/verify-evidence/index.ts",
+      "legacy_providers": [
+        "configured_chat_model_endpoint",
+        "Firecrawl"
+      ],
+      "rules_mode": "human_review_required",
+      "legacy_opt_in": "KFAAH_AUTOMATION_MODE=legacy_ai"
+    }
+  ],
+  "additional_write_gates": [
+    "smart-task-dispatcher",
+    "top-up-employee-tasks"
+  ]
+}

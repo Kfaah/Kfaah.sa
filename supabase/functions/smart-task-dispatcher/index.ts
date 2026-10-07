@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 // Smart Task Dispatcher
 // Central distributor that converts ANY platform suggestion (daily intelligence,
 // report suggestions, donor insights, upload triggers, …) into employee tasks
@@ -95,7 +96,7 @@ function toDateOnly(d: Date) {
   return d.toISOString().slice(0, 10);
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("smart-task-dispatcher", async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -281,4 +282,4 @@ Deno.serve(async (req) => {
     console.error("smart-task-dispatcher error", e);
     return json({ error: e?.message || "خطأ غير متوقع" }, 500);
   }
-});
+}));

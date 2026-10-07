@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 // يحلّل ملفاً مؤرشفاً من مركز الملفات بالذكاء الاصطناعي ويخزّن الملخص والتوصيات.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.0";
 import { extractText, getDocumentProxy } from "npm:unpdf@0.12.1";
@@ -78,7 +79,7 @@ async function extractPlainText(name: string, bytes: Uint8Array): Promise<string
   return "";
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("analyze-uploaded-file", async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -258,4 +259,5 @@ donations | store_master | store_daily | subscriptions | campaigns | gifts | aba
     console.error(e);
     return json({ error: e instanceof Error ? e.message : "unknown" }, 500);
   }
-});
+}));
+

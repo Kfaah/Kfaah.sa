@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 // التحليل الشامل الذكي للمتجر
 // يجمع: مقاييس المتجر + شرائح المتبرعين + محتوى الموقع والمتجر وحسابات التواصل
 // ويخرج: ملخص تنفيذي + مراجعة المنصات + خطة تنفيذية لرسائل المتبرعين + مقترحات
@@ -269,7 +270,7 @@ async function callAstra(system: string, payload: unknown, onTick?: () => void) 
   }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("store-deep-analysis", async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -462,4 +463,5 @@ ${RESULT_SHAPE}`;
   return new Response(stream, {
     headers: { ...corsHeaders, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache" },
   });
-});
+}));
+

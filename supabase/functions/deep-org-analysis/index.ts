@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 // Deep Organization Analysis
 // يدمج: الملفات المرفوعة + ملف التبرعات + الموقع الإلكتروني + المتجر + حسابات التواصل
 // يصدر: تقييم شامل + نقاط قوة + فجوات + توصيات + مساءلات للموظفين بحسب الدور
@@ -247,7 +248,7 @@ async function callAI(systemPrompt: string, userPayload: unknown) {
   }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("deep-org-analysis", async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   let body: AnalyzeRequest;
@@ -738,4 +739,4 @@ Deno.serve(async (req) => {
     JSON.stringify({ started: true, analysis_id: analysisRow.id, status: "running" }),
     { status: 202, headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
-});
+}));

@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
@@ -5,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("tts-arabic", async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     const { text, voice_id = "JBFqnCBsd6RMkjVDRZzb" } = await req.json();
@@ -29,4 +30,4 @@ Deno.serve(async (req) => {
   } catch (e) {
     return new Response(String(e), { status: 500, headers: corsHeaders });
   }
-});
+}));

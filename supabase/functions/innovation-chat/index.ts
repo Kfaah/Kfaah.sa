@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 // deno-lint-ignore-file no-explicit-any
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,7 +11,7 @@ const corsHeaders = {
  * replies as an innovation expert. Suggests refinements, implementation steps,
  * trade-offs.
  */
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("innovation-chat", async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -61,4 +62,4 @@ Deno.serve(async (req) => {
     console.error("innovation-chat error:", e);
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
-});
+}));

@@ -107,6 +107,7 @@ interface HistoryRow {
   file_size_bytes?: number | null;
   ai_analysis: Record<string, any> | null;
   ai_analyzed_at: string | null;
+  analysis_source?: "rules-v1";
 }
 
 const MAX_AI_ANALYSIS_BYTES = 30 * 1024 * 1024;
@@ -403,7 +404,7 @@ export default function Uploads({ orgIdProp, embedded = false }: { orgIdProp?: s
       setAnalyzingId(row.id);
       try {
         const { data, error } = await supabase.functions.invoke("analyze-uploaded-file", {
-          body: { upload_id: row.id },
+          body: { upload_id: row.id, organization_id: row.organization_id || orgId },
         });
         if (error) {
           // نقرأ رسالة الوظيفة إن توفرت لتظهر بالعربية للمستخدم
@@ -424,6 +425,14 @@ export default function Uploads({ orgIdProp, embedded = false }: { orgIdProp?: s
           return false;
         }
         const analysis = (data as any)?.analysis ?? null;
+        if (data?.preview_only && data?.source === "rules-v1") {
+          if (!silent) {
+            setAnalysisRow({ ...row, ai_analysis: analysis, analysis_source: "rules-v1", ai_analyzed_at: null });
+            toast.success("اكتملت معاينة التحليل الآلي. بقي التحليل السابق محفوظاً دون تغيير.");
+          }
+          return true;
+        }
+
         setHistory((prev) =>
           prev.map((r) =>
             r.id === row.id
@@ -444,7 +453,7 @@ export default function Uploads({ orgIdProp, embedded = false }: { orgIdProp?: s
         setAnalyzingId(null);
       }
     },
-    [],
+    [orgId],
   );
 
   const analyzeAllPending = useCallback(async () => {
@@ -877,7 +886,7 @@ export default function Uploads({ orgIdProp, embedded = false }: { orgIdProp?: s
           subtitle="مكان موحّد لرفع جميع ملفات الجمعية — اختر الفئة وسيقوم النظام بالقراءة، الربط، والتحليل تلقائياً"
         />
         <PageGuide
-          description="هذه الصفحة هي البوابة الموحّدة لرفع جميع ملفات الجمعية إلى النظام (مستندات Word، جداول Excel، ملفات PDF، صور). يقوم النظام بقراءة الملف تلقائياً، استخراج البيانات منه، وربطه بالقسم الصحيح (موظفون، خطط، مهام، تقارير) ثم تحليل محتواه بالذكاء الاصطناعي لاستخراج ملخّص ومؤشرات."
+          description="هذه الصفحة هي البوابة الموحّدة لرفع جميع ملفات الجمعية إلى النظام (مستندات Word، جداول Excel، ملفات PDF، صور). يقوم النظام بقراءة الملف تلقائياً، استخراج البيانات منه، وربطه بالقسم الصحيح (موظفون، خطط، مهام، تقارير) ثم عرض التحليل المتاح. يوضح الناتج إن كان معاينة آلية بالقواعد أو تحليلاً سابقاً محفوظاً."
           features={[
             "اختيار فئة الملف لتوجيهه للقسم المناسب",
             "قراءة محتوى Excel وWord وPDF آلياً",
@@ -1203,7 +1212,7 @@ export default function Uploads({ orgIdProp, embedded = false }: { orgIdProp?: s
               <div className="min-w-0">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Sparkles className="w-5 h-5 text-accent" />
-                  <span className="truncate">تحليل ذكي — {analysisRow.file_name}</span>
+                  <span className="truncate">{analysisRow.analysis_source === "rules-v1" ? "معاينة تحليل آلي بالقواعد" : "تحليل سابق محفوظ"} — {analysisRow.file_name}</span>
                 </CardTitle>
                 {analysisRow.ai_analyzed_at && (
                   <p className="text-xs text-muted-foreground mt-1">
@@ -1216,6 +1225,7 @@ export default function Uploads({ orgIdProp, embedded = false }: { orgIdProp?: s
               </Button>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
+              {analysisRow.analysis_source === "rules-v1" && <p className="rounded-lg bg-amber-50 p-3 text-amber-900">معاينة فقط، دون مزود ذكاء اصطناعي. لم تُحفظ بدلاً من التحليل السابق ولم تُنشأ مهام.</p>}
               {analysisRow.ai_analysis?.document_type && (
                 <Badge className="bg-accent text-accent-foreground">
                   {analysisRow.ai_analysis.document_type}
@@ -1461,3 +1471,4 @@ export default function Uploads({ orgIdProp, embedded = false }: { orgIdProp?: s
     </DashboardLayout>
   );
 }
+

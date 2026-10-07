@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "supabase/functions/_shared/automation-policy.ts",
+    "supabase/functions/_shared/bounded-body.ts",
+    "supabase/functions/_shared/local-document-parser.ts",
+    "supabase/functions/_shared/rule-*.ts",
+    "supabase/functions/_shared/quality-advisory-policy.ts"
+  ]
+}

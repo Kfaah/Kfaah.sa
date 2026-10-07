@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 // Daily Donor Intelligence Engine
 // Runs deep behavioral analysis on donations + subscriptions + campaigns
 // + gifts + abandoned carts + failed donations, then asks Lovable AI to
@@ -278,7 +279,7 @@ async function buildSignals(supa: any, orgId: string) {
   };
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("daily-donor-intelligence", async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -445,4 +446,4 @@ ${JSON.stringify(snapshot.signals, null, 2)}
     console.error("daily-donor-intelligence error", e);
     return json({ error: e?.message || "خطأ غير متوقع" }, 500);
   }
-});
+}));

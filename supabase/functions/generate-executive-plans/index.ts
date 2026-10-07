@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -34,7 +35,7 @@ const isDevAdminWork = (...values: unknown[]) => {
   return DEV_ADMIN_TERMS.some((term) => text.includes(term));
 };
 
-serve(async (req) => {
+serve(withRulesMode("generate-executive-plans", async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -1135,4 +1136,5 @@ ${i + 1}. النشاط: ${p.activityName}
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}));
+

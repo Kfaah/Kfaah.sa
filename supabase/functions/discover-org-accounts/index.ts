@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -132,7 +133,7 @@ async function scoreCandidate(url: string, orgName: string, websiteHost: string 
   return score;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("discover-org-accounts", async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     if (!FIRECRAWL_API_KEY) {
@@ -223,4 +224,4 @@ Deno.serve(async (req) => {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}));

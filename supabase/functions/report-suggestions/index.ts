@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 // deno-lint-ignore-file no-explicit-any
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,7 +17,7 @@ const REPORT_LABELS: Record<string, string> = {
   project_donors: "تقرير متبرعي المشاريع",
 };
 
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("report-suggestions", async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -125,4 +126,4 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}));

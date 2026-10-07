@@ -1,3 +1,4 @@
+import { withRulesMode } from "../_shared/rule-mode.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -32,7 +33,7 @@ async function fetchSnippet(url: string): Promise<string> {
   }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withRulesMode("analyze-organization", async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const { organization_id } = await req.json();
@@ -169,4 +170,4 @@ ${sources.map((s) => `--- ${s.label} (${s.url}) ---\n${s.content}`).join("\n\n")
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}));

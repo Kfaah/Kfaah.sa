@@ -645,6 +645,8 @@ export default FinanceHub;
 
 /* ---------- Excel Import View ---------- */
 interface PreviewRow {
+  needs_review?: boolean;
+  auto_classified?: boolean;
   description: string;
   amount: number;
   vendor?: string;
@@ -691,6 +693,8 @@ function ExcelImportView({ orgId, projects, onDone }: { orgId: string; projects:
         vendor: String(norm.vendor || "").trim() || undefined,
         expense_date: dateStr,
         kind: "operational" as Kind,
+        needs_review: true,
+        auto_classified: false,
         project_name: String(norm.project || "").trim() || null,
       };
     }).filter((r) => r.description && r.amount > 0);
@@ -703,7 +707,7 @@ function ExcelImportView({ orgId, projects, onDone }: { orgId: string; projects:
     setClassifying(true);
     try {
       const batchSize = 15;
-      const updated = [...rows];
+      const updated = rows.map(row => ({ ...row }));
       for (let i = 0; i < rows.length; i += batchSize) {
         const batch = rows.slice(i, i + batchSize).map((r, j) => ({
           id: String(i + j),
@@ -712,20 +716,24 @@ function ExcelImportView({ orgId, projects, onDone }: { orgId: string; projects:
           vendor: r.vendor,
         }));
         const { data, error } = await supabase.functions.invoke("classify-expense-batch", {
-          body: { rows: batch, projects },
+          body: { organization_id: orgId, rows: batch, projects },
         });
         if (error) throw error;
         const cls = (data as any)?.classifications || [];
         cls.forEach((c: any) => {
           const idx = i + (c.index - 1);
           if (updated[idx]) {
-            updated[idx].kind = c.kind || updated[idx].kind;
+            const valid = ["project", "marketing", "operational"].includes(c.kind) && c.needs_review !== true;
+            updated[idx].needs_review = !valid;
+            updated[idx].auto_classified = valid;
+            if (valid) updated[idx].kind = c.kind;
             if (c.project_name) updated[idx].project_name = c.project_name;
           }
         });
       }
       setRows(updated);
-      toast.success("تم التصنيف الذكي لكل الصفوف");
+      const reviewCount = updated.filter(row => row.needs_review).length;
+      toast.success(`تم اقتراح التصنيف؛ ${reviewCount} صف يحتاج مراجعة قبل الحفظ.`);
     } catch (e: any) {
       console.error(e);
       toast.error("تعذّر التصنيف الذكي: " + (e.message || ""));
@@ -736,6 +744,7 @@ function ExcelImportView({ orgId, projects, onDone }: { orgId: string; projects:
 
   const saveAll = async () => {
     if (rows.length === 0) return;
+    if (rows.some(row => row.needs_review)) { toast.error("راجع تصنيف الصفوف غير المحسومة قبل الحفظ."); return; }
     setSaving(true);
     const { data: u } = await supabase.auth.getUser();
     const payload = rows.map((r) => ({
@@ -746,7 +755,7 @@ function ExcelImportView({ orgId, projects, onDone }: { orgId: string; projects:
       vendor: r.vendor || null,
       kind: r.kind,
       project_name: r.kind === "project" ? (r.project_name || null) : null,
-      auto_classified: true,
+      auto_classified: r.auto_classified === true,
       created_by: u.user?.id || null,
     }));
     const { error } = await supabase.from("expenses" as any).insert(payload as any);
@@ -842,8 +851,8 @@ function ExcelImportView({ orgId, projects, onDone }: { orgId: string; projects:
                         <TableCell className="text-sm">{r.vendor || "—"}</TableCell>
                         <TableCell className="font-bold">{fmtSAR(r.amount)}</TableCell>
                         <TableCell>
-                          <Select value={r.kind} onValueChange={(v) => updateRow(idx, { kind: v as Kind })}>
-                            <SelectTrigger className="h-8 w-36"><SelectValue /></SelectTrigger>
+                          <Select value={r.needs_review ? "" : r.kind} onValueChange={(v) => updateRow(idx, { kind: v as Kind, needs_review: false, auto_classified: false })}>
+                            <SelectTrigger className="h-8 w-36"><SelectValue placeholder="يلزم مراجعة" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="project">مشروع</SelectItem>
                               <SelectItem value="marketing">تسويق</SelectItem>
@@ -1155,3 +1164,4 @@ function ExternalSourcesView({ orgId, onBack }: { orgId: string; onBack: () => v
     </div>
   );
 }
+

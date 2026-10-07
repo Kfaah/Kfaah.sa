@@ -1,6 +1,11 @@
+import { automationMode } from "../_shared/automation-policy.ts";
+import { RulePlatform } from "../_shared/rule-platform.ts";
 // Parse uploaded Excel file with staff duties and create employee_job_duties rows
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import * as XLSX from "https://esm.sh/xlsx@0.18.5";
+import * as XLSX from "../_shared/vendor/sheetjs-0.20.3.mjs";
+import * as cptable from "../_shared/vendor/sheetjs-cpexcel-0.20.3.mjs";
+import { parseLocalDocument } from "../_shared/local-document-parser.ts";
+XLSX.set_cptable(cptable);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -154,6 +159,12 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (impErr || !imp) throw new Error(impErr?.message ?? "import not found");
 
+    if (automationMode(Deno.env.get("KFAAH_AUTOMATION_MODE")) === "rules") {
+      const scope = new RulePlatform(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, req.headers.get("Authorization") || "");
+      await scope.authenticate(imp.organization_id);
+      scope.requireManager();
+    }
+
     await admin
       .from("staff_duties_imports")
       .update({ status: "processing", started_at: new Date().toISOString() })
@@ -165,7 +176,12 @@ Deno.serve(async (req) => {
       .download(imp.file_path);
     if (dlErr || !file) throw new Error(dlErr?.message ?? "file download failed");
 
+    if (file.size > 30 * 1024 * 1024) throw new Error("حجم الملف يتجاوز حد 30MB.");
     const buf = new Uint8Array(await file.arrayBuffer());
+    if (automationMode(Deno.env.get("KFAAH_AUTOMATION_MODE")) === "rules") {
+      const preview = await parseLocalDocument({ fileName: imp.file_name || imp.file_path, bytes: buf }, { limits: { maxRows: 10000 } });
+      if (preview.truncated) throw new Error("تجاوز الملف حدود الاستخراج الآمن. قسّمه إلى ملفات أصغر.");
+    }
     const wb = XLSX.read(buf, { type: "array" });
 
     const allDuties: ParsedDuty[] = [];
