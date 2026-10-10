@@ -1,0 +1,181 @@
+name: Kfaah owner audit request
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kfaah-owner-audit-channel
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    if: >-
+      github.repository == 'gaberalhrese-cloud/shop-soulmate-04' &&
+      github.ref == 'refs/heads/main' &&
+      github.actor_id == '253139283' &&
+      github.event.issue.user.id == 253139283 &&
+      github.event.issue.title == 'KFAAH_OWNER_AUDIT_V1' &&
+      !github.event.issue.pull_request &&
+      github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate immutable event request without executing its text
+        env:
+          EXPECTED_WORKFLOW_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, re
+          def require(value):
+              if not value:
+                  raise SystemExit('REQUEST_REJECTED')
+          def unique(pairs):
+              result = {}
+              for key, value in pairs:
+                  require(key not in result)
+                  result[key] = value
+              return result
+          with open(os.environ['GITHUB_EVENT_PATH'], encoding='utf-8') as stream:
+              event = json.load(stream)
+          issue = event.get('issue', {})
+          require(os.environ['GITHUB_EVENT_NAME'] == 'issues' and event.get('action') == 'opened')
+          require(os.environ['GITHUB_REPOSITORY'] == 'gaberalhrese-cloud/shop-soulmate-04')
+          require(os.environ['GITHUB_REF'] == 'refs/heads/main' and os.environ['GITHUB_RUN_ATTEMPT'] == '1')
+          require(os.environ['GITHUB_ACTOR_ID'] == '253139283')
+          require(event.get('sender', {}).get('id') == 253139283)
+          require(event.get('repository', {}).get('owner', {}).get('id') == 253139283)
+          require(issue.get('user', {}).get('id') == 253139283 and issue.get('author_association') == 'OWNER')
+          require(issue.get('title') == 'KFAAH_OWNER_AUDIT_V1' and 'pull_request' not in issue)
+          require(type(issue.get('number')) is int and issue['number'] > 0)
+          body = issue.get('body')
+          require(type(body) is str and len(body.encode('utf-8')) <= 4096)
+          try:
+              request = json.loads(body, object_pairs_hook=unique)
+          except (ValueError, TypeError):
+              raise SystemExit('REQUEST_REJECTED')
+          require(type(request) is dict and set(request) == {
+              'version', 'operation', 'workflow_sha', 'source_sha', 'artifact_id',
+              'build_run_id', 'build_attempt', 'manifest_sha256', 'archive_sha256',
+              'expected_current', 'expected_receive_sha256', 'expected_promote_sha256'})
+          require(type(request['version']) is int and request['version'] == 1)
+          require(request['operation'] == 'audit')
+          require(type(request['workflow_sha']) is str and re.fullmatch('[0-9a-f]{40}', request['workflow_sha']))
+          require(request['workflow_sha'] == os.environ['EXPECTED_WORKFLOW_SHA'])
+          require(all(request[name] is None for name in (
+              'source_sha', 'artifact_id', 'build_run_id', 'build_attempt', 'manifest_sha256', 'archive_sha256')))
+          require(request['expected_current'] == '/var/www/kfaah-releases/20261009T213800Z-126960cf')
+          require(request['expected_receive_sha256'] == '5494cae6b5ae590f1528da9a3f48da5e0f0e978e013b0d9d161d4c99ff09c6c4')
+          require(request['expected_promote_sha256'] == 'f10c0ea1e3c60a32b297515d63e338b06d7ecf8a7a18fd9efd7c6b9c729f8fbd')
+          print('OWNER_AUDIT_REQUEST_ACCEPTED issue='+str(issue['number']))
+          PY
+      - name: Inspect fixed helper metadata and secret indicators only
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test "$HETZNER_USER" = deploy
+          [[ "$HETZNER_HOST" =~ ^([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9.-]*[A-Za-z0-9])$ ]]
+          : "${HETZNER_SSH_KEY:?Missing existing deploy key}"
+          : "${HETZNER_KNOWN_HOSTS:?Missing existing pinned host keys}"
+          key_dir="$(mktemp -d "$RUNNER_TEMP/kfaah-owner-audit.XXXXXX")"
+          trap 'rm -rf -- "$key_dir"' EXIT
+          chmod 700 "$key_dir"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$key_dir/key"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$key_dir/known_hosts"
+          chmod 600 "$key_dir/key" "$key_dir/known_hosts"
+          /usr/bin/ssh -F /dev/null -i "$key_dir/key" \
+            -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$key_dir/known_hosts" -o ConnectTimeout=15 \
+            -o ServerAliveInterval=15 -o ServerAliveCountMax=2 \
+            "deploy@$HETZNER_HOST" '/usr/bin/env -i PATH=/usr/bin:/bin /usr/bin/python3 -I -' <<'PY'
+          import hashlib, os, pwd, re, stat
+          if os.geteuid() != 1000 or pwd.getpwuid(os.geteuid()).pw_name != 'deploy':
+              raise SystemExit('UNEXPECTED_DEPLOY_IDENTITY')
+          expected = {
+              '/usr/local/bin/kfaah-receive-frontend': '5494cae6b5ae590f1528da9a3f48da5e0f0e978e013b0d9d161d4c99ff09c6c4',
+              '/usr/local/bin/kfaah-promote-frontend': 'f10c0ea1e3c60a32b297515d63e338b06d7ecf8a7a18fd9efd7c6b9c729f8fbd'}
+          failed = False
+          for path, approved in expected.items():
+              directory = handle = None
+              try:
+                  directory = os.open('/', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+                  for part in path.split('/')[1:-1]:
+                      child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=directory)
+                      os.close(directory)
+                      directory = child
+                      info = os.fstat(directory)
+                      if info.st_uid != 0 or info.st_mode & 0o022:
+                          raise ValueError('untrusted ancestor')
+                  handle = os.open(path.rsplit('/', 1)[1], os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory)
+                  before = os.fstat(handle)
+                  if not stat.S_ISREG(before.st_mode) or before.st_uid != 0 or before.st_nlink != 1 or before.st_mode & 0o7022 or before.st_size > 2*1024*1024:
+                      raise ValueError('untrusted helper')
+                  data = bytearray()
+                  while len(data) <= 2*1024*1024:
+                      chunk = os.read(handle, 65536)
+                      if not chunk:
+                          break
+                      data.extend(chunk)
+                  after = os.fstat(handle)
+                  fields = ('st_dev', 'st_ino', 'st_size', 'st_mtime_ns', 'st_ctime_ns', 'st_nlink', 'st_uid', 'st_mode')
+                  if len(data) != before.st_size or len(data) > 2*1024*1024 or any(getattr(before, name) != getattr(after, name) for name in fields):
+                      raise ValueError('helper changed')
+                  digest = hashlib.sha256(data).hexdigest()
+                  matched = digest == approved
+                  print('HELPER='+path+' SHA256='+digest+' EXPECTED_MATCH='+str(matched).lower())
+                  failed |= not matched
+                  indicators = {
+                      'private_key': rb'-----BEGIN [A-Z ]*PRIVATE KEY-----',
+                      'credential_literal': rb'(?i)(?:password|passwd|secret|token|api[_-]?key)\s*[=:]\s*[\x22\x27][^\x22\x27\r\n]{4,}',
+                      'credential_url': rb'(?i)https?://[^\s/]+:[^\s/]+@',
+                      'known_token_prefix': rb'(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[A-Z0-9]{16}|sk-[A-Za-z0-9_-]{20,})'}
+                  for label, pattern in indicators.items():
+                      print('HELPER='+path+' INDICATOR='+label+' PRESENT='+str(bool(re.search(pattern, data))).lower())
+                  print('HELPER='+path+' SOURCE_EXPORT=NOT_PERMITTED_WITHOUT_PRIVATE_REVIEW')
+              except (OSError, ValueError):
+                  failed = True
+                  print('HELPER='+path+' STATE=READ_NOT_CONFIRMED')
+              finally:
+                  if handle is not None:
+                      os.close(handle)
+                  if directory is not None:
+                      os.close(directory)
+          directory = None
+          try:
+              directory = os.open('/', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+              for part in ('var', 'www'):
+                  child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=directory)
+                  os.close(directory)
+                  directory = child
+                  info = os.fstat(directory)
+                  if info.st_uid != 0 or info.st_mode & 0o022:
+                      raise ValueError('untrusted pointer ancestor')
+              before = os.stat('kfaah-current', dir_fd=directory, follow_symlinks=False)
+              if not stat.S_ISLNK(before.st_mode) or before.st_uid != 0:
+                  raise ValueError('untrusted current pointer')
+              target = os.readlink('kfaah-current', dir_fd=directory)
+              after = os.stat('kfaah-current', dir_fd=directory, follow_symlinks=False)
+              fields = ('st_dev', 'st_ino', 'st_mtime_ns', 'st_ctime_ns', 'st_uid', 'st_mode')
+              if any(getattr(before, name) != getattr(after, name) for name in fields):
+                  raise ValueError('pointer changed')
+              matched = target == '/var/www/kfaah-releases/20261009T213800Z-126960cf'
+              print('BASELINE_POINTER_EXPECTED_MATCH='+str(matched).lower())
+              failed |= not matched
+          except (OSError, ValueError):
+              failed = True
+              print('BASELINE_POINTER=NOT_CONFIRMED')
+          finally:
+              if directory is not None:
+                  os.close(directory)
+          print('SECRET_SCAN=HEURISTIC_ONLY_NO_SOURCE_CONTENT_EXPORTED')
+          if failed:
+              raise SystemExit('AUDIT_EXPECTATIONS_NOT_CONFIRMED')
+          PY
