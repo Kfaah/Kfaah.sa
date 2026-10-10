@@ -1,0 +1,322 @@
+name: Kfaah owner readonly baseline preflight
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: kfaah-owner-readonly-baseline-preflight
+  cancel-in-progress: false
+jobs:
+  preflight:
+    if: >-
+      github.repository == 'gaberalhrese-cloud/shop-soulmate-04' &&
+      github.ref == 'refs/heads/main' && github.actor_id == '253139283' &&
+      github.event.issue.user.id == 253139283 &&
+      github.event.issue.title == 'KFAAH_OWNER_BASELINE_PREFLIGHT_V1' &&
+      !github.event.issue.pull_request && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Validate fixed owner request
+        env:
+          WORKFLOW_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PYTHON'
+          import json, os
+          def require(v):
+              if not v: raise SystemExit('REQUEST_REJECTED')
+          def unique(pairs):
+              out={}
+              for k,v in pairs:
+                  require(k not in out);out[k]=v
+              return out
+          with open(os.environ['GITHUB_EVENT_PATH']) as f:e=json.load(f)
+          i=e.get('issue',{})
+          require(e.get('action')=='opened' and e.get('sender',{}).get('id')==253139283)
+          require(e.get('repository',{}).get('full_name')=='gaberalhrese-cloud/shop-soulmate-04')
+          require(e.get('repository',{}).get('owner',{}).get('id')==253139283)
+          require(i.get('user',{}).get('id')==253139283 and i.get('author_association')=='OWNER')
+          require(i.get('title')=='KFAAH_OWNER_BASELINE_PREFLIGHT_V1' and 'pull_request' not in i)
+          require(os.environ['GITHUB_REF']=='refs/heads/main' and os.environ['GITHUB_RUN_ATTEMPT']=='1')
+          b=i.get('body');require(type(b) is str and len(b.encode())<=4096)
+          try:r=json.loads(b,object_pairs_hook=unique)
+          except (ValueError,TypeError):raise SystemExit('REQUEST_REJECTED')
+          expected={'version':1,'operation':'READONLY_PREFLIGHT',
+                    'workflow_sha':os.environ['WORKFLOW_SHA'],
+                    'expected_current':'/var/www/kfaah-releases/20261009T213800Z-126960cf',
+                    'expected_receive_sha256':'5494cae6b5ae590f1528da9a3f48da5e0f0e978e013b0d9d161d4c99ff09c6c4',
+                    'expected_promote_sha256':'f10c0ea1e3c60a32b297515d63e338b06d7ecf8a7a18fd9efd7c6b9c729f8fbd'}
+          require(type(r) is dict and r==expected and type(r.get('version')) is int)
+          print('OWNER_READONLY_PREFLIGHT_REQUEST_ACCEPTED')
+          PYTHON
+      - name: Read known GitHub publisher state without logs or credentials
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -m 700 audit-output
+          python3 - <<'PYTHON'
+          import json, os, urllib.request
+          from pathlib import Path
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,*a,**kw):raise ValueError('REDIRECT_REJECTED')
+          opener=urllib.request.build_opener(urllib.request.ProxyHandler({}),NoRedirect())
+          def get(endpoint):
+              req=urllib.request.Request('https://api.github.com/repos/gaberalhrese-cloud/shop-soulmate-04/'+endpoint,
+                  headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'})
+              with opener.open(req,timeout=20) as response:data=response.read(8*1024*1024+1)
+              if len(data)>8*1024*1024:raise ValueError('RESPONSE_LIMIT')
+              return json.loads(data)
+          def pages(endpoint,key):
+              rows=[]
+              for page in range(1,11):
+                  obj=get(endpoint+('&' if '?' in endpoint else '?')+'per_page=100&page='+str(page))
+                  batch=obj[key];rows.extend(batch)
+                  if len(batch)<100:return rows
+              raise ValueError('PAGINATION_INCOMPLETE')
+          def publisher(path):return any(word in path.lower() for word in ('publish','deploy','manager','release'))
+          try:
+              workflows=pages('actions/workflows','workflows')
+              known=[{k:w.get(k) for k in ('id','name','path','state')} for w in workflows if publisher(w.get('path',''))]
+              runs={}
+              for status in ('queued','in_progress','waiting','pending','requested'):
+                  for r in pages('actions/runs?status='+status,'workflow_runs'):
+                      if publisher(r.get('path','')):
+                          runs[r['id']]={k:r.get(k) for k in ('id','workflow_id','path','status','run_attempt','head_sha','event')}
+              out={'scanComplete':True,'knownPublisherWorkflows':known,'activeKnownPublisherRuns':list(runs.values()),
+                   'coverage':'GitHub workflows whose paths include publish/deploy/manager/release; no external writer exclusion',
+                   'exclusiveWindowConfirmed':False}
+          except Exception:
+              out={'scanComplete':False,'exclusiveWindowConfirmed':False,'reason':'GITHUB_PUBLISHER_STATE_NOT_CONFIRMED'}
+          Path('audit-output/github-publishers.json').write_text(json.dumps(out,sort_keys=True)+'\n')
+          print('GITHUB_PUBLISHER_SCAN_COMPLETE='+str(out['scanComplete']).lower())
+          PYTHON
+      - name: Read fixed server snapshot twice without executing helpers
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test "$HETZNER_USER" = deploy
+          [[ "$HETZNER_HOST" =~ ^([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9.-]*[A-Za-z0-9])$ ]]
+          : "${HETZNER_SSH_KEY:?Missing existing deploy key}"
+          : "${HETZNER_KNOWN_HOSTS:?Missing existing pinned host keys}"
+          key_dir="$(mktemp -d "$RUNNER_TEMP/kfaah-readonly-preflight.XXXXXX")"
+          trap 'rm -rf -- "$key_dir"' EXIT
+          chmod 700 "$key_dir"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$key_dir/key"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$key_dir/known_hosts"
+          chmod 600 "$key_dir/key" "$key_dir/known_hosts"
+          set +e
+          timeout 35m /usr/bin/ssh -F /dev/null -i "$key_dir/key" \
+            -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$key_dir/known_hosts" -o ConnectTimeout=15 \
+            -o ServerAliveInterval=15 -o ServerAliveCountMax=2 \
+            "deploy@$HETZNER_HOST" '/usr/bin/env -i PATH=/usr/bin:/bin /usr/bin/python3 -I -' \
+            > audit-output/server-inventory.jsonl <<'PYTHON'
+          import hashlib, json, os, pwd, stat, time
+          EXPECTED='/var/www/kfaah-releases/20261009T213800Z-126960cf'
+          HELPERS={
+           'kfaah-receive-frontend':'5494cae6b5ae590f1528da9a3f48da5e0f0e978e013b0d9d161d4c99ff09c6c4',
+           'kfaah-promote-frontend':'f10c0ea1e3c60a32b297515d63e338b06d7ecf8a7a18fd9efd7c6b9c729f8fbd'}
+          MAX_ENTRIES=1000000
+          DEADLINE_SECONDS=900
+          FIELDS=('st_dev','st_ino','st_size','st_mtime_ns','st_ctime_ns','st_mode','st_uid','st_gid','st_nlink')
+          def meta(s):return tuple(getattr(s,k) for k in FIELDS)
+          def canonical(o):return (json.dumps(o,sort_keys=True,separators=(',',':'),ensure_ascii=True)+'\n').encode()
+          def emit(o):print(canonical(o).decode(),end='',flush=True)
+          def kind(s):
+           if stat.S_ISREG(s.st_mode):return 'file'
+           if stat.S_ISDIR(s.st_mode):return 'directory'
+           if stat.S_ISLNK(s.st_mode):return 'symlink'
+           return 'special'
+          def descriptor(path,s):
+           return {'path':path,'type':kind(s),'uid':s.st_uid,'gid':s.st_gid,'mode':format(stat.S_IMODE(s.st_mode),'04o'),'nlink':s.st_nlink,'size':s.st_size,'dev':s.st_dev,'ino':s.st_ino,'mtimeNs':s.st_mtime_ns,'ctimeNs':s.st_ctime_ns}
+          def directory(path,protect=True):
+           if not path.startswith('/') or '..' in path.split('/'):raise ValueError('PATH_REJECTED')
+           fd=os.open('/',os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+           try:
+            for part in path.split('/')[1:]:
+             child=os.open(part,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW,dir_fd=fd);os.close(fd);fd=child
+             s=os.fstat(fd)
+             if protect and (s.st_uid!=0 or s.st_mode&0o7022):raise ValueError('ANCESTOR_UNPROTECTED')
+            return fd
+           except BaseException:os.close(fd);raise
+          
+          def pointer(fd,expected):
+           s=os.stat('kfaah-current',dir_fd=fd,follow_symlinks=False)
+           if not stat.S_ISLNK(s.st_mode) or s.st_uid!=0 or os.readlink('kfaah-current',dir_fd=fd)!=expected:raise ValueError('CURRENT_MISMATCH')
+           return meta(s)
+          
+          def scan(root,output=emit,protect=True,deadline_seconds=DEADLINE_SECONDS,max_entries=MAX_ENTRIES):
+           started=time.monotonic();manifest=hashlib.sha256();metadata=hashlib.sha256()
+           counts={'entries':0,'files':0,'directories':0,'bytes':0,'symlinks':0,'hardlinks':0,'special':0,'unprotected':0}
+           def guard():
+            if time.monotonic()-started>deadline_seconds:raise ValueError('DEADLINE_PARTIAL_SCAN')
+           def walk(fd,prefix):
+            guard();before=os.fstat(fd)
+            pairs=[('',before)]+[(name,None) for name in sorted(os.listdir(fd))]
+            for entry,initial in pairs:
+             guard()
+             if entry=='':s=initial;path=prefix[:-1] if prefix else '.'
+             else:s=os.stat(entry,dir_fd=fd,follow_symlinks=False);path=prefix+entry
+             if entry and stat.S_ISDIR(s.st_mode):
+              child=os.open(entry,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW,dir_fd=fd)
+              try:
+               if meta(s)!=meta(os.fstat(child)):raise ValueError('DIRECTORY_REPLACED')
+               walk(child,path+'/')
+              finally:os.close(child)
+              continue
+             counts['entries']+=1
+             if counts['entries']>max_entries:raise ValueError('ENTRY_LIMIT_PARTIAL_SCAN')
+             row=descriptor(path,s);metadata.update(canonical(row))
+             if s.st_uid!=0 or s.st_mode&0o7022:counts['unprotected']+=1
+             k=row['type']
+             if k=='directory':counts['directories']+=1
+             elif k=='symlink':counts['symlinks']+=1
+             elif k=='special':counts['special']+=1
+             else:
+              counts['files']+=1;counts['bytes']+=s.st_size
+              if s.st_nlink!=1:counts['hardlinks']+=1
+              handle=os.open(entry,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK,dir_fd=fd)
+              try:
+               if meta(s)!=meta(os.fstat(handle)):raise ValueError('FILE_REPLACED')
+               h=hashlib.sha256();size=0
+               while True:
+                guard();chunk=os.read(handle,1048576)
+                if not chunk:break
+                h.update(chunk);size+=len(chunk)
+               if size!=s.st_size or meta(s)!=meta(os.fstat(handle)) or meta(s)!=meta(os.stat(entry,dir_fd=fd,follow_symlinks=False)):raise ValueError('FILE_CHANGED')
+               row['sha256']=h.hexdigest()
+              finally:os.close(handle)
+             raw=canonical(row);manifest.update(raw)
+             if output is not None:output({'record':'entry','entry':row})
+            if meta(before)!=meta(os.fstat(fd)):raise ValueError('DIRECTORY_CHANGED')
+           rootfd=directory(root,protect)
+           try:walk(rootfd,'')
+           finally:os.close(rootfd)
+           return {'counts':counts,'manifestSha256':manifest.hexdigest(),'metadataSha256':metadata.hexdigest()}
+          
+          def helper_hash(name):
+           fd=directory('/usr/local/bin');handle=None
+           try:
+            s=os.stat(name,dir_fd=fd,follow_symlinks=False)
+            if not stat.S_ISREG(s.st_mode) or s.st_uid!=0 or s.st_nlink!=1 or s.st_mode&0o7022 or s.st_size>2097152:raise ValueError('HELPER_UNPROTECTED')
+            handle=os.open(name,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK,dir_fd=fd);h=hashlib.sha256();size=0
+            if meta(s)!=meta(os.fstat(handle)):raise ValueError('HELPER_REPLACED')
+            while True:
+             chunk=os.read(handle,65536)
+             if not chunk:break
+             size+=len(chunk)
+             if size>2097152:raise ValueError('HELPER_LIMIT')
+             h.update(chunk)
+            if size!=s.st_size or meta(s)!=meta(os.fstat(handle)) or meta(s)!=meta(os.stat(name,dir_fd=fd,follow_symlinks=False)):raise ValueError('HELPER_CHANGED')
+            return descriptor('/usr/local/bin/'+name,s)|{'sha256':h.hexdigest(),'expectedMatch':h.hexdigest()==HELPERS[name]}
+           finally:
+            if handle is not None:os.close(handle)
+            os.close(fd)
+          
+          def known_processes():
+           # comm only: never cmdline, environ, process arguments or service contents.
+           known=set(HELPERS)|{n[:15] for n in HELPERS};rows=[];unreadable=0
+           for item in os.scandir('/proc'):
+            if not item.name.isdigit():continue
+            try:
+             uid=item.stat(follow_symlinks=False).st_uid
+             with open(item.path+'/comm','rb') as stream:comm=stream.read(128).decode('ascii','replace').strip()
+             if comm in known:rows.append({'pid':int(item.name),'uid':uid,'comm':comm})
+            except OSError:unreadable+=1
+           return {'knownHelperProcesses':rows[:100],'matchingCount':len(rows),'unreadableCount':unreadable,'coverage':'comm-only; shell/python wrappers and external publishers are not excluded'}
+          
+          def main():
+           if os.geteuid()!=1000 or pwd.getpwuid(1000).pw_name!='deploy':raise ValueError('IDENTITY_REJECTED')
+           parent=directory('/var/www')
+           try:
+            before=pointer(parent,EXPECTED)
+            emit({'record':'header','version':1,'expectedCurrent':EXPECTED,'entryLimit':MAX_ENTRIES,'deadlineSecondsPerScan':DEADLINE_SECONDS,'byteLimit':None,'contentExported':False})
+            helpers=[helper_hash(name) for name in sorted(HELPERS)]
+            first=scan(EXPECTED)
+            # Re-read every byte and metadata. A failed/incomplete second pass is never stable.
+            second=scan(EXPECTED,output=None)
+            stable=first==second and before==pointer(parent,EXPECTED)
+            helpers_after=[helper_hash(name) for name in sorted(HELPERS)]
+            helper_ok=helpers==helpers_after and all(h['expectedMatch'] for h in helpers)
+            c=first['counts'];safe=not any(c[k] for k in ('symlinks','hardlinks','special','unprotected'))
+            summary={'record':'summary','scanComplete':True,'snapshotStable':stable,'treeReadiness':stable and safe and helper_ok,'current':EXPECTED,**first,'helpers':helpers,'helpersStable':helper_ok,'publishers':known_processes(),'exclusiveWindowConfirmed':False,'receiverSourceReviewed':False,'rollbackBundleReady':False,'rollbackContentExported':False}
+            emit(summary)
+            if not summary['treeReadiness']:raise SystemExit(1)
+           finally:os.close(parent)
+          if __name__=='__main__':
+           try:main()
+           except (OSError,ValueError):
+            emit({'record':'failure','scanComplete':False,'snapshotStable':False,'treeReadiness':False,'reason':'READ_OR_EXPECTATION_NOT_CONFIRMED'});raise SystemExit(1)
+          PYTHON
+          scan_exit=$?
+          set -e
+          printf '%s\n' "$scan_exit" > audit-output/server-exit-status.txt
+      - name: Check manifest and print bounded readiness summary
+        if: always()
+        run: |
+          set -euo pipefail
+          python3 - <<'PYTHON'
+          import hashlib,json
+          from pathlib import Path
+          p=Path('audit-output');p.mkdir(exist_ok=True)
+          def canonical(o):return (json.dumps(o,sort_keys=True,separators=(',',':'),ensure_ascii=True)+'\n').encode()
+          summary=None;failure=False;h=hashlib.sha256();owners={};entries=0
+          try:
+              with (p/'server-inventory.jsonl').open('rb') as stream:
+                  for raw in stream:
+                      if len(raw)>1048576:raise ValueError('RECORD_LIMIT')
+                      row=json.loads(raw)
+                      if row.get('record')=='entry':
+                          e=row['entry'];h.update(canonical(e));entries+=1
+                          k=str(e['uid'])+':'+str(e['gid'])+':'+e['mode']+':'+e['type']
+                          if k not in owners and len(owners)>=1024:raise ValueError('OWNER_GROUP_LIMIT')
+                          owners[k]=owners.get(k,0)+1
+                      elif row.get('record')=='summary':
+                          if summary is not None:raise ValueError('DUPLICATE_SUMMARY')
+                          summary=row
+                      elif row.get('record')=='failure':failure=True
+              require=summary is not None and not failure and summary['scanComplete'] and summary['manifestSha256']==h.hexdigest() and summary['counts']['entries']==entries
+              code=(p/'server-exit-status.txt').read_text().strip()
+              github=json.loads((p/'github-publishers.json').read_text())
+              result={'serverScanComplete':bool(require),'snapshotStable':bool(require and summary['snapshotStable']),
+                      'treeReadiness':bool(require and code=='0' and summary['treeReadiness']),
+                      'manifestSha256':h.hexdigest() if require else None,
+                      'counts':summary['counts'] if require else None,'ownerModeGroups':owners if require else {},
+                      'githubPublisherScanComplete':github.get('scanComplete') is True,
+                      'activeKnownGithubPublishers':len(github.get('activeKnownPublisherRuns',[])),
+                      'activeKnownServerHelpers':summary['publishers']['matchingCount'] if require else None,
+                      'exclusiveWindowConfirmed':False,'receiverSourceReviewed':False,'rollbackBundleReady':False}
+          except Exception:
+              result={'serverScanComplete':False,'snapshotStable':False,'treeReadiness':False,'rollbackBundleReady':False,'reason':'READONLY_PREFLIGHT_NOT_CONFIRMED'}
+          (p/'readiness.json').write_bytes(canonical(result))
+          bounded={k:v for k,v in result.items() if k!='ownerModeGroups'}
+          bounded['ownerModeGroupCount']=len(result.get('ownerModeGroups',{}))
+          print(json.dumps(bounded,sort_keys=True))
+          PYTHON
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kfaah-readonly-baseline-preflight-${{ github.run_id }}-${{ github.run_attempt }}
+          path: audit-output/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Fail closed if inventory or publisher scan is incomplete or unsafe
+        if: always()
+        run: |
+          set -euo pipefail
+          python3 - <<'PYTHON'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('audit-output/readiness.json').read_text())
+          if not (r.get('treeReadiness') and r.get('githubPublisherScanComplete') and r.get('activeKnownGithubPublishers')==0 and r.get('activeKnownServerHelpers')==0):
+              raise SystemExit('READONLY_PREFLIGHT_NOT_READY')
+          print('READONLY_TREE_CHECKS_PASSED; EXCLUSIVITY_AND_ROLLBACK_BUNDLE_STILL_REQUIRE_SEPARATE_EVIDENCE')
+          PYTHON
