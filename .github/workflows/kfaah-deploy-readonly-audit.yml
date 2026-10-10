@@ -1,0 +1,131 @@
+name: Kfaah deploy boundary audit (read only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kfaah-deploy-readonly-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read fixed deploy metadata with existing SSH identity
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test "$HETZNER_USER" = deploy
+          [[ "$HETZNER_HOST" =~ ^([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9.-]*[A-Za-z0-9])$ ]]
+          : "${HETZNER_SSH_KEY:?Missing existing deploy key}"
+          : "${HETZNER_KNOWN_HOSTS:?Missing existing pinned host keys}"
+          key_dir="$(mktemp -d "$RUNNER_TEMP/kfaah-audit.XXXXXX")"
+          trap 'rm -rf -- "$key_dir"' EXIT
+          chmod 700 "$key_dir"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$key_dir/key"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$key_dir/known_hosts"
+          chmod 600 "$key_dir/key" "$key_dir/known_hosts"
+          /usr/bin/ssh -F /dev/null -i "$key_dir/key" \
+            -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$key_dir/known_hosts" -o ConnectTimeout=15 \
+            -o ServerAliveInterval=15 -o ServerAliveCountMax=2 \
+            "deploy@$HETZNER_HOST" '/usr/bin/env -i PATH=/usr/bin:/bin /bin/bash --noprofile --norc -s' <<'REMOTE'
+          set -euo pipefail
+          test "$(id -un)" = deploy
+          printf 'DEPLOY_UID=%s\n' "$(id -u)"
+          printf 'GROUP_NAMES=%s\n' "$(id -Gn)"
+          printf '%s\n' '=== FIXED PATH OWNERS AND MODES ==='
+          for path in /usr/local /usr/local/bin /usr/local/lib \
+            /usr/local/bin/kfaah-receive-frontend /usr/local/bin/kfaah-promote-frontend \
+            /usr/local/bin/kfaah-release-v1 /usr/local/lib/kfaah-release-v1 \
+            /home/deploy /home/deploy/incoming /home/deploy/kfaah-incoming-v1 \
+            /var/www /var/www/kfaah-current /var/www/kfaah-staging /var/www/kfaah-releases \
+            /srv /srv/kfaah-release-v1 /srv/kfaah-release-v1/objects /srv/kfaah-release-v1/current; do
+            if [ -e "$path" ] || [ -L "$path" ]; then
+              stat -c 'PATH=%n UID=%u GID=%g MODE=%a TYPE=%F' -- "$path"
+            else
+              printf 'PATH=%s STATE=MISSING\n' "$path"
+            fi
+          done
+          printf '%s\n' '=== FIXED CURRENT POINTERS ==='
+          for path in /var/www/kfaah-current /srv/kfaah-release-v1/current; do
+            if [ -L "$path" ]; then
+              printf 'POINTER=%s TARGET=' "$path"
+              readlink -- "$path"
+            else
+              printf 'POINTER=%s STATE=NOT_SYMLINK\n' "$path"
+            fi
+          done
+          printf '%s\n' '=== REGULAR HELPER DIGESTS ONLY ==='
+          python3 - <<'PY'
+          import hashlib, os, stat
+          paths = ['/usr/local/bin/kfaah-receive-frontend', '/usr/local/bin/kfaah-promote-frontend',
+                   '/usr/local/bin/kfaah-release-v1', '/usr/local/lib/kfaah-release-v1/server.py',
+                   '/usr/local/lib/kfaah-release-v1/contract.py']
+          for path in paths:
+              directory = handle = None
+              try:
+                  directory = os.open('/', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+                  parts = path.split('/')[1:]
+                  for part in parts[:-1]:
+                      child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=directory)
+                      os.close(directory)
+                      directory = child
+                      info = os.fstat(directory)
+                      if info.st_uid != 0 or info.st_mode & 0o022:
+                          raise ValueError('untrusted ancestor')
+                  handle = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory)
+                  before = os.fstat(handle)
+                  if not stat.S_ISREG(before.st_mode) or before.st_uid != 0 or before.st_nlink != 1 or before.st_mode & 0o022 or before.st_size > 2*1024*1024:
+                      raise ValueError('untrusted helper')
+                  digest = hashlib.sha256()
+                  total = 0
+                  while True:
+                      chunk = os.read(handle, 65536)
+                      if not chunk:
+                          break
+                      total += len(chunk)
+                      if total > 2*1024*1024:
+                          raise ValueError('helper size limit')
+                      digest.update(chunk)
+                  after = os.fstat(handle)
+                  fields = ('st_dev', 'st_ino', 'st_size', 'st_mtime_ns', 'st_ctime_ns', 'st_nlink', 'st_uid', 'st_mode')
+                  if total != before.st_size or any(getattr(before, name) != getattr(after, name) for name in fields):
+                      raise ValueError('helper changed')
+                  print('HELPER='+path+' SHA256='+digest.hexdigest())
+              except (OSError, ValueError):
+                  print('HELPER='+path+' STATE=HASH_NOT_CONFIRMED')
+              finally:
+                  if handle is not None:
+                      os.close(handle)
+                  if directory is not None:
+                      os.close(directory)
+          PY
+          printf '%s\n' '=== FILESYSTEM SPACE ==='
+          df -Pk -- / /var /home /srv
+          printf '%s\n' '=== SUDO VERSION ONLY ==='
+          /usr/bin/sudo --version | sed -n '1p'
+          printf '%s\n' '=== NONEXECUTING EXACT SUDO PERMISSION CHECKS ==='
+          permission() {
+            label="$1"
+            shift
+            if /usr/bin/sudo -n -l -- "$@" >/dev/null 2>&1; then
+              printf 'SUDO_CHECK=%s RESULT=PERMITTED_QUERY\n' "$label"
+            else
+              printf 'SUDO_CHECK=%s RESULT=NOT_CONFIRMED\n' "$label"
+            fi
+          }
+          permission old_receive /usr/local/bin/kfaah-receive-frontend /home/deploy/incoming
+          permission old_promote /usr/local/bin/kfaah-promote-frontend --live
+          permission new_status /usr/local/bin/kfaah-release-v1 status
+          permission general_shell /bin/sh
+          REMOTE
