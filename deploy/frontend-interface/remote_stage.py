@@ -1,5 +1,5 @@
 """Fixed deploy-user STAGE_ONLY operations; loaded with pinned audited modules."""
-import ctypes, errno, fcntl, hashlib, json, os, pwd, stat, subprocess, time, uuid
+import ctypes, errno, fcntl, grp, hashlib, json, os, pwd, stat, subprocess, time, uuid
 from pathlib import Path
 import approved_audit as a
 import approved_release as r
@@ -10,7 +10,16 @@ LEGACY='/var/www/kfaah'
 LOG='/var/log/kfaah-deploy.log'
 EXECUTION_ENABLED=True  # Independent approval of the revised code is still required.
 
-EVIDENCE_FIELDS={'candidateBinding','phase','result','reason','backupPath','manifestSha256','contentSha256','counts','baselineBytesVerified','contentExported','stagingBeforePreserved','stagingBeforeContentSha256','baselineContentSha256','promoteInvoked','receiverInvoked','receiverSourceReviewed','allWritersExcluded','quietWindowAssertion','automaticRootRecovery','expectedHtmlInjection','legacyBadgeSha256','retainedFileCount','receiveExitCode','differenceCount','differences','truncated','stagingMatchesReceiverModel','incomingRecovery','incomingCandidateRetained','oldIncomingNeverDeleted','currentBaselineMatchedBeforeAfter','baselineStillVerified','helpersMatchedBeforeAfter'}
+EVIDENCE_FIELDS={'errorCode','errorErrno','candidateBinding','phase','result','reason','backupPath','manifestSha256','contentSha256','counts','baselineBytesVerified','contentExported','stagingBeforePreserved','stagingBeforeContentSha256','baselineContentSha256','promoteInvoked','receiverInvoked','receiverSourceReviewed','allWritersExcluded','quietWindowAssertion','automaticRootRecovery','expectedHtmlInjection','legacyBadgeSha256','retainedFileCount','receiveExitCode','differenceCount','differences','truncated','stagingMatchesReceiverModel','incomingRecovery','incomingCandidateRetained','oldIncomingNeverDeleted','currentBaselineMatchedBeforeAfter','baselineStillVerified','helpersMatchedBeforeAfter'}
+SAFE_ERROR_CODES=frozenset(['ANCESTOR_UNPROTECTED', 'ATOMIC_NOREPLACE_UNAVAILABLE', 'BACKUP_BYTES_MISMATCH', 'BACKUP_CHANGED', 'BACKUP_COUNTS_CHANGED', 'BACKUP_MANIFEST_UNPROTECTED', 'BACKUP_READY_MISMATCH', 'BADGE_DESTINATION_IS_DIRECTORY', 'BASELINE_APPROVAL_MISMATCH', 'BASELINE_CHANGED_DURING_COPY', 'BASELINE_COPY_OWNER', 'BASELINE_FILE_REJECTED', 'BASELINE_HARDLINK', 'BASELINE_MANIFEST_CHANGED', 'BASELINE_MANIFEST_NONCANONICAL', 'BASELINE_MODE', 'BASELINE_NONREGULAR', 'BASELINE_OWNER', 'BASELINE_RECORD_LIMIT', 'CANDIDATE_BINDING_REJECTED', 'CANDIDATE_ORIGIN_MISMATCH', 'COMPONENT_REJECTED', 'COPY_SOURCE_CHANGED', 'COPY_SOURCE_GREW', 'COPY_SOURCE_REPLACED', 'CROSS_FILESYSTEM_SWAP_REJECTED', 'CURRENT_BASELINE_CHANGED', 'CURRENT_CHANGED_BEFORE_BACKUP', 'CURRENT_CHANGED_DURING_STAGING_BACKUP', 'CURRENT_MISMATCH', 'CURRENT_POINTER_CHANGED', 'CURRENT_UNSAFE', 'DEADLINE_PARTIAL_SCAN', 'DEPLOY_IDENTITY_REJECTED', 'DIRECTORY_CHANGED', 'DIRECTORY_REPLACED', 'ENTRY_LIMIT_PARTIAL_SCAN', 'EVIDENCE_SIZE_REJECTED', 'FILE_CHANGED', 'FILE_REPLACED', 'HELPER_CHANGED', 'HELPER_IDENTITY_MISMATCH', 'HELPER_LIMIT', 'HELPER_REPLACED', 'HELPER_UNPROTECTED', 'HISTORICAL_PATH_REJECTED', 'HISTORICAL_RECOVERY_INPUT_CHANGED', 'IDENTITY_REJECTED', 'INCOMING_CONTAINER_UNSAFE', 'INDEPENDENT_APPROVAL_REQUIRED', 'INSTALLED_INCOMING_CHANGED', 'JOURNAL_UNSAFE', 'KNOWN_SERVER_HELPER_ACTIVE', 'LEGACY_BADGE_CHANGED', 'LEGACY_BADGE_UNSAFE', 'LEGACY_DIRECTORY_UNSAFE', 'LOCK_UNSAFE', 'LOG_UNSAFE', 'MANUAL_RECOVERY_MODEL_MISMATCH', 'NONREGULAR_BASELINE', 'OLD_STAGING_ASSETS_RECEIVER_INELIGIBLE', 'OLD_STAGING_RECEIVER_INELIGIBLE', 'ORIGINAL_BACKUP_NOT_CONFIRMED', 'ORIGINAL_RESTORE_NOT_CONFIRMED', 'PATH_REJECTED', 'PHASE_REJECTED', 'PREPARED_CANDIDATE_MISMATCH', 'PRIVATE_DIRECTORY_REJECTED', 'RECEIVER_FILE_UNSAFE', 'RECEIVER_MODE_MISMATCH', 'RECEIVER_PATHS_CHANGED', 'RECEIVER_STOP_CONFIRMATION_REQUIRED', 'RECEIVER_TREE_UNSAFE', 'RECOVERY_CANDIDATE_CHANGED', 'RECOVERY_CROSS_FILESYSTEM', 'RECOVERY_NAMES_REJECTED', 'RECOVERY_NAME_COLLISION', 'RECOVERY_TRANSACTION_EXISTS', 'RERUN_REJECTED', 'RETAINED_IDENTITY_CHANGED', 'STAGING_BACKUP_CHANGED', 'STAGING_BACKUP_SOURCE_REJECTED', 'STAGING_CHANGED_SINCE_BACKUP', 'SWAP_ALREADY_EXISTS', 'SWAP_IDENTITY_CHANGED', 'SWAP_STATE_REJECTED', 'TRANSACTION_NAME_REJECTED', 'UNIQUE_SWAP_PATH_EXISTS', 'UNKNOWN_INCOMING_NOT_OVERWRITTEN', 'UNPROTECTED_BASELINE'])
+SAFE_ERROR_CODES=SAFE_ERROR_CODES|frozenset(['LOG_ACCESS_ACL_REJECTED', 'LOG_CHANGED', 'LOG_DEPLOY_IDENTITY_REJECTED', 'LOG_DEPLOY_WRITE_REJECTED', 'LOG_DIRECTORY_CHANGED', 'LOG_DIRECTORY_PROFILE_REJECTED', 'LOG_FIXED_PATH_REJECTED', 'LOG_GROUP_PROFILE_REJECTED', 'LOG_SERVICE_PROFILE_REJECTED','ERROR_EVIDENCE_REJECTED'])
+SAFE_RELEASE_ERRORS={'Untrusted directory ancestor':'DIRECTORY_OWNER_OR_MODE_REJECTED','Wrong owner':'OWNER_REJECTED','Unsafe relative path':'STATIC_PATH_REJECTED','Regular single-link file required':'REGULAR_FILE_REJECTED','Special mode rejected':'SPECIAL_MODE_REJECTED','Unprotected content':'MODE_REJECTED'}
+def safe_failure(exc):
+ if isinstance(exc,subprocess.TimeoutExpired):return {'errorCode':'OPERATION_TIMEOUT'}
+ if isinstance(exc,OSError):return {'errorCode':'OS_ERROR','errorErrno':exc.errno if type(exc.errno) is int and 0<=exc.errno<=4096 else None}
+ code=str(exc)
+ return {'errorCode':code if code in SAFE_ERROR_CODES else SAFE_RELEASE_ERRORS.get(code,'UNCLASSIFIED_EXPECTATION_REJECTED')}
+
 CANDIDATE_BINDING_KEYS=frozenset(('manifest_sha256', 'archive_sha256', 'source_sha', 'build_workflow_sha', 'build_run_id', 'build_attempt', 'artifact_id'))
 def candidate_binding(request):
  binding={key:request[key] for key in CANDIDATE_BINDING_KEYS}
@@ -21,6 +30,8 @@ def candidate_binding(request):
 
 def safe_evidence(obj):
  out={key:value for key,value in obj.items() if key in EVIDENCE_FIELDS}
+ if 'errorCode' in out:must(type(out['errorCode']) is str and out['errorCode'] in SAFE_ERROR_CODES|set(SAFE_RELEASE_ERRORS.values())|{'OS_ERROR','OPERATION_TIMEOUT','UNCLASSIFIED_EXPECTATION_REJECTED'},'ERROR_EVIDENCE_REJECTED')
+ if 'errorErrno' in out:must(out['errorErrno'] is None or type(out['errorErrno']) is int and 0<=out['errorErrno']<=4096,'ERROR_EVIDENCE_REJECTED')
  if 'candidateBinding' in out:
   must(type(out['candidateBinding']) is dict and set(out['candidateBinding'])==CANDIDATE_BINDING_KEYS,'CANDIDATE_BINDING_REJECTED')
   out['candidateBinding']=candidate_binding(out['candidateBinding'])
@@ -333,19 +344,77 @@ def legacy_directory():
   return fd
  except BaseException:os.close(fd);raise
 
+def absent_access_acl(fd,path_handle=False):
+ # O_PATH allows metadata checks on the root:root 0640 log without read access.
+ # Its fixed proc descriptor resolves the held inode, even after pathname rename.
+ target='/proc/self/fd/'+str(fd) if path_handle else fd
+ try:os.getxattr(target,'system.posix_acl_access')
+ except OSError as exc:
+  if exc.errno==errno.ENODATA:return
+  raise
+ raise ValueError('LOG_ACCESS_ACL_REJECTED')
+def protected_log_anchor(fd,uid,gid,mode):
+ info=os.fstat(fd)
+ must(stat.S_ISDIR(info.st_mode) and info.st_uid==uid and info.st_gid==gid and stat.S_IMODE(info.st_mode)==mode,'LOG_DIRECTORY_PROFILE_REJECTED')
+ absent_access_acl(fd)
+ must(not os.access('.',os.W_OK,dir_fd=fd,effective_ids=True),'LOG_DEPLOY_WRITE_REJECTED')
+ return info
+def logging_service_profile():
+ # One fixed operationally trusted logger; this is not protection from root
+ # or logging-service compromise, and never permits arbitrary writable groups.
+ try:group=grp.getgrgid(103)
+ except KeyError:raise ValueError('LOG_GROUP_PROFILE_REJECTED') from None
+ must(group.gr_gid==103 and group.gr_name=='syslog' and not group.gr_mem,'LOG_GROUP_PROFILE_REJECTED')
+ groups=grp.getgrall()
+ must(sum(entry.gr_gid==103 for entry in groups)==1 and sum(entry.gr_name=='syslog' for entry in groups)==1 and all(entry.gr_gid==103 and not entry.gr_mem for entry in groups if entry.gr_name=='syslog'),'LOG_GROUP_PROFILE_REJECTED')
+ accounts=pwd.getpwall()
+ primary=[entry for entry in accounts if entry.pw_gid==103]
+ must(len(primary)==1,'LOG_SERVICE_PROFILE_REJECTED')
+ account=primary[0]
+ must(account.pw_uid==102 and account.pw_name=='syslog' and account.pw_gid==103 and account.pw_shell in ('/usr/sbin/nologin','/sbin/nologin','/bin/false','/usr/bin/false'),'LOG_SERVICE_PROFILE_REJECTED')
+ must(sum(entry.pw_uid==102 for entry in accounts)==1 and sum(entry.pw_name=='syslog' for entry in accounts)==1,'LOG_SERVICE_PROFILE_REJECTED')
+ must(os.getuid()==1000 and os.geteuid()==1000 and os.getgid()==1000 and os.getegid()==1000 and not set(os.getgroups())&{0,103},'LOG_DEPLOY_IDENTITY_REJECTED')
+def protected_log_directory():
+ must(LOG=='/var/log/kfaah-deploy.log','LOG_FIXED_PATH_REJECTED')
+ logging_service_profile()
+ root=os.open('/',os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+ var=None;fd=None
+ try:
+  root_info=protected_log_anchor(root,0,0,0o755)
+  var=os.open('var',os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW,dir_fd=root)
+  var_info=protected_log_anchor(var,0,0,0o755)
+  fd=os.open('log',os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW,dir_fd=var)
+  log_info=protected_log_anchor(fd,0,103,0o775)
+  must(r.metadata(root_info)==r.metadata(os.fstat(root)) and r.metadata(var_info)==r.metadata(os.stat('var',dir_fd=root,follow_symlinks=False)) and r.metadata(log_info)==r.metadata(os.stat('log',dir_fd=var,follow_symlinks=False)),'LOG_DIRECTORY_CHANGED')
+  return fd
+ except BaseException:
+  if fd is not None:os.close(fd)
+  raise
+ finally:
+  if var is not None:os.close(var)
+  os.close(root)
+def protected_log_identity(parent):
+ fd=os.open('kfaah-deploy.log',os.O_PATH|os.O_NOFOLLOW,dir_fd=parent)
+ try:
+  info=os.fstat(fd)
+  must(stat.S_ISREG(info.st_mode) and info.st_uid==0 and info.st_gid==0 and info.st_nlink==1 and stat.S_IMODE(info.st_mode)==0o640,'LOG_UNSAFE')
+  absent_access_acl(fd,True)
+  must(not os.access('kfaah-deploy.log',os.W_OK,dir_fd=parent,effective_ids=True,follow_symlinks=False),'LOG_DEPLOY_WRITE_REJECTED')
+  must(r.metadata(info)==r.metadata(os.fstat(fd))==r.metadata(os.stat('kfaah-deploy.log',dir_fd=parent,follow_symlinks=False)),'LOG_CHANGED')
+  return root_identity(info)|{'gid':info.st_gid,'nlink':info.st_nlink}
+ finally:os.close(fd)
+
 def receiver_paths(post=False):
  # No new root permission; refuse redirected or writable root destinations.
  root=r.open_directory('/var/www',(0,));os.close(root)
  stage=r.open_directory(STAGING,(0,),33);os.close(stage)
  inventory=tree_inventory(STAGING,(0,33),post)
  must('hide-badge.js' not in inventory['directories'],'BADGE_DESTINATION_IS_DIRECTORY')
- log_parent=r.open_directory(Path(LOG).parent,(0,))
+ log_parent=protected_log_directory()
  try:
-  try:
-   info=os.stat(Path(LOG).name,dir_fd=log_parent,follow_symlinks=False)
-   must(stat.S_ISREG(info.st_mode) and info.st_uid==0 and info.st_nlink==1 and not info.st_mode&0o7022,'LOG_UNSAFE')
-   log_identity=root_identity(info)
-  except FileNotFoundError:log_identity=None
+  log_identity=protected_log_identity(log_parent)
+  log_parent_identity=root_identity(protected_log_anchor(log_parent,0,103,0o775))|{'gid':103}
+  logging_service_profile()
  finally:os.close(log_parent)
  legacy=None;legacy_identity=None
  try:
@@ -362,7 +431,7 @@ def receiver_paths(post=False):
     legacy={'sha256':r.digest(data),'size':len(data)}
    except FileNotFoundError:pass
   finally:os.close(fd)
- return {'inventory':inventory,'legacyBadge':legacy,'legacyDirectoryIdentity':legacy_identity,'logIdentity':log_identity}
+ return {'inventory':inventory,'legacyBadge':legacy,'legacyDirectoryIdentity':legacy_identity,'logIdentity':log_identity,'logParentIdentity':log_parent_identity}
 def receiver_model(incoming,index_bytes,previous,legacy_badge):
  expected={p:d for p,d in incoming['files'].items() if not excluded(p)}
  expected.update({p:d for p,d in previous['files'].items() if excluded(p)})
@@ -470,8 +539,8 @@ def stage(request,txn):
   must(actual['legacyBadge']==observed['legacyBadge'] and actual['legacyDirectoryIdentity']==observed['legacyDirectoryIdentity'],'LEGACY_BADGE_CHANGED')
   outcome|=descriptor_diff(modeled['files'],actual['inventory']['files'])
   outcome['stagingMatchesReceiverModel']=code==0 and outcome['differenceCount']==0 and modeled['directories']==sorted(actual['inventory']['directories']) and not modeled['badgeReferenceMissing']
- except (OSError,ValueError,subprocess.TimeoutExpired):
-  outcome|={'stagingMatchesReceiverModel':False,'reason':'STAGING_READ_OR_RECEIVE_NOT_CONFIRMED'}
+ except (OSError,ValueError,subprocess.TimeoutExpired) as exc:
+  outcome|={'stagingMatchesReceiverModel':False,'reason':'STAGING_READ_OR_RECEIVE_NOT_CONFIRMED',**safe_failure(exc)}
   if outcome['receiverInvoked']:
    state=journal_read(txn)
    if state['phase']=='RECEIVER_RUNNING':state['phase']='RECEIVER_STATUS_UNKNOWN';journal_write(txn,state)
@@ -507,6 +576,6 @@ def main(request,phase,run_id,attempt):
   result=backup(request,txn) if phase=='backup' else (recover_incoming(txn) if phase=='recover-incoming' else stage(request,txn))
   emit(result)
   if phase=='stage' and not stage_ready(result):raise SystemExit(1)
- except (OSError,ValueError):
-  emit({'phase':phase,'result':'STOPPED','reason':'EXPECTATION_NOT_CONFIRMED','backupPath':txn+'/baseline','promoteInvoked':False});raise SystemExit(1)
+ except (OSError,ValueError) as exc:
+  emit({'phase':phase,'result':'STOPPED','reason':'EXPECTATION_NOT_CONFIRMED','backupPath':txn+'/baseline','promoteInvoked':False,**safe_failure(exc)});raise SystemExit(1)
  finally:os.close(lock)
