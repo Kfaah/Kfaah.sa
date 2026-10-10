@@ -1,0 +1,131 @@
+name: Kfaah read-only failed backup diagnosis
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+concurrency:
+  group: kfaah-frontend-deploy
+  cancel-in-progress: false
+jobs:
+  diagnose:
+    if: >-
+      github.repository == 'gaberalhrese-cloud/shop-soulmate-04' &&
+      github.ref == 'refs/heads/main' && github.actor_id == '253139283' &&
+      github.event.issue.user.id == 253139283 &&
+      github.event.issue.title == 'KFAAH_OWNER_DIAG_STAGE_38070495638_V1' &&
+      !github.event.issue.pull_request && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      WORKFLOW_SHA: ${{ github.sha }}
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: channel
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 4cfe757e82dd6239db888cae277a8ff8d1d19dd0
+          path: pinned-tools
+          persist-credentials: false
+      - name: Read-only fixed transaction probes via existing deploy connection
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          : "${HETZNER_SSH_KEY:?Missing existing deploy key}"
+          : "${HETZNER_KNOWN_HOSTS:?Missing existing pinned host keys}"
+          diagnostic_key_dir="$(mktemp -d "$RUNNER_TEMP/kfaah-diagnostic.XXXXXX")"
+          trap 'rm -rf -- "$diagnostic_key_dir"' EXIT
+          chmod 700 "$diagnostic_key_dir"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$diagnostic_key_dir/key"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$diagnostic_key_dir/known_hosts"
+          chmod 600 "$diagnostic_key_dir/key" "$diagnostic_key_dir/known_hosts"
+          export DIAGNOSTIC_KEY_DIR="$diagnostic_key_dir"
+          python3 -B - <<'PYTHON'
+          import hashlib, importlib.util, json, os, re, subprocess, sys, types
+          from pathlib import Path
+          TITLE='KFAAH_OWNER_DIAG_STAGE_38070495638_V1'
+          REPO='gaberalhrese-cloud/shop-soulmate-04'
+          PIN='4cfe757e82dd6239db888cae277a8ff8d1d19dd0'
+          DIAGNOSTIC_SHA='3ae830bc60f33a6af7209d414d93c7f420204cc28f7dbb59f50bcaa4e6b5cc4d'
+          def must(value):
+           if not value:raise ValueError('READ_ONLY_DIAGNOSTIC_REJECTED')
+          def unique(pairs):
+           out={}
+           for key,value in pairs:must(key not in out);out[key]=value
+           return out
+          def request(event,workflow_sha,attempt,repository,ref,actor):
+           must(repository==REPO and ref=='refs/heads/main' and actor=='253139283' and attempt=='1')
+           must(re.fullmatch('[a-f0-9]{40}',workflow_sha) and event.get('action')=='opened' and event.get('sender',{}).get('id')==253139283)
+           repo=event.get('repository',{});must(repo.get('full_name')==REPO and repo.get('owner',{}).get('id')==253139283)
+           issue=event.get('issue',{});must(issue.get('title')==TITLE and issue.get('user',{}).get('id')==253139283 and issue.get('author_association')=='OWNER' and 'pull_request' not in issue)
+           body=issue.get('body');must(type(body) is str and len(body.encode())<=4096)
+           q=json.loads(body,object_pairs_hook=unique)
+           must(q=={'version':1,'operation':'READ_ONLY_BACKUP_DIAGNOSTIC','workflow_sha':workflow_sha,'stage_workflow_sha':PIN,'stage_run_id':'38070495638','stage_attempt':'1'} and type(q['version']) is int)
+           return q
+          def pinned(path,sha):
+           raw=path.read_bytes();must(hashlib.sha256(raw).hexdigest()==sha);return raw.decode()
+          def payload(pinned_root,diagnostic_path):
+           files=pinned_root/'deploy/frontend-interface'
+           control=pinned(files/'stage_only.py','85d7711c3d7a113d9bbb74c8c3e52fec13f072a8a9c3505e6870c04a7cae202b')
+           namespace={'__name__':'approved_controller'};exec(compile(control,'approved_controller','exec'),namespace)
+           audit=namespace['approved_audit_source'](pinned_root/'.github/workflows/kfaah-owner-baseline-preflight.yml')
+           must(hashlib.sha256(audit.encode()).hexdigest()=='4ece0ace5fa9b83b589473fd26b21fe120bdf7ab150f8b0640d9d9c6e9cc2ccb')
+           sources=[('approved_audit',audit),('approved_release',pinned(files/'release.py','18fceb0de983aa8a334cd258df0d648c6bd9bd384b8c09137b6701bdb2ce90ef')),('approved_stage',pinned(files/'remote_stage.py','b20a954021ec4a964a75ff431c6ed2846d9ead8315f892b021f73f7bc4cc29da')),('backup_diagnostic',pinned(diagnostic_path,DIAGNOSTIC_SHA))]
+           code='import sys,types\nsys.dont_write_bytecode=True\n'
+           for name,source in sources:
+            code+='m=types.ModuleType('+repr(name)+');sys.modules['+repr(name)+']=m\nexec(compile('+repr(source)+','+repr(name)+',"exec"),m.__dict__)\n'
+           return (code+'sys.modules["backup_diagnostic"].main()\n').encode()
+          COUNTS={'entries','files','directories','bytes','symlinks','hardlinks','special','unprotected'}
+          PROBES={'metadata_'+x for x in ('base','transaction','lock','staging','legacy','log','current_link')}|{'transaction_'+x.replace('.','_').replace('-','_') for x in ('baseline','baseline-manifest.jsonl','candidate','staging-before','staging-manifest.jsonl','staging-ready.json','baseline-ready.json','incoming-swap.json','stage-result.json')}|set('base_private_guard transaction_private_guard lock_guard current_pointer current_check helpers known_processes staging_root_guard staging_inventory legacy_root_guard receiver_paths baseline_copy_scan staging_copy_scan'.split())
+          REASONS=set('OS_ERROR UNCLASSIFIED_EXPECTATION_REJECTED DIRECTORY_OWNER_OR_MODE_REJECTED OWNER_REJECTED STATIC_PATH_REJECTED REGULAR_FILE_REJECTED SPECIAL_MODE_REJECTED MODE_REJECTED PRIVATE_DIRECTORY_REJECTED CURRENT_BASELINE_CHANGED CURRENT_UNSAFE CURRENT_MISMATCH ANCESTOR_UNPROTECTED HELPER_IDENTITY_MISMATCH HELPER_UNPROTECTED HELPER_REPLACED HELPER_CHANGED HELPER_LIMIT RECEIVER_TREE_UNSAFE RECEIVER_FILE_UNSAFE BADGE_DESTINATION_IS_DIRECTORY LOG_UNSAFE LEGACY_BADGE_UNSAFE LEGACY_BADGE_CHANGED NONREGULAR_BASELINE BASELINE_COPY_OWNER NONSTATIC_BASELINE BASELINE_HARDLINK UNPROTECTED_BASELINE DIRECTORY_REPLACED FILE_REPLACED FILE_CHANGED DIRECTORY_CHANGED DEADLINE_PARTIAL_SCAN ENTRY_LIMIT_PARTIAL_SCAN LOCK_UNSAFE'.split())
+          def evidence(raw):
+           must(len(raw)<=65536 and len(raw.splitlines())==1)
+           obj=json.loads(raw,object_pairs_hook=unique)
+           fixed={'phase':'READ_ONLY_BACKUP_DIAGNOSTIC','stageRunId':'38070495638','historicalFailureExactlyIdentified':False,'observationsAreCurrent':True,'receiverInvoked':False,'promoteInvoked':False,'filesystemWritesRequested':False}
+           must(type(obj) is dict and set(obj)==set(fixed)|{'probes'})
+           for key,value in fixed.items():must(type(obj[key]) is type(value) and obj[key]==value)
+           rows=obj['probes'];must(type(rows) is list and len(rows)==29 and all(type(row) is dict for row in rows) and {row.get('probe') for row in rows}==PROBES)
+           for row in rows:
+            must(type(row) is dict and row['status'] in ('PASSED','NOT_CONFIRMED'))
+            for key,value in row.items():
+             if key=='probe':must(value in PROBES)
+             elif key=='status':pass
+             elif key=='reason':must(value in REASONS)
+             elif key=='errno':must(value is None or type(value) is int and 0<=value<=4096)
+             elif key=='type':must(value in ('directory','file','symlink','special'))
+             elif key=='mode':must(type(value) is str and re.fullmatch('[0-7]{4}',value))
+             elif key in ('uid','gid','nlink','size','dev','ino','matchingCount'):must(type(value) is int and value>=0)
+             elif key in ('availableAtProbe','matchesApprovedBaseline','expectedMatch','legacyBadgePresent'):must(type(value) is bool)
+             elif key in ('manifestSha256','contentSha256'):must(type(value) is str and re.fullmatch('[a-f0-9]{64}',value))
+             elif key=='counts':must(type(value) is dict and set(value)<=COUNTS and all(type(n) is int and n>=0 for n in value.values()))
+             else:must(False)
+           return json.dumps(obj,sort_keys=True,separators=(',',':'))+'\n'
+          def ssh_command(host,user,keydir):
+           must(user=='deploy' and type(host) is str and re.fullmatch(r'(?:[A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9.-]*[A-Za-z0-9])',host) and keydir.is_absolute())
+           return ['/usr/bin/ssh','-F','/dev/null','-i',str(keydir/'key'),'-o','BatchMode=yes','-o','IdentitiesOnly=yes','-o','StrictHostKeyChecking=yes','-o','UserKnownHostsFile='+str(keydir/'known_hosts'),'-o','ConnectTimeout=15','-o','ServerAliveInterval=15','-o','ServerAliveCountMax=2','deploy@'+host,'/usr/bin/env -i PATH=/usr/bin:/bin PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -I -B -']
+          def main():
+           event_path=Path(os.environ['GITHUB_EVENT_PATH']);must(event_path.stat().st_size<=1048576)
+           request(json.loads(event_path.read_bytes(),object_pairs_hook=unique),os.environ['WORKFLOW_SHA'],os.environ['GITHUB_RUN_ATTEMPT'],os.environ['GITHUB_REPOSITORY'],os.environ['GITHUB_REF'],os.environ['GITHUB_ACTOR_ID'])
+           code=payload(Path('pinned-tools'),Path('channel/deploy/frontend-interface/backup_diagnostic.py'))
+           command=ssh_command(os.environ['HETZNER_HOST'],os.environ['HETZNER_USER'],Path(os.environ['DIAGNOSTIC_KEY_DIR']))
+           result=subprocess.run(command,input=code,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,timeout=1800,check=False)
+           safe=evidence(result.stdout);must(result.returncode==0)
+           Path('diagnostic-evidence').mkdir(exist_ok=True);Path('diagnostic-evidence/result.jsonl').write_text(safe);print(safe,end='')
+          if __name__=='__main__':
+           try:main()
+           except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError):raise SystemExit('READ_ONLY_DIAGNOSTIC_NOT_CONFIRMED') from None
+          PYTHON
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kfaah-backup-diagnostic-38070495638-${{ github.run_id }}-1
+          path: diagnostic-evidence/result.jsonl
+          if-no-files-found: error
+          retention-days: 14
