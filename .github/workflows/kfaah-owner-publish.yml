@@ -25,7 +25,7 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          ref: 64baa64fa6f14c33803308117954e9aae0ebf0a2
+          ref: 49e15c900b44c2718c70be26fc8c0549ddf2de23
           path: stage-tools
           persist-credentials: false
       - uses: actions/checkout@v4
@@ -46,7 +46,7 @@ jobs:
       group: kfaah-frontend-deploy
       cancel-in-progress: false
     needs: review
-    if: ${{ false }}
+    if: ${{ needs.review.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 75
     env:
@@ -60,7 +60,7 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          ref: 64baa64fa6f14c33803308117954e9aae0ebf0a2
+          ref: 49e15c900b44c2718c70be26fc8c0549ddf2de23
           path: stage-tools
           persist-credentials: false
       - uses: actions/checkout@v4

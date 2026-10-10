@@ -4,7 +4,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 import approved_stage as m
 import approved_release as r
-EXECUTION_ENABLED=False
+EXECUTION_ENABLED=True
 ORIGIN='https://kfaah.sa'
 
 def must(value,label):

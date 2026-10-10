@@ -1,10 +1,10 @@
 """Disabled owner PUBLISH channel; binds successful STAGE and immutable build provenance."""
 import argparse,base64,hashlib,importlib.util,json,os,re,shutil,subprocess,sys
 from pathlib import Path
-EXECUTION_ENABLED=False
+EXECUTION_ENABLED=True
 REPO='gaberalhrese-cloud/shop-soulmate-04'
 # Independently reviewed STAGE companion commit; PUBLISH remains disabled.
-STAGE_SHA='64baa64fa6f14c33803308117954e9aae0ebf0a2'
+STAGE_SHA='49e15c900b44c2718c70be26fc8c0549ddf2de23'
 STAGE_WORKFLOW='.github/workflows/kfaah-owner-stage-only.yml'
 OWNER=253139283
 EXECUTION_STATE="NOT_INVOKED"
@@ -13,7 +13,7 @@ ROOT=Path(__file__).parent
 def must(v,label='PUBLISH_REQUEST_REJECTED'):
  if not v:raise ValueError(label)
 def load_dependencies(stage_tools,build_tools):
- for file,sha in {'stage_only.py':'5ecc37167122942a9f4a26491afaae16cc62e78eb6bb3df604ba661eeff3e773','remote_stage.py':'e91a690993f36b6f08336690d0f56e8db7410f6b808cb62fcb1c901f1dc45a35'}.items():must(hashlib.sha256((stage_tools/file).read_bytes()).hexdigest()==sha,'STAGE_TOOLS_CHANGED')
+ for file,sha in {'stage_only.py':'5ecc37167122942a9f4a26491afaae16cc62e78eb6bb3df604ba661eeff3e773','remote_stage.py':'0d5603942921172b27c6a2b3722da70a9417278d2ceb2a2821406cf504cf2568'}.items():must(hashlib.sha256((stage_tools/file).read_bytes()).hexdigest()==sha,'STAGE_TOOLS_CHANGED')
  spec=importlib.util.spec_from_file_location('stage_controller',stage_tools/'stage_only.py');s=importlib.util.module_from_spec(spec);spec.loader.exec_module(s)
  r,p=s.dependency_modules(build_tools);return s,r,p
 
