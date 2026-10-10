@@ -1,0 +1,156 @@
+name: Kfaah owner verified publish
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  review:
+    if: >-
+      github.repository == 'gaberalhrese-cloud/shop-soulmate-04' &&
+      github.ref == 'refs/heads/main' && github.actor_id == '253139283' &&
+      github.event.issue.user.id == 253139283 &&
+      github.event.issue.title == 'KFAAH_OWNER_PUBLISH_V1' &&
+      !github.event.issue.pull_request && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      WORKFLOW_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: publish-tools
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 49e15c900b44c2718c70be26fc8c0549ddf2de23
+          path: stage-tools
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 9abc38927afeb8a0642449440e4af28de88932f1
+          path: build-tools
+          persist-credentials: false
+      - name: Validate owner PUBLISH request without server access
+        run: |
+          set -euo pipefail
+          python3 -B publish-tools/deploy/frontend-interface/publish_only.py plan \
+            --stage-tools stage-tools/deploy/frontend-interface \
+            --build-tools build-tools/deploy/frontend-interface \
+            --audit-workflow unused
+          echo 'PUBLISH_DISABLED_PENDING_REVIEW_AND_ACTUAL_STAGE_SUCCESS'
+  publish:
+    concurrency:
+      group: kfaah-frontend-deploy
+      cancel-in-progress: false
+    needs: review
+    if: ${{ needs.review.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      WORKFLOW_SHA: ${{ github.sha }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: publish-tools
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 49e15c900b44c2718c70be26fc8c0549ddf2de23
+          path: stage-tools
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 9abc38927afeb8a0642449440e4af28de88932f1
+          path: build-tools
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 321db6ce04fb264a71381c154ce378b4be7bea99
+          path: audit-tools
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.3
+      - name: Revalidate owner request
+        id: plan
+        run: |
+          set -euo pipefail
+          python3 -B publish-tools/deploy/frontend-interface/publish_only.py plan \
+            --stage-tools stage-tools/deploy/frontend-interface \
+            --build-tools build-tools/deploy/frontend-interface \
+            --audit-workflow audit-tools/.github/workflows/kfaah-owner-baseline-preflight.yml
+      - name: Verify exact successful STAGE run and build provenance
+        run: |
+          set -euo pipefail
+          python3 -B publish-tools/deploy/frontend-interface/publish_only.py verify-run \
+            --stage-tools stage-tools/deploy/frontend-interface \
+            --build-tools build-tools/deploy/frontend-interface \
+            --audit-workflow audit-tools/.github/workflows/kfaah-owner-baseline-preflight.yml
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.plan.outputs.stage_run_id }}
+          artifact-ids: ${{ steps.plan.outputs.stage_artifact_id }}
+          merge-multiple: true
+          path: stage-evidence
+      - name: Verify frozen successful stage and baseline evidence
+        run: |
+          set -euo pipefail
+          python3 -B publish-tools/deploy/frontend-interface/publish_only.py verify-evidence \
+            --stage-tools stage-tools/deploy/frontend-interface \
+            --build-tools build-tools/deploy/frontend-interface \
+            --audit-workflow audit-tools/.github/workflows/kfaah-owner-baseline-preflight.yml
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.plan.outputs.build_run_id }}
+          artifact-ids: ${{ steps.plan.outputs.artifact_id }}
+          merge-multiple: true
+          path: sealed-bundle
+      - name: Parse exact verified immutable bundle without running application JavaScript
+        run: |
+          set -euo pipefail
+          python3 -B publish-tools/deploy/frontend-interface/publish_only.py verify-dependencies \
+            --stage-tools stage-tools/deploy/frontend-interface \
+            --build-tools build-tools/deploy/frontend-interface \
+            --audit-workflow audit-tools/.github/workflows/kfaah-owner-baseline-preflight.yml
+      - name: Invoke existing promoter once and verify current HTTPS assets
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          : "${HETZNER_SSH_KEY:?Missing existing deploy key}"
+          : "${HETZNER_KNOWN_HOSTS:?Missing existing pinned host keys}"
+          publish_key_dir="$(mktemp -d "$RUNNER_TEMP/kfaah-publish-only.XXXXXX")"
+          trap 'rm -rf -- "$publish_key_dir"' EXIT
+          chmod 700 "$publish_key_dir"
+          printf '%s\n' "$HETZNER_SSH_KEY" > "$publish_key_dir/key"
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > "$publish_key_dir/known_hosts"
+          chmod 600 "$publish_key_dir/key" "$publish_key_dir/known_hosts"
+          export PUBLISH_KEY_DIR="$publish_key_dir"
+          python3 -B publish-tools/deploy/frontend-interface/publish_only.py publish \
+            --stage-tools stage-tools/deploy/frontend-interface \
+            --build-tools build-tools/deploy/frontend-interface \
+            --audit-workflow audit-tools/.github/workflows/kfaah-owner-baseline-preflight.yml
+      - name: Display allowlisted publish evidence
+        if: always()
+        run: |
+          python3 -B publish-tools/deploy/frontend-interface/publish_only.py show-evidence \
+            --stage-tools stage-tools/deploy/frontend-interface \
+            --build-tools build-tools/deploy/frontend-interface \
+            --audit-workflow unused
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kfaah-publish-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: publish-evidence/
+          if-no-files-found: warn
+          retention-days: 14

@@ -1,0 +1,13 @@
+{
+  "integrity": "sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==",
+  "licenseSha256": "76a876cf886ff9be2a8b5e2e86514fed06223c8c9f0c1e9ee9606e93841e00b7",
+  "lockfileGitCommit": "aac8ebf43e6c42cb53ccb93bb0342a5aa501d30c",
+  "lockfileSha256": "b759986c5d7eee215ff81a586c024fb3ca8b49ae2bcc163fe999f0d34d11c321",
+  "packageIntegrityRefetch": "NOTRUN_PUBLIC_DNS_UNAVAILABLE",
+  "resolved": "https://registry.npmjs.org/acorn/-/acorn-8.15.0.tgz",
+  "sha256": "fdb08546776ec6228b03e8d02b40d4ab3255bae5f401adba7ff5dad927ac5c9c",
+  "source": "Existing lockfile-pinned node_modules/acorn/dist/acorn.js copied unchanged",
+  "vendorSource": "Unchanged existing project lockfile-pinned installed dependency; file SHA pinned for every runner parse",
+  "version": "8.15.0",
+  "workingLockMatchesTracked": true
+}
