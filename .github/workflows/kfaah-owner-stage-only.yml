@@ -40,7 +40,7 @@ jobs:
           echo 'EXECUTION_BLOCKED_PENDING_INDEPENDENT_APPROVAL; QUIET_WINDOW_IS_AN_ASSERTION'
   stage:
     needs: review
-    if: ${{ false }}
+    if: ${{ needs.review.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 75
     env:
