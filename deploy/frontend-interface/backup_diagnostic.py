@@ -4,12 +4,12 @@ Never calls stage main, backup, journal, receiver, promoter, or a subprocess.
 import errno, fcntl, json, os, pwd, stat
 from pathlib import Path
 import approved_stage as m
-RUN='38070495638'
+RUN='38073963173'
 TXN=m.BASE+'/stage-'+RUN+'-1'
 CURRENT='/var/www/kfaah-releases/20261009T213800Z-126960cf'
 MANIFEST='175f07648cbf276c814937b03ed69f9ee2bff7c891333a9c444ee9a9115072cb'
 REQUEST={'expected_current':CURRENT,'baseline_manifest_sha256':MANIFEST}
-REASONS=frozenset('PRIVATE_DIRECTORY_REJECTED CURRENT_BASELINE_CHANGED CURRENT_UNSAFE CURRENT_MISMATCH ANCESTOR_UNPROTECTED HELPER_IDENTITY_MISMATCH HELPER_UNPROTECTED HELPER_REPLACED HELPER_CHANGED HELPER_LIMIT RECEIVER_TREE_UNSAFE RECEIVER_FILE_UNSAFE BADGE_DESTINATION_IS_DIRECTORY LOG_UNSAFE LEGACY_BADGE_UNSAFE LEGACY_BADGE_CHANGED NONREGULAR_BASELINE BASELINE_COPY_OWNER NONSTATIC_BASELINE BASELINE_HARDLINK UNPROTECTED_BASELINE DIRECTORY_REPLACED FILE_REPLACED FILE_CHANGED DIRECTORY_CHANGED DEADLINE_PARTIAL_SCAN ENTRY_LIMIT_PARTIAL_SCAN LOCK_UNSAFE'.split())
+REASONS=frozenset('HISTORICAL_PATH_REJECTED LEGACY_DIRECTORY_UNSAFE PRIVATE_DIRECTORY_REJECTED CURRENT_BASELINE_CHANGED CURRENT_UNSAFE CURRENT_MISMATCH ANCESTOR_UNPROTECTED HELPER_IDENTITY_MISMATCH HELPER_UNPROTECTED HELPER_REPLACED HELPER_CHANGED HELPER_LIMIT RECEIVER_TREE_UNSAFE RECEIVER_FILE_UNSAFE BADGE_DESTINATION_IS_DIRECTORY LOG_UNSAFE LEGACY_BADGE_UNSAFE LEGACY_BADGE_CHANGED NONREGULAR_BASELINE BASELINE_COPY_OWNER NONSTATIC_BASELINE BASELINE_HARDLINK UNPROTECTED_BASELINE DIRECTORY_REPLACED FILE_REPLACED FILE_CHANGED DIRECTORY_CHANGED DEADLINE_PARTIAL_SCAN ENTRY_LIMIT_PARTIAL_SCAN LOCK_UNSAFE'.split())
 RELEASE_REASONS={'Untrusted directory ancestor':'DIRECTORY_OWNER_OR_MODE_REJECTED','Wrong owner':'OWNER_REJECTED','Unsafe relative path':'STATIC_PATH_REJECTED','Regular single-link file required':'REGULAR_FILE_REJECTED','Special mode rejected':'SPECIAL_MODE_REJECTED','Unprotected content':'MODE_REJECTED'}
 def safe_error(exc):
  if isinstance(exc,OSError):return {'reason':'OS_ERROR','errno':exc.errno if type(exc.errno) is int else None}
@@ -24,6 +24,8 @@ def metadata(path):
  return {'type':kind,'uid':s.st_uid,'gid':s.st_gid,'mode':format(stat.S_IMODE(s.st_mode),'04o'),'nlink':s.st_nlink,'size':s.st_size,'dev':s.st_dev,'ino':s.st_ino}
 def directory_guard(path,ancestors,owner):
  fd=m.r.open_directory(path,ancestors,owner);os.close(fd);return {}
+def legacy_guard():
+ fd=m.legacy_directory();os.close(fd);return {}
 def private_guard(path):
  fd=m.private_dir(path);os.close(fd);return {}
 def lock_guard():
@@ -66,7 +68,7 @@ def diagnose():
   def observe(child=child):
    private_guard(m.BASE);private_guard(TXN);return metadata(TXN+'/'+child)
   rows.append(probe('transaction_'+child.replace('.','_').replace('-','_'),observe))
- operations=[('base_private_guard',lambda:private_guard(m.BASE)),('transaction_private_guard',lambda:private_guard(TXN)),('lock_guard',lock_guard),('current_pointer',pointer_guard),('current_check',current_guard),('helpers',helpers_guard),('known_processes',processes_guard),('staging_root_guard',lambda:directory_guard(m.STAGING,(0,),33)),('staging_inventory',inventory_guard),('legacy_root_guard',lambda:directory_guard(m.LEGACY,(0,),0)),('receiver_paths',receiver_guard),('baseline_copy_scan',lambda:copy_guard(TXN+'/baseline')),('staging_copy_scan',lambda:copy_guard(TXN+'/staging-before'))]
+ operations=[('base_private_guard',lambda:private_guard(m.BASE)),('transaction_private_guard',lambda:private_guard(TXN)),('lock_guard',lock_guard),('current_pointer',pointer_guard),('current_check',current_guard),('helpers',helpers_guard),('known_processes',processes_guard),('staging_root_guard',lambda:directory_guard(m.STAGING,(0,),33)),('staging_inventory',inventory_guard),('legacy_root_guard',legacy_guard),('receiver_paths',receiver_guard),('baseline_copy_scan',lambda:copy_guard(TXN+'/baseline')),('staging_copy_scan',lambda:copy_guard(TXN+'/staging-before'))]
  rows.extend(probe(key,operation) for key,operation in operations)
  return {'phase':'READ_ONLY_BACKUP_DIAGNOSTIC','stageRunId':RUN,'historicalFailureExactlyIdentified':False,'observationsAreCurrent':True,'receiverInvoked':False,'promoteInvoked':False,'filesystemWritesRequested':False,'probes':rows}
 def main():
