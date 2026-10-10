@@ -9,7 +9,7 @@ TXN=m.BASE+'/stage-'+RUN+'-1'
 CURRENT='/var/www/kfaah-releases/20261009T213800Z-126960cf'
 MANIFEST='175f07648cbf276c814937b03ed69f9ee2bff7c891333a9c444ee9a9115072cb'
 REQUEST={'expected_current':CURRENT,'baseline_manifest_sha256':MANIFEST}
-REASONS=frozenset('HISTORICAL_PATH_REJECTED LEGACY_DIRECTORY_UNSAFE PRIVATE_DIRECTORY_REJECTED CURRENT_BASELINE_CHANGED CURRENT_UNSAFE CURRENT_MISMATCH ANCESTOR_UNPROTECTED HELPER_IDENTITY_MISMATCH HELPER_UNPROTECTED HELPER_REPLACED HELPER_CHANGED HELPER_LIMIT RECEIVER_TREE_UNSAFE RECEIVER_FILE_UNSAFE BADGE_DESTINATION_IS_DIRECTORY LOG_UNSAFE LEGACY_BADGE_UNSAFE LEGACY_BADGE_CHANGED NONREGULAR_BASELINE BASELINE_COPY_OWNER NONSTATIC_BASELINE BASELINE_HARDLINK UNPROTECTED_BASELINE DIRECTORY_REPLACED FILE_REPLACED FILE_CHANGED DIRECTORY_CHANGED DEADLINE_PARTIAL_SCAN ENTRY_LIMIT_PARTIAL_SCAN LOCK_UNSAFE'.split())
+REASONS=frozenset('NUMERIC_GROUP_CONTEXT_LIMIT HISTORICAL_PATH_REJECTED LEGACY_DIRECTORY_UNSAFE PRIVATE_DIRECTORY_REJECTED CURRENT_BASELINE_CHANGED CURRENT_UNSAFE CURRENT_MISMATCH ANCESTOR_UNPROTECTED HELPER_IDENTITY_MISMATCH HELPER_UNPROTECTED HELPER_REPLACED HELPER_CHANGED HELPER_LIMIT RECEIVER_TREE_UNSAFE RECEIVER_FILE_UNSAFE BADGE_DESTINATION_IS_DIRECTORY LOG_UNSAFE LEGACY_BADGE_UNSAFE LEGACY_BADGE_CHANGED NONREGULAR_BASELINE BASELINE_COPY_OWNER NONSTATIC_BASELINE BASELINE_HARDLINK UNPROTECTED_BASELINE DIRECTORY_REPLACED FILE_REPLACED FILE_CHANGED DIRECTORY_CHANGED DEADLINE_PARTIAL_SCAN ENTRY_LIMIT_PARTIAL_SCAN LOCK_UNSAFE'.split())
 RELEASE_REASONS={'Untrusted directory ancestor':'DIRECTORY_OWNER_OR_MODE_REJECTED','Wrong owner':'OWNER_REJECTED','Unsafe relative path':'STATIC_PATH_REJECTED','Regular single-link file required':'REGULAR_FILE_REJECTED','Special mode rejected':'SPECIAL_MODE_REJECTED','Unprotected content':'MODE_REJECTED'}
 def safe_error(exc):
  if isinstance(exc,OSError):return {'reason':'OS_ERROR','errno':exc.errno if type(exc.errno) is int else None}
@@ -18,10 +18,13 @@ def safe_error(exc):
 def metadata(path):
  # Open every parent without following links; final entry itself is lstat only.
  fd=m.r.open_directory(Path(path).parent)
- try:s=os.stat(Path(path).name,dir_fd=fd,follow_symlinks=False)
+ try:s=os.fstat(fd) if Path(path)==Path('/') else os.stat(Path(path).name,dir_fd=fd,follow_symlinks=False)
  finally:os.close(fd)
  kind='directory' if stat.S_ISDIR(s.st_mode) else 'file' if stat.S_ISREG(s.st_mode) else 'symlink' if stat.S_ISLNK(s.st_mode) else 'special'
  return {'type':kind,'uid':s.st_uid,'gid':s.st_gid,'mode':format(stat.S_IMODE(s.st_mode),'04o'),'nlink':s.st_nlink,'size':s.st_size,'dev':s.st_dev,'ino':s.st_ino}
+def numeric_identity():
+ groups=sorted(set(os.getgroups()));m.must(len(groups)<=256,'NUMERIC_GROUP_CONTEXT_LIMIT')
+ return {'uid':os.getuid(),'euid':os.geteuid(),'gid':os.getgid(),'egid':os.getegid(),'supplementaryGids':groups}
 def directory_guard(path,ancestors,owner):
  fd=m.r.open_directory(path,ancestors,owner);os.close(fd);return {}
 def legacy_guard():
@@ -61,14 +64,14 @@ def probe(probe_id,operation):
  except (OSError,ValueError) as exc:return {'probe':probe_id,'status':'NOT_CONFIRMED',**safe_error(exc)}
 def diagnose():
  rows=[]
- fixed={'base':m.BASE,'transaction':TXN,'lock':'/home/deploy/.kfaah-stage-only.lock','staging':m.STAGING,'legacy':m.LEGACY,'log':m.LOG,'current_link':'/var/www/kfaah-current'}
+ fixed={'filesystem_root':'/','var':'/var','var_log':'/var/log','var_www':'/var/www','home':'/home','home_deploy':'/home/deploy','usr':'/usr','usr_local':'/usr/local','usr_local_bin':'/usr/local/bin','releases':'/var/www/kfaah-releases','current_baseline':CURRENT,'base':m.BASE,'transaction':TXN,'lock':'/home/deploy/.kfaah-stage-only.lock','staging':m.STAGING,'legacy':m.LEGACY,'log':m.LOG,'current_link':'/var/www/kfaah-current'}
  for key,path in fixed.items():rows.append(probe('metadata_'+key,lambda path=path:metadata(path)))
  # Child observations guarded against symlinked/misowned transaction ancestors.
  for child in ('baseline','baseline-manifest.jsonl','candidate','staging-before','staging-manifest.jsonl','staging-ready.json','baseline-ready.json','incoming-swap.json','stage-result.json'):
   def observe(child=child):
    private_guard(m.BASE);private_guard(TXN);return metadata(TXN+'/'+child)
   rows.append(probe('transaction_'+child.replace('.','_').replace('-','_'),observe))
- operations=[('base_private_guard',lambda:private_guard(m.BASE)),('transaction_private_guard',lambda:private_guard(TXN)),('lock_guard',lock_guard),('current_pointer',pointer_guard),('current_check',current_guard),('helpers',helpers_guard),('known_processes',processes_guard),('staging_root_guard',lambda:directory_guard(m.STAGING,(0,),33)),('staging_inventory',inventory_guard),('legacy_root_guard',legacy_guard),('receiver_paths',receiver_guard),('baseline_copy_scan',lambda:copy_guard(TXN+'/baseline')),('staging_copy_scan',lambda:copy_guard(TXN+'/staging-before'))]
+ operations=[('identity_numeric',numeric_identity),('base_private_guard',lambda:private_guard(m.BASE)),('transaction_private_guard',lambda:private_guard(TXN)),('lock_guard',lock_guard),('current_pointer',pointer_guard),('current_check',current_guard),('helpers',helpers_guard),('known_processes',processes_guard),('staging_root_guard',lambda:directory_guard(m.STAGING,(0,),33)),('staging_inventory',inventory_guard),('legacy_root_guard',legacy_guard),('receiver_paths',receiver_guard),('baseline_copy_scan',lambda:copy_guard(TXN+'/baseline')),('staging_copy_scan',lambda:copy_guard(TXN+'/staging-before'))]
  rows.extend(probe(key,operation) for key,operation in operations)
  return {'phase':'READ_ONLY_BACKUP_DIAGNOSTIC','stageRunId':RUN,'historicalFailureExactlyIdentified':False,'observationsAreCurrent':True,'receiverInvoked':False,'promoteInvoked':False,'filesystemWritesRequested':False,'probes':rows}
 def main():
