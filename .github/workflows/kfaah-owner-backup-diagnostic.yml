@@ -13,7 +13,7 @@ jobs:
       github.repository == 'gaberalhrese-cloud/shop-soulmate-04' &&
       github.ref == 'refs/heads/main' && github.actor_id == '253139283' &&
       github.event.issue.user.id == 253139283 &&
-      github.event.issue.title == 'KFAAH_OWNER_DIAG_STAGE_38073963173_V1' &&
+      github.event.issue.title == 'KFAAH_OWNER_DIAG_STAGE_38073963173_V2' &&
       !github.event.issue.pull_request && github.run_attempt == 1
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -51,10 +51,10 @@ jobs:
           python3 -B - <<'PYTHON'
           import hashlib, importlib.util, json, os, re, subprocess, sys, types
           from pathlib import Path
-          TITLE='KFAAH_OWNER_DIAG_STAGE_38073963173_V1'
+          TITLE='KFAAH_OWNER_DIAG_STAGE_38073963173_V2'
           REPO='gaberalhrese-cloud/shop-soulmate-04'
           PIN='64baa64fa6f14c33803308117954e9aae0ebf0a2'
-          DIAGNOSTIC_SHA='aa47b0f2a30dd74ff393a18f4787cf7dac0b991d3a651fe21b8a37ccaf10341f'
+          DIAGNOSTIC_SHA='f3b17d5d303abed215a7022c7a41fdb09c66a8d6f07adb339907a52b72fbc346'
           def must(value):
            if not value:raise ValueError('READ_ONLY_DIAGNOSTIC_REJECTED')
           def unique(pairs):
@@ -84,15 +84,15 @@ jobs:
             code+='m=types.ModuleType('+repr(name)+');sys.modules['+repr(name)+']=m\nexec(compile('+repr(source)+','+repr(name)+',"exec"),m.__dict__)\n'
            return (code+'sys.modules["backup_diagnostic"].main()\n').encode()
           COUNTS={'entries','files','directories','bytes','symlinks','hardlinks','special','unprotected'}
-          PROBES={'metadata_'+x for x in ('base','transaction','lock','staging','legacy','log','current_link')}|{'transaction_'+x.replace('.','_').replace('-','_') for x in ('baseline','baseline-manifest.jsonl','candidate','staging-before','staging-manifest.jsonl','staging-ready.json','baseline-ready.json','incoming-swap.json','stage-result.json')}|set('base_private_guard transaction_private_guard lock_guard current_pointer current_check helpers known_processes staging_root_guard staging_inventory legacy_root_guard receiver_paths baseline_copy_scan staging_copy_scan'.split())
-          REASONS=set('HISTORICAL_PATH_REJECTED LEGACY_DIRECTORY_UNSAFE OS_ERROR UNCLASSIFIED_EXPECTATION_REJECTED DIRECTORY_OWNER_OR_MODE_REJECTED OWNER_REJECTED STATIC_PATH_REJECTED REGULAR_FILE_REJECTED SPECIAL_MODE_REJECTED MODE_REJECTED PRIVATE_DIRECTORY_REJECTED CURRENT_BASELINE_CHANGED CURRENT_UNSAFE CURRENT_MISMATCH ANCESTOR_UNPROTECTED HELPER_IDENTITY_MISMATCH HELPER_UNPROTECTED HELPER_REPLACED HELPER_CHANGED HELPER_LIMIT RECEIVER_TREE_UNSAFE RECEIVER_FILE_UNSAFE BADGE_DESTINATION_IS_DIRECTORY LOG_UNSAFE LEGACY_BADGE_UNSAFE LEGACY_BADGE_CHANGED NONREGULAR_BASELINE BASELINE_COPY_OWNER NONSTATIC_BASELINE BASELINE_HARDLINK UNPROTECTED_BASELINE DIRECTORY_REPLACED FILE_REPLACED FILE_CHANGED DIRECTORY_CHANGED DEADLINE_PARTIAL_SCAN ENTRY_LIMIT_PARTIAL_SCAN LOCK_UNSAFE'.split())
+          PROBES={'metadata_'+x for x in ('filesystem_root','var','var_log','var_www','home','home_deploy','usr','usr_local','usr_local_bin','releases','current_baseline','base','transaction','lock','staging','legacy','log','current_link')}|{'transaction_'+x.replace('.','_').replace('-','_') for x in ('baseline','baseline-manifest.jsonl','candidate','staging-before','staging-manifest.jsonl','staging-ready.json','baseline-ready.json','incoming-swap.json','stage-result.json')}|set('identity_numeric base_private_guard transaction_private_guard lock_guard current_pointer current_check helpers known_processes staging_root_guard staging_inventory legacy_root_guard receiver_paths baseline_copy_scan staging_copy_scan'.split())
+          REASONS=set('NUMERIC_GROUP_CONTEXT_LIMIT HISTORICAL_PATH_REJECTED LEGACY_DIRECTORY_UNSAFE OS_ERROR UNCLASSIFIED_EXPECTATION_REJECTED DIRECTORY_OWNER_OR_MODE_REJECTED OWNER_REJECTED STATIC_PATH_REJECTED REGULAR_FILE_REJECTED SPECIAL_MODE_REJECTED MODE_REJECTED PRIVATE_DIRECTORY_REJECTED CURRENT_BASELINE_CHANGED CURRENT_UNSAFE CURRENT_MISMATCH ANCESTOR_UNPROTECTED HELPER_IDENTITY_MISMATCH HELPER_UNPROTECTED HELPER_REPLACED HELPER_CHANGED HELPER_LIMIT RECEIVER_TREE_UNSAFE RECEIVER_FILE_UNSAFE BADGE_DESTINATION_IS_DIRECTORY LOG_UNSAFE LEGACY_BADGE_UNSAFE LEGACY_BADGE_CHANGED NONREGULAR_BASELINE BASELINE_COPY_OWNER NONSTATIC_BASELINE BASELINE_HARDLINK UNPROTECTED_BASELINE DIRECTORY_REPLACED FILE_REPLACED FILE_CHANGED DIRECTORY_CHANGED DEADLINE_PARTIAL_SCAN ENTRY_LIMIT_PARTIAL_SCAN LOCK_UNSAFE'.split())
           def evidence(raw):
            must(len(raw)<=65536 and len(raw.splitlines())==1)
            obj=json.loads(raw,object_pairs_hook=unique)
            fixed={'phase':'READ_ONLY_BACKUP_DIAGNOSTIC','stageRunId':'38073963173','historicalFailureExactlyIdentified':False,'observationsAreCurrent':True,'receiverInvoked':False,'promoteInvoked':False,'filesystemWritesRequested':False}
            must(type(obj) is dict and set(obj)==set(fixed)|{'probes'})
            for key,value in fixed.items():must(type(obj[key]) is type(value) and obj[key]==value)
-           rows=obj['probes'];must(type(rows) is list and len(rows)==29 and all(type(row) is dict for row in rows) and {row.get('probe') for row in rows}==PROBES)
+           rows=obj['probes'];must(type(rows) is list and len(rows)==41 and all(type(row) is dict for row in rows) and {row.get('probe') for row in rows}==PROBES)
            for row in rows:
             must(type(row) is dict and row['status'] in ('PASSED','NOT_CONFIRMED'))
             for key,value in row.items():
@@ -102,7 +102,8 @@ jobs:
              elif key=='errno':must(value is None or type(value) is int and 0<=value<=4096)
              elif key=='type':must(value in ('directory','file','symlink','special'))
              elif key=='mode':must(type(value) is str and re.fullmatch('[0-7]{4}',value))
-             elif key in ('uid','gid','nlink','size','dev','ino','matchingCount'):must(type(value) is int and value>=0)
+             elif key in ('uid','euid','gid','egid','nlink','size','dev','ino','matchingCount'):must(type(value) is int and value>=0)
+             elif key=='supplementaryGids':must(type(value) is list and len(value)<=256 and all(type(n) is int and n>=0 for n in value) and value==sorted(set(value)))
              elif key in ('availableAtProbe','matchesApprovedBaseline','expectedMatch','legacyBadgePresent'):must(type(value) is bool)
              elif key in ('manifestSha256','contentSha256'):must(type(value) is str and re.fullmatch('[a-f0-9]{64}',value))
              elif key=='counts':must(type(value) is dict and set(value)<=COUNTS and all(type(n) is int and n>=0 for n in value.values()))
