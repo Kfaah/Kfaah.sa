@@ -1,0 +1,136 @@
+name: Kfaah owner frontend prepare and verify
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: kfaah-frontend-preparation
+  cancel-in-progress: false
+jobs:
+  plan:
+    if: >-
+      github.repository == 'gaberalhrese-cloud/shop-soulmate-04' &&
+      github.ref == 'refs/heads/main' && github.actor_id == '253139283' &&
+      github.event.issue.user.id == 253139283 &&
+      github.event.issue.title == 'KFAAH_FRONTEND_PREPARE_V1' &&
+      !github.event.issue.pull_request && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      operation: ${{ steps.plan.outputs.operation }}
+      source_sha: ${{ steps.plan.outputs.source_sha }}
+      build_run_id: ${{ steps.plan.outputs.build_run_id }}
+      build_attempt: ${{ steps.plan.outputs.build_attempt }}
+      artifact_id: ${{ steps.plan.outputs.artifact_id }}
+      manifest_sha256: ${{ steps.plan.outputs.manifest_sha256 }}
+      archive_sha256: ${{ steps.plan.outputs.archive_sha256 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Validate owner request using trusted code
+        id: plan
+        env:
+          WORKFLOW_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          python3 -B deploy/frontend-interface/release.py plan \
+            --event "$GITHUB_EVENT_PATH" --workflow-sha "$WORKFLOW_SHA" \
+            --attempt "$GITHUB_RUN_ATTEMPT" --outputs "$GITHUB_OUTPUT"
+  build:
+    needs: plan
+    if: needs.plan.outputs.operation == 'PREPARE'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: trusted
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.source_sha }}
+          path: reviewed-source
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check exact source is on reviewed main and reject local environment files
+        env:
+          SOURCE_SHA: ${{ needs.plan.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git -C reviewed-source rev-parse HEAD)" = "$SOURCE_SHA"
+          git -C reviewed-source merge-base --is-ancestor "$SOURCE_SHA" origin/main
+          python3 - <<'PY'
+          from pathlib import Path
+          for p in Path('reviewed-source').rglob('.env*'):
+              if p.name != '.env.example':
+                  raise SystemExit('LOCAL_ENVIRONMENT_FILE_REJECTED')
+          PY
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.3'
+      - name: Build once and seal those exact files
+        env:
+          SOURCE_SHA: ${{ needs.plan.outputs.source_sha }}
+          WORKFLOW_SHA: ${{ github.sha }}
+          VITE_SUPABASE_URL: https://kfaah.sa
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          KFAAH_DEPLOY_TARGET: production
+          KFAAH_EXPECTED_API_URL: https://kfaah.sa
+        run: |
+          set -euo pipefail
+          cd reviewed-source
+          bash deploy/build-frontend.sh
+          git diff --exit-code HEAD
+          cd ..
+          git -C trusted diff --exit-code HEAD
+          python3 -B trusted/deploy/frontend-interface/release.py pack-build \
+            --dist reviewed-source/dist --output sealed-bundle \
+            --source-sha "$SOURCE_SHA" --workflow-sha "$WORKFLOW_SHA" \
+            --run-id "$GITHUB_RUN_ID" --attempt "$GITHUB_RUN_ATTEMPT" \
+            --node-version "$(node --version)" --lock reviewed-source/package-lock.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kfaah-frontend-bundle-${{ github.run_id }}-${{ github.run_attempt }}
+          path: sealed-bundle/
+          if-no-files-found: error
+          retention-days: 30
+  verify:
+    needs: plan
+    if: needs.plan.outputs.operation == 'VERIFY'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Verify fixed build workflow and exact artifact identity before download
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          python3 -B deploy/frontend-interface/provenance.py \
+            --event "$GITHUB_EVENT_PATH" --workflow-sha "$WORKFLOW_SHA" \
+            --attempt "$GITHUB_RUN_ATTEMPT"
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ needs.plan.outputs.build_run_id }}
+          artifact-ids: ${{ needs.plan.outputs.artifact_id }}
+          merge-multiple: true
+          path: sealed-bundle
+      - name: Verify approved manifest archive files and source without rebuilding
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          python3 -B deploy/frontend-interface/provenance.py \
+            --event "$GITHUB_EVENT_PATH" --workflow-sha "$WORKFLOW_SHA" \
+            --attempt "$GITHUB_RUN_ATTEMPT" --bundle-directory sealed-bundle
