@@ -1,0 +1,139 @@
+name: Kfaah exact artifact parser compatibility
+'on':
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '.github/workflows/kfaah-parser-artifact-ci.yml'
+      - '.github/workflows/kfaah-owner-publish.yml'
+      - 'deploy/frontend-interface/publish_only.py'
+      - 'deploy/frontend-interface/remote_publish.py'
+      - 'deploy/frontend-interface/parse_dependencies.cjs'
+      - 'deploy/frontend-interface/test_parser.py'
+      - 'deploy/frontend-interface/test_publish.py'
+      - 'deploy/frontend-interface/vendor/**'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  exact-artifact-parser:
+    if: github.repository == 'gaberalhrese-cloud/shop-soulmate-04' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: parser-tools
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 9abc38927afeb8a0642449440e4af28de88932f1
+          path: build-tools
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.3
+      - name: Verify exact approved build run and artifact before downloading
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -I -B - <<'PYTHON'
+          import base64, hashlib, importlib.util, io, json, os, subprocess, sys, tarfile, urllib.request
+          from pathlib import Path
+          BUILD=Path('build-tools/deploy/frontend-interface')
+          TOOLS=Path('parser-tools/deploy/frontend-interface')
+          REQUEST={'build_workflow_sha':'9abc38927afeb8a0642449440e4af28de88932f1','source_sha':'aac8ebf43e6c42cb53ccb93bb0342a5aa501d30c','build_run_id':'38064330025','build_attempt':'1','artifact_id':'11674530852','manifest_sha256':'5b497184d178245a1dea023df6e7d36b0ac99caedb80e57d91a7e7a541a4b59e','archive_sha256':'bc1437ac275d4204da151ebe88336db9285c75a97f665069786bf3f5fc6e87a7'}
+          def require(value, reason):
+              if not value: raise ValueError(reason)
+          def load_provenance():
+              for name, sha in {'release.py':'18fceb0de983aa8a334cd258df0d648c6bd9bd384b8c09137b6701bdb2ce90ef','provenance.py':'adbe647ff3b8e4fd05d902c54a9465b17dd6ec34a8792ac4a7635b2853bb9e1f'}.items():
+                  require(hashlib.sha256((BUILD/name).read_bytes()).hexdigest()==sha, 'BUILD_TOOLS_CHANGED')
+              spec=importlib.util.spec_from_file_location('ci_provenance', BUILD/'provenance.py')
+              module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+              return module
+          def verify_github(p):
+              def get(suffix):
+                  req=urllib.request.Request('https://api.github.com/repos/'+p.REPO+'/'+suffix, headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'})
+                  opener=urllib.request.build_opener(urllib.request.ProxyHandler({}),p.NoRedirect())
+                  with opener.open(req,timeout=20) as response: raw=response.read(4*1024*1024+1)
+                  require(len(raw)<=4*1024*1024,'GITHUB_RESPONSE_LIMIT')
+                  return json.loads(raw,object_pairs_hook=p.r.unique)
+              return p.verify_run(REQUEST,get)
+          def main():
+              p=load_provenance()
+              require(verify_github(p)==REQUEST['build_workflow_sha'],'BUILD_HEAD_CHANGED')
+              print('EXACT_GITHUB_RUN_AND_ARTIFACT_PROVENANCE_PASSED')
+          if __name__=='__main__': main()
+          PYTHON
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: gaberalhrese-cloud/shop-soulmate-04
+          run-id: 38064330025
+          artifact-ids: 11674530852
+          merge-multiple: true
+          path: sealed-bundle
+      - name: Verify original bytes, official Acorn integrity and parse without app execution
+        run: |
+          python3 -I -B - <<'PYTHON'
+          import base64, hashlib, importlib.util, io, json, os, subprocess, sys, tarfile, urllib.request
+          from pathlib import Path
+          BUILD=Path('build-tools/deploy/frontend-interface')
+          TOOLS=Path('parser-tools/deploy/frontend-interface')
+          REQUEST={'build_workflow_sha':'9abc38927afeb8a0642449440e4af28de88932f1','source_sha':'aac8ebf43e6c42cb53ccb93bb0342a5aa501d30c','build_run_id':'38064330025','build_attempt':'1','artifact_id':'11674530852','manifest_sha256':'5b497184d178245a1dea023df6e7d36b0ac99caedb80e57d91a7e7a541a4b59e','archive_sha256':'bc1437ac275d4204da151ebe88336db9285c75a97f665069786bf3f5fc6e87a7'}
+          def require(value, reason):
+              if not value: raise ValueError(reason)
+          def load_provenance():
+              for name, sha in {'release.py':'18fceb0de983aa8a334cd258df0d648c6bd9bd384b8c09137b6701bdb2ce90ef','provenance.py':'adbe647ff3b8e4fd05d902c54a9465b17dd6ec34a8792ac4a7635b2853bb9e1f'}.items():
+                  require(hashlib.sha256((BUILD/name).read_bytes()).hexdigest()==sha, 'BUILD_TOOLS_CHANGED')
+              spec=importlib.util.spec_from_file_location('ci_provenance', BUILD/'provenance.py')
+              module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+              return module
+          SRI='sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg=='
+          TARBALL='https://registry.npmjs.org/acorn/-/acorn-8.15.0.tgz'
+          PARSER_SHA='fdb08546776ec6228b03e8d02b40d4ab3255bae5f401adba7ff5dad927ac5c9c'
+          def registry_fetch(url,limit,p):
+              opener=urllib.request.build_opener(urllib.request.ProxyHandler({}),p.NoRedirect())
+              with opener.open(urllib.request.Request(url),timeout=30) as response: raw=response.read(limit+1)
+              require(len(raw)<=limit,'REGISTRY_RESPONSE_LIMIT')
+              return raw
+          def verify_acorn(p,fetch=registry_fetch):
+              metadata=json.loads(fetch('https://registry.npmjs.org/acorn/8.15.0',1024*1024,p),object_pairs_hook=p.r.unique)
+              require(metadata.get('name')=='acorn' and metadata.get('version')=='8.15.0' and metadata.get('dist',{}).get('integrity')==SRI and metadata.get('dist',{}).get('tarball')==TARBALL,'ACORN_REGISTRY_METADATA_MISMATCH')
+              payload=fetch(TARBALL,8*1024*1024,p)
+              require('sha512-'+base64.b64encode(hashlib.sha512(payload).digest()).decode()==SRI,'ACORN_PACKAGE_INTEGRITY_MISMATCH')
+              # Read the one required member in memory; never extract or execute package code.
+              with tarfile.open(fileobj=io.BytesIO(payload),mode='r:gz') as archive:
+                  members=[m for m in archive if m.name=='package/dist/acorn.js']
+                  require(len(members)==1 and members[0].isfile() and not members[0].linkname and members[0].size<=2*1024*1024,'ACORN_PACKAGE_MEMBER_REJECTED')
+                  official=archive.extractfile(members[0]).read()
+              vendor=p.r.read_regular(TOOLS/'vendor/acorn.cjs',2*1024*1024)
+              require(official==vendor and hashlib.sha256(vendor).hexdigest()==PARSER_SHA,'ACORN_VENDOR_DIFFERS_FROM_VERIFIED_PACKAGE')
+              return True
+          def verify_bundle(p):
+              manifest,files=p.r.verify(Path('sealed-bundle'),REQUEST['manifest_sha256'],REQUEST['archive_sha256'])
+              p.compare_origin(manifest,REQUEST,REQUEST['build_workflow_sha'])
+              require(manifest['origin']['nodeVersion']=='v22.23.3','BUILD_NODE_VERSION_MISMATCH')
+              return manifest,files
+          def parse_candidate(p,files):
+              spec=importlib.util.spec_from_file_location('ci_parser_controller',TOOLS/'publish_only.py')
+              c=importlib.util.module_from_spec(spec);spec.loader.exec_module(c)
+              require(c.EXECUTION_ENABLED is False,'PUBLISH_GATE_MUST_STAY_DISABLED')
+              graph=c.candidate_graph(files,p.r)
+              return {'phase':'EXACT_ARTIFACT_PARSE_ONLY','artifactId':REQUEST['artifact_id'],'buildRunId':REQUEST['build_run_id'],'sourceSha':REQUEST['source_sha'],'manifestSha256':REQUEST['manifest_sha256'],'archiveSha256':REQUEST['archive_sha256'],'parser':'Acorn 8.15.0','officialPackageIntegrityVerified':True,'files':len(files),'javascriptFiles':sum(n.lower().endswith('.js') for n in files),'uniqueJavascriptSourcesParsed':len(graph),'computedImportCount':sum(row['computedImportCount'] for row in graph.values()),'applicationCodeExecuted':False,'promoterInvoked':False}
+          def main():
+              require(subprocess.check_output(['node','--version'],text=True).strip()=='v22.23.3','RUNNER_NODE_VERSION_MISMATCH')
+              p=load_provenance()
+              manifest,files=verify_bundle(p) # Exact bytes and source origin before any candidate AST parsing.
+              verify_acorn(p) # Network unavailable, metadata mismatch or SRI mismatch all fail closed.
+              report=parse_candidate(p,files)
+              Path('parser-ci-evidence.json').write_text(json.dumps(report,sort_keys=True)+'\n')
+              print(json.dumps(report,sort_keys=True))
+          if __name__=='__main__': main()
+          PYTHON
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kfaah-exact-artifact-parser-${{ github.run_id }}-${{ github.run_attempt }}
+          path: parser-ci-evidence.json
+          if-no-files-found: error
+          retention-days: 7
