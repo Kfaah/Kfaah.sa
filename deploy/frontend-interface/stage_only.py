@@ -42,14 +42,25 @@ def api_get(token,p,suffix):
   must(len(data)<=8*1024*1024);return json.loads(data,object_pairs_hook=p.r.unique)
  except Exception:raise ValueError('GITHUB_PROVENANCE_OR_ACTIVITY_NOT_CONFIRMED') from None
 
-def publishers_quiet(get,this_run):
- # The shared concurrency group covers cooperating existing GitHub publishers only.
+def nonapplicable_issue_peer(row,get,workflow_sha):
+ expected={'.github/workflows/kfaah-owner-stage-only.yml':{'review','stage'},'.github/workflows/kfaah-owner-publish.yml':{'review','publish'}}
+ names=expected.get(row.get('path'))
+ if not names or not workflow_sha or row.get('event')!='issues' or row.get('head_branch')!='main' or row.get('head_sha')!=workflow_sha or type(row.get('id')) is not int or row.get('run_attempt')!=1:return False
+ obj=get('actions/runs/'+str(row['id'])+'/attempts/1/jobs?per_page=100')
+ jobs=obj.get('jobs')
+ # Only exact known job sets that are already proven skipped are exempted.
+ # Empty, pending, executing, foreign-head or partial job evidence stays blocking.
+ return type(jobs) is list and obj.get('total_count')==len(names)==len(jobs) and all(type(job) is dict for job in jobs) and {job.get('name') for job in jobs}==names and all(job.get('status')=='completed' and job.get('conclusion')=='skipped' for job in jobs)
+
+def publishers_quiet(get,this_run,workflow_sha=None):
  for status in ('queued','in_progress','waiting','pending','requested'):
   for page in range(1,11):
    obj=get('actions/runs?status='+status+'&per_page=100&page='+str(page));rows=obj['workflow_runs']
    for row in rows:
     path=row.get('path','').lower()
-    if row.get('id')!=int(this_run) and any(w in path for w in ('publish','deploy','manager','release','stage-only')):raise ValueError('KNOWN_GITHUB_PUBLISHER_ACTIVE')
+    if row.get('id')!=int(this_run) and any(w in path for w in ('publish','deploy','manager','release','stage-only')):
+     if nonapplicable_issue_peer(row,get,workflow_sha):continue
+     raise ValueError('KNOWN_GITHUB_PUBLISHER_ACTIVE')
    if len(rows)<100:break
   else:raise ValueError('PUBLISHER_SCAN_INCOMPLETE')
 
@@ -96,7 +107,7 @@ def main():
     must(len(raw)<=262144);print(json.dumps(sanitize(json.loads(raw),r),sort_keys=True))
   return
  token=os.environ.get('GH_TOKEN','');must(bool(token));get=lambda suffix:api_get(token,p,suffix)
- head=p.verify_run(q,get);publishers_quiet(get,run_id)
+ head=p.verify_run(q,get);publishers_quiet(get,run_id,os.environ['WORKFLOW_SHA'])
  if args.action=='verify':
   manifest,_=r.verify(args.bundle,q['manifest_sha256'],q['archive_sha256']);p.compare_origin(manifest,q,head)
   print('STAGE_CANDIDATE_GITHUB_PROVENANCE_AND_BYTES_VERIFIED');return

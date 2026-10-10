@@ -10,16 +10,27 @@ LEGACY='/var/www/kfaah'
 LOG='/var/log/kfaah-deploy.log'
 EXECUTION_ENABLED=True  # Independent approval of the revised code is still required.
 
-EVIDENCE_FIELDS={'phase','result','reason','backupPath','manifestSha256','contentSha256','counts','baselineBytesVerified','contentExported','stagingBeforePreserved','stagingBeforeContentSha256','baselineContentSha256','promoteInvoked','receiverInvoked','receiverSourceReviewed','allWritersExcluded','quietWindowAssertion','automaticRootRecovery','expectedHtmlInjection','legacyBadgeSha256','retainedFileCount','receiveExitCode','differenceCount','differences','truncated','stagingMatchesReceiverModel','incomingRecovery','incomingCandidateRetained','oldIncomingNeverDeleted','currentBaselineMatchedBeforeAfter','baselineStillVerified','helpersMatchedBeforeAfter'}
+EVIDENCE_FIELDS={'candidateBinding','phase','result','reason','backupPath','manifestSha256','contentSha256','counts','baselineBytesVerified','contentExported','stagingBeforePreserved','stagingBeforeContentSha256','baselineContentSha256','promoteInvoked','receiverInvoked','receiverSourceReviewed','allWritersExcluded','quietWindowAssertion','automaticRootRecovery','expectedHtmlInjection','legacyBadgeSha256','retainedFileCount','receiveExitCode','differenceCount','differences','truncated','stagingMatchesReceiverModel','incomingRecovery','incomingCandidateRetained','oldIncomingNeverDeleted','currentBaselineMatchedBeforeAfter','baselineStillVerified','helpersMatchedBeforeAfter'}
+CANDIDATE_BINDING_KEYS=frozenset(('manifest_sha256', 'archive_sha256', 'source_sha', 'build_workflow_sha', 'build_run_id', 'build_attempt', 'artifact_id'))
+def candidate_binding(request):
+ binding={key:request[key] for key in CANDIDATE_BINDING_KEYS}
+ for key in ('manifest_sha256','archive_sha256'):r.check(r.H64,binding[key])
+ for key in ('source_sha','build_workflow_sha'):r.check(r.H40,binding[key])
+ for key in ('build_run_id','build_attempt','artifact_id'):r.check(r.POSITIVE,binding[key])
+ return binding
+
 def safe_evidence(obj):
  out={key:value for key,value in obj.items() if key in EVIDENCE_FIELDS}
+ if 'candidateBinding' in out:
+  must(type(out['candidateBinding']) is dict and set(out['candidateBinding'])==CANDIDATE_BINDING_KEYS,'CANDIDATE_BINDING_REJECTED')
+  out['candidateBinding']=candidate_binding(out['candidateBinding'])
  if 'counts' in out:
   keys={'entries','files','directories','bytes','symlinks','hardlinks','special','unprotected'}
   out['counts']={k:v for k,v in out['counts'].items() if k in keys and type(v) is int and v>=0}
  if 'differences' in out:
   rows=[]
   for row in out['differences'][:100]:
-   path=frontend_name(row['path']);item={'path':path}
+   path=historical_name(row['path']);item={'path':path}
    for key in ('expected','actual'):
     value=row.get(key)
     if value is not None:
@@ -47,6 +58,13 @@ def private_dir(path,create=False):
   return child
  finally:os.close(fd)
 
+def historical_name(relative):
+ # Historical snapshots are not newly deployable bundles. Preserve literal
+ # filenames (including harmless leading dots) without interpreting escapes.
+ must(type(relative) is str and 0<len(relative.encode('utf-8'))<=4096 and not relative.startswith('/') and '\\' not in relative and not any(ord(c)<32 or ord(c)==127 for c in relative),'HISTORICAL_PATH_REJECTED')
+ must(all(part not in ('','.','..') and len(part.encode('utf-8'))<=255 for part in relative.split('/')),'HISTORICAL_PATH_REJECTED')
+ return relative
+
 def frontend_name(relative):
  r.name('/'.join('well-known' if part=='.well-known' else part for part in relative.split('/')))
  return relative
@@ -55,7 +73,7 @@ def static_name(relative):
  return Path(relative).suffix.lower() in r.SUFFIXES or '.well-known' in relative.split('/') or Path(relative).name.startswith('index.html.bak')
 
 def relative_parent(rootfd,relative,create=False,directory_mode=0o700):
- frontend_name(relative);parts=relative.split('/');fd=os.dup(rootfd)
+ historical_name(relative);parts=relative.split('/');fd=os.dup(rootfd)
  try:
   for part in parts[:-1]:
    if create:
@@ -84,8 +102,7 @@ def content_scan(path,protect=False):
  def visit(record):
   row=record['entry'];must(row['type'] in ('directory','file'),'NONREGULAR_BASELINE');must(row['uid']==(0 if protect else 1000),'BASELINE_COPY_OWNER')
   if row['path']!='.':
-   frontend_name(row['path'])
-   if row['type']=='file':must(static_name(row['path']),'NONSTATIC_BASELINE')
+   historical_name(row['path'])
   must(row['nlink']==1 if row['type']=='file' else True,'BASELINE_HARDLINK')
   must(not (int(row['mode'],8)&0o7022),'UNPROTECTED_BASELINE')
   h.update(a.canonical(content_row(row)))
@@ -101,14 +118,14 @@ def baseline_copy(source,dest,manifest_path,expected_sha,protect=True,source_own
    row=record['entry'];must(row['type'] in ('file','directory'),'BASELINE_NONREGULAR')
    must(row['uid'] in source_owners if source_owners is not None else True,'BASELINE_OWNER')
    must(not int(row['mode'],8)&0o7022,'BASELINE_MODE')
-   if row['path']!='.':frontend_name(row['path'])
+   if row['path']!='.':historical_name(row['path'])
    if row['type']=='directory':
     if row['path']!='.':
      parent,name=relative_parent(destfd,row['path'],True)
      try:os.mkdir(name,0o700,dir_fd=parent);os.fsync(parent)
      finally:os.close(parent)
    else:
-    must(row['nlink']==1 and static_name(row['path']),'BASELINE_FILE_REJECTED')
+    must(row['nlink']==1,'BASELINE_FILE_REJECTED')
     srcparent,name=relative_parent(sourcefd,row['path']);dstparent,_=relative_parent(destfd,row['path'])
     src=dst=None
     try:
@@ -298,13 +315,24 @@ def tree_inventory(path,owners,exact_modes=False):
  files={};directories=[]
  def visit(record):
   row=record['entry'];must(row['type'] in ('directory','file') and row['uid'] in owners and not int(row['mode'],8)&0o7022,'RECEIVER_TREE_UNSAFE')
-  if row['path']!='.':frontend_name(row['path'])
+  if row['path']!='.':historical_name(row['path'])
   if exact_modes:must(int(row['mode'],8)==(0o644 if row['type']=='file' else 0o755),'RECEIVER_MODE_MISMATCH')
   if row['type']=='file':
-   must(row['nlink']==1 and static_name(row['path']),'RECEIVER_FILE_UNSAFE');files[row['path']]={'sha256':row['sha256'],'size':row['size']}
+   must(row['nlink']==1,'RECEIVER_FILE_UNSAFE');files[row['path']]={'sha256':row['sha256'],'size':row['size']}
   else:directories.append(row['path'])
  result=a.scan(path,output=visit,protect=False)
  return {'files':files,'directories':directories,'scan':result}
+def legacy_directory():
+ # Existing www-data-owned legacy root is permitted only at this fixed path,
+ # with protected root ancestors and an ordinary non-writable directory.
+ parent=r.open_directory(Path(LEGACY).parent,(0,))
+ try:fd=os.open(Path(LEGACY).name,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW,dir_fd=parent)
+ finally:os.close(parent)
+ try:
+  info=os.fstat(fd);must(info.st_uid in (0,33) and not info.st_mode&0o7022,'LEGACY_DIRECTORY_UNSAFE')
+  return fd
+ except BaseException:os.close(fd);raise
+
 def receiver_paths(post=False):
  # No new root permission; refuse redirected or writable root destinations.
  root=r.open_directory('/var/www',(0,));os.close(root)
@@ -321,7 +349,7 @@ def receiver_paths(post=False):
  finally:os.close(log_parent)
  legacy=None;legacy_identity=None
  try:
-  fd=r.open_directory(LEGACY,(0,),0)
+  fd=legacy_directory()
  except FileNotFoundError:fd=None
  if fd is not None:
   try:
@@ -420,7 +448,7 @@ def stage(request,txn):
  ready=verify_backup(txn,request);before,_=current_check(request);before_helpers=helpers()
  manifest,files=r.verify(txn+'/candidate',request['manifest_sha256'],request['archive_sha256'])
  origin=manifest['origin'];must(all(origin.get(k)==v for k,v in {'kind':'build','sourceSha':request['source_sha'],'workflowSha':request['build_workflow_sha'],'buildRunId':request['build_run_id'],'buildAttempt':request['build_attempt']}.items()),'CANDIDATE_ORIGIN_MISMATCH')
- outcome={'phase':'STAGE_ONLY','baselineBytesVerified':True,'backupPath':txn+'/baseline','baselineContentSha256':ready['contentSha256'],'promoteInvoked':False,'receiverInvoked':False,'receiverSourceReviewed':True,'allWritersExcluded':False,'quietWindowAssertion':request['quiet_window_confirmed'],'automaticRootRecovery':False}
+ outcome={'candidateBinding':candidate_binding(request),'phase':'STAGE_ONLY','baselineBytesVerified':True,'backupPath':txn+'/baseline','baselineContentSha256':ready['contentSha256'],'promoteInvoked':False,'receiverInvoked':False,'receiverSourceReviewed':True,'allWritersExcluded':False,'quietWindowAssertion':request['quiet_window_confirmed'],'automaticRootRecovery':False}
  try:
   must(a.known_processes()['matchingCount']==0,'KNOWN_SERVER_HELPER_ACTIVE')
   saved,staging_ready=verified_staging_backup(txn);observed=receiver_paths()

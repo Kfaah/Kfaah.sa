@@ -5,9 +5,6 @@ on:
 permissions:
   contents: read
   actions: read
-concurrency:
-  group: kfaah-frontend-deploy
-  cancel-in-progress: false
 jobs:
   review:
     if: >-
@@ -39,6 +36,9 @@ jobs:
             --audit-workflow unused
           echo 'EXECUTION_BLOCKED_PENDING_INDEPENDENT_APPROVAL; QUIET_WINDOW_IS_AN_ASSERTION'
   stage:
+    concurrency:
+      group: kfaah-frontend-deploy
+      cancel-in-progress: false
     needs: review
     if: ${{ needs.review.result == 'success' }}
     runs-on: ubuntu-latest
