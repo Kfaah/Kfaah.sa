@@ -1,7 +1,7 @@
 """Read-only fixed failed transaction probe. Loaded with independently pinned modules.
 Never calls stage main, backup, journal, receiver, promoter, or a subprocess.
 """
-import errno, fcntl, json, os, pwd, stat
+import errno, fcntl, grp, json, os, pwd, re, stat
 from pathlib import Path
 import approved_stage as m
 RUN='38073963173'
@@ -9,7 +9,7 @@ TXN=m.BASE+'/stage-'+RUN+'-1'
 CURRENT='/var/www/kfaah-releases/20261009T213800Z-126960cf'
 MANIFEST='175f07648cbf276c814937b03ed69f9ee2bff7c891333a9c444ee9a9115072cb'
 REQUEST={'expected_current':CURRENT,'baseline_manifest_sha256':MANIFEST}
-REASONS=frozenset('NUMERIC_GROUP_CONTEXT_LIMIT HISTORICAL_PATH_REJECTED LEGACY_DIRECTORY_UNSAFE PRIVATE_DIRECTORY_REJECTED CURRENT_BASELINE_CHANGED CURRENT_UNSAFE CURRENT_MISMATCH ANCESTOR_UNPROTECTED HELPER_IDENTITY_MISMATCH HELPER_UNPROTECTED HELPER_REPLACED HELPER_CHANGED HELPER_LIMIT RECEIVER_TREE_UNSAFE RECEIVER_FILE_UNSAFE BADGE_DESTINATION_IS_DIRECTORY LOG_UNSAFE LEGACY_BADGE_UNSAFE LEGACY_BADGE_CHANGED NONREGULAR_BASELINE BASELINE_COPY_OWNER NONSTATIC_BASELINE BASELINE_HARDLINK UNPROTECTED_BASELINE DIRECTORY_REPLACED FILE_REPLACED FILE_CHANGED DIRECTORY_CHANGED DEADLINE_PARTIAL_SCAN ENTRY_LIMIT_PARTIAL_SCAN LOCK_UNSAFE'.split())
+REASONS=frozenset('FIXED_GROUP_NOT_FOUND FIXED_GROUP_IDENTITY_REJECTED FIXED_GROUP_MEMBER_LIMIT FIXED_GROUP_MEMBER_NOT_FOUND DEPLOY_ACCESS_IDENTITY_REJECTED ACCESS_CHECK_UNSUPPORTED NUMERIC_GROUP_CONTEXT_LIMIT HISTORICAL_PATH_REJECTED LEGACY_DIRECTORY_UNSAFE PRIVATE_DIRECTORY_REJECTED CURRENT_BASELINE_CHANGED CURRENT_UNSAFE CURRENT_MISMATCH ANCESTOR_UNPROTECTED HELPER_IDENTITY_MISMATCH HELPER_UNPROTECTED HELPER_REPLACED HELPER_CHANGED HELPER_LIMIT RECEIVER_TREE_UNSAFE RECEIVER_FILE_UNSAFE BADGE_DESTINATION_IS_DIRECTORY LOG_UNSAFE LEGACY_BADGE_UNSAFE LEGACY_BADGE_CHANGED NONREGULAR_BASELINE BASELINE_COPY_OWNER NONSTATIC_BASELINE BASELINE_HARDLINK UNPROTECTED_BASELINE DIRECTORY_REPLACED FILE_REPLACED FILE_CHANGED DIRECTORY_CHANGED DEADLINE_PARTIAL_SCAN ENTRY_LIMIT_PARTIAL_SCAN LOCK_UNSAFE'.split())
 RELEASE_REASONS={'Untrusted directory ancestor':'DIRECTORY_OWNER_OR_MODE_REJECTED','Wrong owner':'OWNER_REJECTED','Unsafe relative path':'STATIC_PATH_REJECTED','Regular single-link file required':'REGULAR_FILE_REJECTED','Special mode rejected':'SPECIAL_MODE_REJECTED','Unprotected content':'MODE_REJECTED'}
 def safe_error(exc):
  if isinstance(exc,OSError):return {'reason':'OS_ERROR','errno':exc.errno if type(exc.errno) is int else None}
@@ -25,6 +25,43 @@ def metadata(path):
 def numeric_identity():
  groups=sorted(set(os.getgroups()));m.must(len(groups)<=256,'NUMERIC_GROUP_CONTEXT_LIMIT')
  return {'uid':os.getuid(),'euid':os.geteuid(),'gid':os.getgid(),'egid':os.getegid(),'supplementaryGids':groups}
+def log_parent_group():
+ # Only GID 103 is exposed. NSS enumeration is filtered before serialization;
+ # no account name, shell path, password field, or unrelated UID is returned.
+ try:group=grp.getgrgid(103)
+ except KeyError:raise ValueError('FIXED_GROUP_NOT_FOUND') from None
+ m.must(group.gr_gid==103 and re.fullmatch(r'[A-Za-z_][A-Za-z0-9_.-]{0,63}',group.gr_name) is not None,'FIXED_GROUP_IDENTITY_REJECTED')
+ m.must(len(group.gr_mem)<=256,'FIXED_GROUP_MEMBER_LIMIT')
+ explicit={}
+ for name in group.gr_mem:
+  try:account=pwd.getpwnam(name)
+  except KeyError:raise ValueError('FIXED_GROUP_MEMBER_NOT_FOUND') from None
+  m.must(account.pw_name==name,'FIXED_GROUP_IDENTITY_REJECTED');explicit[account.pw_uid]=account
+ primary={account.pw_uid:account for account in pwd.getpwall() if account.pw_gid==103}
+ accounts={**primary,**explicit};m.must(len(accounts)<=256,'FIXED_GROUP_MEMBER_LIMIT')
+ logging_names={'syslog','rsyslog','systemd-journal','systemd-journal-remote','systemd-journal-upload'}
+ shells={'/usr/sbin/nologin','/sbin/nologin','/bin/false','/usr/bin/false'}
+ # Classification evidence only: fixed name/shell allowlists and UID < 1000.
+ # These booleans never grant trust or change any stage guard.
+ return {'gid':103,'groupName':group.gr_name,'explicitMemberUids':sorted(explicit),'primaryGroupAccountUids':sorted(primary),'accounts':[{'uid':uid,'knownLoggingService':account.pw_name in logging_names,'noninteractiveShell':account.pw_shell in shells,'systemAccount':0<=uid<1000} for uid,account in sorted(accounts.items())]}
+def log_parent_write_access():
+ m.must(os.getuid()==1000 and os.geteuid()==1000 and os.getgid()==1000 and os.getegid()==1000,'DEPLOY_ACCESS_IDENTITY_REJECTED')
+ m.must(os.access in os.supports_dir_fd and os.access in os.supports_effective_ids,'ACCESS_CHECK_UNSUPPORTED')
+ fd=m.r.open_directory('/var/log')
+ try:
+  try:return {'deployHasWriteAccess':os.access('.',os.W_OK,dir_fd=fd,effective_ids=True,follow_symlinks=False)}
+  except NotImplementedError:raise ValueError('ACCESS_CHECK_UNSUPPORTED') from None
+ finally:os.close(fd)
+def log_parent_access_acl():
+ # Descriptor pins the fixed no-follow directory; discard all ACL contents.
+ fd=m.r.open_directory('/var/log')
+ try:
+  try:os.getxattr(fd,'system.posix_acl_access')
+  except OSError as exc:
+   if exc.errno==errno.ENODATA:return {'posixAccessAclPresent':False}
+   raise
+  return {'posixAccessAclPresent':True}
+ finally:os.close(fd)
 def directory_guard(path,ancestors,owner):
  fd=m.r.open_directory(path,ancestors,owner);os.close(fd);return {}
 def legacy_guard():
@@ -73,6 +110,7 @@ def diagnose():
   rows.append(probe('transaction_'+child.replace('.','_').replace('-','_'),observe))
  operations=[('identity_numeric',numeric_identity),('base_private_guard',lambda:private_guard(m.BASE)),('transaction_private_guard',lambda:private_guard(TXN)),('lock_guard',lock_guard),('current_pointer',pointer_guard),('current_check',current_guard),('helpers',helpers_guard),('known_processes',processes_guard),('staging_root_guard',lambda:directory_guard(m.STAGING,(0,),33)),('staging_inventory',inventory_guard),('legacy_root_guard',legacy_guard),('receiver_paths',receiver_guard),('baseline_copy_scan',lambda:copy_guard(TXN+'/baseline')),('staging_copy_scan',lambda:copy_guard(TXN+'/staging-before'))]
  rows.extend(probe(key,operation) for key,operation in operations)
+ rows.extend(probe(key,operation) for key,operation in [('log_parent_group_103',log_parent_group),('log_parent_deploy_write_access',log_parent_write_access),('log_parent_access_acl',log_parent_access_acl)])
  return {'phase':'READ_ONLY_BACKUP_DIAGNOSTIC','stageRunId':RUN,'historicalFailureExactlyIdentified':False,'observationsAreCurrent':True,'receiverInvoked':False,'promoteInvoked':False,'filesystemWritesRequested':False,'probes':rows}
 def main():
  if os.geteuid()!=1000 or pwd.getpwuid(1000).pw_name!='deploy':raise ValueError('DEPLOY_IDENTITY_REJECTED')
