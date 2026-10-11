@@ -1,3 +1,4 @@
+import { EmployeeAttendance } from "@/components/EmployeeAttendance";
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -297,6 +298,7 @@ const Index = () => {
 
   return (
     <DashboardLayout>
+      <EmployeeAttendance />
       <div className="space-y-8">
         {/* Page Title */}
         <div className="animate-fade-in">

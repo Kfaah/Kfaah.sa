@@ -1,3 +1,4 @@
+import { EmployeeAttendance } from "@/components/EmployeeAttendance";
 import { useEffect, useState, forwardRef, Suspense } from "react";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import { useParams, useNavigate, Link } from "react-router-dom";
@@ -1008,6 +1009,7 @@ export default function OrgInternalDashboard({
 
         {/* EMPLOYEES */}
         <TabsContent value="employees" className="mt-6" dir="rtl">
+          <EmployeeAttendance management organizationId={orgId} />
           <EmployeesShowcase
             employees={employees}
             loading={employeesLoading}

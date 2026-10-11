@@ -1,3 +1,4 @@
+import { EmployeeAttendance } from "@/components/EmployeeAttendance";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -564,6 +565,7 @@ const Employees = () => {
 
   return (
     <DashboardLayout>
+      <EmployeeAttendance management />
       {/* Page Header */}
       <div className="flex items-center justify-between mb-8 animate-fade-in flex-wrap gap-4">
         <div>

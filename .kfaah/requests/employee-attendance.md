@@ -1,0 +1,2 @@
+# Employee attendance
+Add organization-scoped attendance tracking to Employees and self-service check-in, absence and check-out to Profile. Keep original repository and production unchanged. Do not deploy, run database migrations or change existing permissions. New database schema is a review-only proposal under docs/employee-attendance.sql; activation requires separate approval. Use server timestamps and Riyadh calendar days; unrecorded days are not automatically absences. Preview/viewer accounts cannot record attendance.

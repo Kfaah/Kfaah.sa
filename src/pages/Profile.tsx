@@ -1,3 +1,4 @@
+import { EmployeeAttendance } from "@/components/EmployeeAttendance";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -598,6 +599,7 @@ export default function Profile() {
 
   return (
     <DashboardLayout>
+      <EmployeeAttendance />
       <div className="w-full max-w-screen-2xl mx-auto space-y-6" dir="rtl">
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
 
