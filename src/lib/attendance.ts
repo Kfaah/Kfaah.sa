@@ -24,9 +24,11 @@ type AttendanceDatabase = {
 // Same authenticated client/session, with the proposed RPC contract typed locally.
 export const attendanceApi = supabase as unknown as SupabaseClient<AttendanceDatabase>;
 export function riyadhDay(date = new Date()): string {
-  return new Intl.DateTimeFormat("en-CA", {
+  const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Riyadh", year: "numeric", month: "2-digit", day: "2-digit",
-  }).format(date);
+  }).formatToParts(date);
+  const part = (type: string) => parts.find(p => p.type === type)!.value;
+  return `${part("year")}-${part("month")}-${part("day")}`;
 }
 export function attendanceTime(value: string | null): string {
   return value ? new Intl.DateTimeFormat("ar-SA", {
