@@ -18,7 +18,7 @@ Target: `Kfaah/Kfaah.sa`. GitHub owner/actor: `Kfaah`, ID `341028123` (confirmed
 - 20 synthetic offline release security tests passed: `python3 -B scripts/recovery/test-release-channel.py`.
 - 12 prepared-release tests and existing worker/promotion safety checks passed.
 - All six active workflow files passed official actionlint 1.7.12 (shellcheck and pyflakes integrations unavailable; these were not run). The downloaded actionlint archive was checked against the official release SHA256 checksum file.
-- Frozen install + production-mode Vite build + bundle independence checks ran successfully twice from an isolated copy, using `ci-public-placeholder`, NOT a production key. Original manifests/lock remained unchanged. Local Node 24.19.0 was used; workflows select Node 22. Node 22 CI has not been claimed as passed.
+- Frozen install + production-mode Vite build + bundle independence checks ran successfully twice from an isolated copy, using `ci-public-placeholder`, NOT a production key. Original manifests/lock remained unchanged. Local Node 24.19.0 was used. GitHub Actions subsequently passed both the new safety job and the full frontend build job using Node 22 on draft PR #1 (runs 38262583472 and 38262583601).
 - GitHub environments list is empty. Integration receives HTTP 403 for Actions permission settings and secret metadata. This is insufficient integration scope, not proof that secrets are absent.
 - Six historical failed workflow records on the attendance branch were visible for legacy YAML files. They predate this branch; no production operation was invoked by this preparation.
 - No SSH/remote audit, build artifact prepared by Actions, STAGE, PUBLISH, rollback or database operation was executed. No authentication credential or GitHub setting was created/changed. This draft is not release readiness.
@@ -38,11 +38,11 @@ Do not paste values in chat or commit them. The owner/admin checks existing GitH
 
 Create/review protected GitHub environments `kfaah-readonly`, `kfaah-stage` and `kfaah-production` before activation. Restrict deployment branches to main and configure production approval by the owner/reviewer. Merely adding an environment name to YAML does NOT configure protection. GitHub plan support and actual protection rules must be checked. Environment-scoped server secrets are preferred. None of these settings has been changed.
 
-Actions should remain disabled until the archival/security PR is reviewed and merged into main. The old main tree still contains legacy workflows. This draft PR alone does not replace it. Do not merge this PR or enable Actions under the assumption that production is ready; hard locks remain after merge.
+Do not enable legacy publishing or submit production-triggering issues before the archival/security PR is reviewed and merged into main. Read-only CI jobs ran on PR #1; Actions configuration settings are not readable by this integration and were not changed. The old main tree still contains legacy workflows. This draft PR alone does not replace it. Do not merge this PR or enable Actions under the assumption that production is ready; hard locks remain after merge.
 
 ## Activation sequence requiring separate review
 
-1. Review this PR and test Node 22 CI without production secrets or service access. Merge only after owner's review. Verify protections, authentication and known-hosts metadata through supported settings.
+1. Review this PR and its passed Node 22 CI. Merge only after owner's review. Verify protections, authentication and known-hosts metadata through supported settings.
 2. Owner/server admin confirms actual current release target via authorized read-only access. Review the readonly job's scope and fill `expected_current` with that verified path. Only then unlock readonly baseline in a separate reviewed change; validate new manifests/helper identities and publisher state, never reuse October 9 evidence.
 3. Run PREPARE and VERIFY for an explicitly reviewed source SHA on main, with a real public frontend key, and retain sealed artifact/run/source/checksum evidence. Requests are new OWNER issues with exact validator schemas; old runs and reruns are rejected.
 4. Fill `build_tools_commit`, `audit_tools_commit`, `baseline_manifest_sha256` from freshly verified evidence; update audit and tool hashes only when reviewed source really changes. Stage tools checkouts use immutable event SHA and exact byte hashes; any future use of differing tool commits must keep checkout references and the hash gates consistent.
