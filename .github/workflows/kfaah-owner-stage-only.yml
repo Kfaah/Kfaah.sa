@@ -8,9 +8,9 @@ permissions:
 jobs:
   review:
     if: >-
-      github.repository == 'gaberalhrese-cloud/shop-soulmate-04' &&
-      github.ref == 'refs/heads/main' && github.actor_id == '253139283' &&
-      github.event.issue.user.id == 253139283 &&
+      github.repository == 'Kfaah/Kfaah.sa' &&
+      github.ref == 'refs/heads/main' && github.actor_id == '341028123' &&
+      github.event.issue.user.id == 341028123 &&
       github.event.issue.title == 'KFAAH_OWNER_STAGE_ONLY_V1' &&
       !github.event.issue.pull_request && github.run_attempt == 1
     runs-on: ubuntu-latest
@@ -18,14 +18,14 @@ jobs:
     env:
       WORKFLOW_SHA: ${{ github.sha }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ github.sha }}
           path: stage-tools
           persist-credentials: false
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: 9abc38927afeb8a0642449440e4af28de88932f1
+          ref: ${{ github.sha }}
           path: build-tools
           persist-credentials: false
       - name: Validate owner request without server access
@@ -36,30 +36,33 @@ jobs:
             --audit-workflow unused
           echo 'EXECUTION_BLOCKED_PENDING_INDEPENDENT_APPROVAL; QUIET_WINDOW_IS_AN_ASSERTION'
   stage:
+    environment: kfaah-stage
     concurrency:
       group: kfaah-frontend-deploy
       cancel-in-progress: false
     needs: review
-    if: ${{ needs.review.result == 'success' }}
+    # Hard lock: separate reviewed activation is required.
+    if: ${{ false && needs.review.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 75
     env:
       WORKFLOW_SHA: ${{ github.sha }}
       GH_TOKEN: ${{ github.token }}
+      KFAAH_LEGACY_READ_TOKEN: ${{ secrets.KFAAH_LEGACY_READ_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ github.sha }}
           path: stage-tools
           persist-credentials: false
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: 9abc38927afeb8a0642449440e4af28de88932f1
+          ref: ${{ github.sha }}
           path: build-tools
           persist-credentials: false
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: 321db6ce04fb264a71381c154ce378b4be7bea99
+          ref: ${{ github.sha }}
           path: audit-tools
           persist-credentials: false
       - name: Validate exact owner request
@@ -69,7 +72,7 @@ jobs:
           python3 -B stage-tools/deploy/frontend-interface/stage_only.py plan \
             --tools build-tools/deploy/frontend-interface \
             --audit-workflow audit-tools/.github/workflows/kfaah-owner-baseline-preflight.yml
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           github-token: ${{ github.token }}
           run-id: ${{ steps.plan.outputs.build_run_id }}
@@ -111,7 +114,7 @@ jobs:
           python3 -B stage-tools/deploy/frontend-interface/stage_only.py evidence \
             --tools build-tools/deploy/frontend-interface \
             --audit-workflow audit-tools/.github/workflows/kfaah-owner-baseline-preflight.yml
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: kfaah-stage-only-evidence-${{ github.run_id }}-${{ github.run_attempt }}

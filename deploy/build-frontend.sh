@@ -20,7 +20,7 @@ if [[ -n ${KFAAH_EXPECTED_API_URL:-} && $VITE_SUPABASE_URL != "$KFAAH_EXPECTED_A
   exit 1
 fi
 
-npm ci
+python3 deploy/install-frontend-dependencies.py
 npm run build
 
 if ! grep -Fq "$VITE_SUPABASE_URL" dist/index.html; then

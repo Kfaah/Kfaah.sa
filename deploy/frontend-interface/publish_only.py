@@ -1,19 +1,20 @@
 """Disabled owner PUBLISH channel; binds successful STAGE and immutable build provenance."""
 import argparse,base64,hashlib,importlib.util,json,os,re,shutil,subprocess,sys
 from pathlib import Path
-EXECUTION_ENABLED=True
-REPO='gaberalhrese-cloud/shop-soulmate-04'
+from channel_policy import approval
+EXECUTION_ENABLED=False
+REPO='Kfaah/Kfaah.sa'
 # Independently reviewed STAGE companion commit; PUBLISH remains disabled.
-STAGE_SHA='49e15c900b44c2718c70be26fc8c0549ddf2de23'
+STAGE_SHA=approval()['stage_tools_commit']
 STAGE_WORKFLOW='.github/workflows/kfaah-owner-stage-only.yml'
-OWNER=253139283
+OWNER=341028123
 EXECUTION_STATE="NOT_INVOKED"
 ROOT=Path(__file__).parent
 
 def must(v,label='PUBLISH_REQUEST_REJECTED'):
  if not v:raise ValueError(label)
 def load_dependencies(stage_tools,build_tools):
- for file,sha in {'stage_only.py':'5ecc37167122942a9f4a26491afaae16cc62e78eb6bb3df604ba661eeff3e773','remote_stage.py':'0d5603942921172b27c6a2b3722da70a9417278d2ceb2a2821406cf504cf2568'}.items():must(hashlib.sha256((stage_tools/file).read_bytes()).hexdigest()==sha,'STAGE_TOOLS_CHANGED')
+ for file,sha in {'stage_only.py':'ae8ca78bb10f01419f0e39cf65d46e03b763f74758c2c7669c0a1c8431696ac7','remote_stage.py':'0d5603942921172b27c6a2b3722da70a9417278d2ceb2a2821406cf504cf2568'}.items():must(hashlib.sha256((stage_tools/file).read_bytes()).hexdigest()==sha,'STAGE_TOOLS_CHANGED')
  spec=importlib.util.spec_from_file_location('stage_controller',stage_tools/'stage_only.py');s=importlib.util.module_from_spec(spec);spec.loader.exec_module(s)
  r,p=s.dependency_modules(build_tools);return s,r,p
 
@@ -24,6 +25,7 @@ def plan_request(e,sha,attempt,r,s):
  body=i.get('body');must(type(body) is str and len(body.encode())<=4096);q=json.loads(body,object_pairs_hook=r.unique)
  fields={'version','operation','workflow_sha','stage_workflow_sha','stage_run_id','stage_attempt','stage_artifact_id','stage_result_sha256','stage_backup_result_sha256','build_workflow_sha','source_sha','build_run_id','build_attempt','artifact_id','manifest_sha256','archive_sha256','expected_current','baseline_manifest_sha256','expected_receive_sha256','expected_promote_sha256','quiet_window_confirmed'}
  must(type(q) is dict and set(q)==fields and type(q['version']) is int and q['version']==1 and q['operation']=='PUBLISH')
+ r.check(r.H40,STAGE_SHA);r.check(r.H40,s.TOOLS_SHA);r.check(r.H64,s.BASELINE_SHA)
  r.check(r.H40,sha);must(q['workflow_sha']==sha and q['stage_workflow_sha']==STAGE_SHA and q['stage_attempt']=='1')
  r.check(r.H40,q['source_sha']);must(q['build_workflow_sha']==s.TOOLS_SHA)
  for key in ('stage_run_id','stage_artifact_id','build_run_id','build_attempt','artifact_id'):r.check(r.POSITIVE,q[key])
@@ -143,7 +145,7 @@ def main():
    for key in ('stage_run_id','stage_artifact_id','build_run_id','artifact_id'):output.write(key+'='+q[key]+'\n')
   print('OWNER_PUBLISH_REQUEST_VALIDATED; PUBLISH_EXECUTION_DISABLED');return
  get=lambda suffix:s.api_get(os.environ['GH_TOKEN'],p,suffix)
- verify_stage_run(q,get);build_head=p.verify_run(q,get);s.publishers_quiet(get,os.environ['GITHUB_RUN_ID'],os.environ['WORKFLOW_SHA'])
+ verify_stage_run(q,get);build_head=p.verify_run(q,get);s.publishers_quiet(get,os.environ['GITHUB_RUN_ID'],os.environ['WORKFLOW_SHA'],s.legacy_reader(p))
  if args.action=='verify-run':print('STAGE_AND_BUILD_RUN_PROVENANCE_VERIFIED');return
  approved=evidence(q,args.stage_evidence,r)
  if args.action=='verify-evidence':print('IMMUTABLE_SUCCESSFUL_STAGE_EVIDENCE_VERIFIED');return

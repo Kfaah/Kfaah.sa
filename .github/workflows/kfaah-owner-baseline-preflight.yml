@@ -10,22 +10,31 @@ concurrency:
   cancel-in-progress: false
 jobs:
   preflight:
+    environment: kfaah-readonly
+    # Hard lock: server inspection requires separate reviewed activation.
     if: >-
-      github.repository == 'gaberalhrese-cloud/shop-soulmate-04' &&
-      github.ref == 'refs/heads/main' && github.actor_id == '253139283' &&
-      github.event.issue.user.id == 253139283 &&
+      false &&
+      github.repository == 'Kfaah/Kfaah.sa' &&
+      github.ref == 'refs/heads/main' && github.actor_id == '341028123' &&
+      github.event.issue.user.id == 341028123 &&
       github.event.issue.title == 'KFAAH_OWNER_BASELINE_PREFLIGHT_V1' &&
       !github.event.issue.pull_request && github.run_attempt == 1
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
       - name: Validate fixed owner request
         env:
           WORKFLOW_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           python3 - <<'PYTHON'
-          import json, os
+          import json, os, re, sys
+          sys.path.insert(0, "deploy/frontend-interface")
+          from channel_policy import approval
           def require(v):
               if not v: raise SystemExit('REQUEST_REJECTED')
           def unique(pairs):
@@ -35,21 +44,24 @@ jobs:
               return out
           with open(os.environ['GITHUB_EVENT_PATH']) as f:e=json.load(f)
           i=e.get('issue',{})
-          require(e.get('action')=='opened' and e.get('sender',{}).get('id')==253139283)
-          require(e.get('repository',{}).get('full_name')=='gaberalhrese-cloud/shop-soulmate-04')
-          require(e.get('repository',{}).get('owner',{}).get('id')==253139283)
-          require(i.get('user',{}).get('id')==253139283 and i.get('author_association')=='OWNER')
+          require(e.get('action')=='opened' and e.get('sender',{}).get('id')==341028123)
+          require(e.get('repository',{}).get('full_name')=='Kfaah/Kfaah.sa')
+          require(e.get('repository',{}).get('owner',{}).get('id')==341028123)
+          require(i.get('user',{}).get('id')==341028123 and i.get('author_association')=='OWNER')
           require(i.get('title')=='KFAAH_OWNER_BASELINE_PREFLIGHT_V1' and 'pull_request' not in i)
           require(os.environ['GITHUB_REF']=='refs/heads/main' and os.environ['GITHUB_RUN_ATTEMPT']=='1')
           b=i.get('body');require(type(b) is str and len(b.encode())<=4096)
           try:r=json.loads(b,object_pairs_hook=unique)
           except (ValueError,TypeError):raise SystemExit('REQUEST_REJECTED')
+          target=approval()['expected_current']
+          require(type(target) is str and re.fullmatch(r'/var/www/kfaah-releases/[A-Za-z0-9-]+',target))
           expected={'version':1,'operation':'READONLY_PREFLIGHT',
                     'workflow_sha':os.environ['WORKFLOW_SHA'],
-                    'expected_current':'/var/www/kfaah-releases/20261009T213800Z-126960cf',
+                    'expected_current':target,
                     'expected_receive_sha256':'5494cae6b5ae590f1528da9a3f48da5e0f0e978e013b0d9d161d4c99ff09c6c4',
                     'expected_promote_sha256':'f10c0ea1e3c60a32b297515d63e338b06d7ecf8a7a18fd9efd7c6b9c729f8fbd'}
           require(type(r) is dict and r==expected and type(r.get('version')) is int)
+          with open(os.environ['GITHUB_ENV'],'a') as out:out.write('KFAAH_EXPECTED_CURRENT='+target+'\n')
           print('OWNER_READONLY_PREFLIGHT_REQUEST_ACCEPTED')
           PYTHON
       - name: Read known GitHub publisher state without logs or credentials
@@ -65,7 +77,7 @@ jobs:
               def redirect_request(self,*a,**kw):raise ValueError('REDIRECT_REJECTED')
           opener=urllib.request.build_opener(urllib.request.ProxyHandler({}),NoRedirect())
           def get(endpoint):
-              req=urllib.request.Request('https://api.github.com/repos/gaberalhrese-cloud/shop-soulmate-04/'+endpoint,
+              req=urllib.request.Request('https://api.github.com/repos/Kfaah/Kfaah.sa/'+endpoint,
                   headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'})
               with opener.open(req,timeout=20) as response:data=response.read(8*1024*1024+1)
               if len(data)>8*1024*1024:raise ValueError('RESPONSE_LIMIT')
@@ -117,10 +129,11 @@ jobs:
             -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile="$key_dir/known_hosts" -o ConnectTimeout=15 \
             -o ServerAliveInterval=15 -o ServerAliveCountMax=2 \
-            "deploy@$HETZNER_HOST" '/usr/bin/env -i PATH=/usr/bin:/bin /usr/bin/python3 -I -' \
+            "deploy@$HETZNER_HOST" '/usr/bin/env -i PATH=/usr/bin:/bin /usr/bin/python3 -I -' "$KFAAH_EXPECTED_CURRENT" \
             > audit-output/server-inventory.jsonl <<'PYTHON'
           import hashlib, json, os, pwd, stat, time
-          EXPECTED='/var/www/kfaah-releases/20261009T213800Z-126960cf'
+          import sys
+          EXPECTED=sys.argv[1] if __name__=='__main__' else None
           HELPERS={
            'kfaah-receive-frontend':'5494cae6b5ae590f1528da9a3f48da5e0f0e978e013b0d9d161d4c99ff09c6c4',
            'kfaah-promote-frontend':'f10c0ea1e3c60a32b297515d63e338b06d7ecf8a7a18fd9efd7c6b9c729f8fbd'}
@@ -301,7 +314,7 @@ jobs:
           bounded['ownerModeGroupCount']=len(result.get('ownerModeGroups',{}))
           print(json.dumps(bounded,sort_keys=True))
           PYTHON
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: kfaah-readonly-baseline-preflight-${{ github.run_id }}-${{ github.run_attempt }}
