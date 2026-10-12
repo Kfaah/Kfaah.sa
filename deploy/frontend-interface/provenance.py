@@ -3,13 +3,13 @@
 import argparse, importlib.util, json, os, urllib.request
 from pathlib import Path
 spec=importlib.util.spec_from_file_location('release',Path(__file__).with_name('release.py'));r=importlib.util.module_from_spec(spec);spec.loader.exec_module(r)
-REPO='gaberalhrese-cloud/shop-soulmate-04'
+REPO='Kfaah/Kfaah.sa'
 WORKFLOW='.github/workflows/kfaah-owner-frontend-prepare.yml'
 
 def verify_run(request,get):
     for key in ('build_run_id','build_attempt','artifact_id'):r.check(r.POSITIVE,request[key])
     run=get('actions/runs/'+request['build_run_id']+'/attempts/'+request['build_attempt'])
-    if run.get('id')!=int(request['build_run_id']) or run.get('run_attempt')!=int(request['build_attempt']) or run.get('status')!='completed' or run.get('conclusion')!='success' or run.get('event')!='issues' or run.get('head_branch')!='main' or run.get('path')!=WORKFLOW or run.get('repository',{}).get('full_name')!=REPO or run.get('actor',{}).get('id')!=253139283:raise ValueError('Unapproved build provenance')
+    if run.get('id')!=int(request['build_run_id']) or run.get('run_attempt')!=int(request['build_attempt']) or run.get('status')!='completed' or run.get('conclusion')!='success' or run.get('event')!='issues' or run.get('head_branch')!='main' or run.get('path')!=WORKFLOW or run.get('repository',{}).get('full_name')!=REPO or run.get('actor',{}).get('id')!=341028123:raise ValueError('Unapproved build provenance')
     head=r.check(r.H40,run.get('head_sha'))
     if head!=r.check(r.H40,request['build_workflow_sha']):raise ValueError('Build workflow commit differs from explicit approval')
     artifact=get('actions/artifacts/'+request['artifact_id'])

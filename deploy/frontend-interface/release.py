@@ -169,9 +169,9 @@ def verify(directory,manifest_sha,archive_sha):
     return obj,files
 
 def plan_request(event,workflow_sha,attempt='1'):
-    if attempt!='1' or event.get('action')!='opened' or event.get('sender',{}).get('id')!=253139283 or event.get('repository',{}).get('full_name')!='gaberalhrese-cloud/shop-soulmate-04' or event.get('repository',{}).get('owner',{}).get('id')!=253139283:raise ValueError('Unapproved event')
+    if attempt!='1' or event.get('action')!='opened' or event.get('sender',{}).get('id')!=341028123 or event.get('repository',{}).get('full_name')!='Kfaah/Kfaah.sa' or event.get('repository',{}).get('owner',{}).get('id')!=341028123:raise ValueError('Unapproved event')
     issue=event.get('issue',{})
-    if issue.get('user',{}).get('id')!=253139283 or issue.get('author_association')!='OWNER' or issue.get('title')!='KFAAH_FRONTEND_PREPARE_V1' or 'pull_request' in issue:raise ValueError('Unapproved requester')
+    if issue.get('user',{}).get('id')!=341028123 or issue.get('author_association')!='OWNER' or issue.get('title')!='KFAAH_FRONTEND_PREPARE_V1' or 'pull_request' in issue:raise ValueError('Unapproved requester')
     body=issue.get('body')
     if type(body) is not str or len(body.encode())>4096:raise ValueError('Request limit')
     request=json.loads(body,object_pairs_hook=unique)

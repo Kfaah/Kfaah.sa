@@ -1,0 +1,22 @@
+name: Kfaah release channel safety checks
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safety:
+    if: github.repository == 'Kfaah/Kfaah.sa'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Run offline release channel tests
+        run: python3 -B scripts/recovery/test-release-channel.py
+      - name: Show activation blockers without secrets or server access
+        run: python3 -B deploy/frontend-interface/channel_policy.py

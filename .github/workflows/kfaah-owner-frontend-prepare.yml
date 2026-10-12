@@ -11,9 +11,9 @@ concurrency:
 jobs:
   plan:
     if: >-
-      github.repository == 'gaberalhrese-cloud/shop-soulmate-04' &&
-      github.ref == 'refs/heads/main' && github.actor_id == '253139283' &&
-      github.event.issue.user.id == 253139283 &&
+      github.repository == 'Kfaah/Kfaah.sa' &&
+      github.ref == 'refs/heads/main' && github.actor_id == '341028123' &&
+      github.event.issue.user.id == 341028123 &&
       github.event.issue.title == 'KFAAH_FRONTEND_PREPARE_V1' &&
       !github.event.issue.pull_request && github.run_attempt == 1
     runs-on: ubuntu-latest
@@ -27,7 +27,7 @@ jobs:
       manifest_sha256: ${{ steps.plan.outputs.manifest_sha256 }}
       archive_sha256: ${{ steps.plan.outputs.archive_sha256 }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
@@ -46,12 +46,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ github.sha }}
           path: trusted
           persist-credentials: false
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ needs.plan.outputs.source_sha }}
           path: reviewed-source
@@ -70,9 +70,9 @@ jobs:
               if p.name != '.env.example':
                   raise SystemExit('LOCAL_ENVIRONMENT_FILE_REJECTED')
           PY
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: '22.23.3'
+          node-version: '22'
       - name: Build once and seal those exact files
         env:
           SOURCE_SHA: ${{ needs.plan.outputs.source_sha }}
@@ -93,7 +93,7 @@ jobs:
             --source-sha "$SOURCE_SHA" --workflow-sha "$WORKFLOW_SHA" \
             --run-id "$GITHUB_RUN_ID" --attempt "$GITHUB_RUN_ATTEMPT" \
             --node-version "$(node --version)" --lock reviewed-source/package-lock.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: kfaah-frontend-bundle-${{ github.run_id }}-${{ github.run_attempt }}
           path: sealed-bundle/
@@ -105,7 +105,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
@@ -118,7 +118,7 @@ jobs:
           python3 -B deploy/frontend-interface/provenance.py \
             --event "$GITHUB_EVENT_PATH" --workflow-sha "$WORKFLOW_SHA" \
             --attempt "$GITHUB_RUN_ATTEMPT"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           github-token: ${{ github.token }}
           run-id: ${{ needs.plan.outputs.build_run_id }}

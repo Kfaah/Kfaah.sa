@@ -1,16 +1,17 @@
 """Owner STAGE_ONLY runner, reusing pinned PREPARE and readonly-preflight modules."""
 import argparse, hashlib, importlib.util, json, os, re, subprocess, sys, types, urllib.request
 from pathlib import Path
-EXECUTION_ENABLED=True  # Keep live execution blocked until independent approval.
-TOOLS_SHA='9abc38927afeb8a0642449440e4af28de88932f1'
-AUDIT_SHA='321db6ce04fb264a71381c154ce378b4be7bea99'
-CURRENT='/var/www/kfaah-releases/20261009T213800Z-126960cf'
-BASELINE_SHA='175f07648cbf276c814937b03ed69f9ee2bff7c891333a9c444ee9a9115072cb'
+from channel_policy import approval
+EXECUTION_ENABLED=False  # Keep live execution blocked until independent approval.
+TOOLS_SHA=approval()['build_tools_commit']
+AUDIT_SHA=approval()['audit_tools_commit']
+CURRENT=approval()['expected_current']
+BASELINE_SHA=approval()['baseline_manifest_sha256']
 RECEIVE_SHA='5494cae6b5ae590f1528da9a3f48da5e0f0e978e013b0d9d161d4c99ff09c6c4'
 PROMOTE_SHA='f10c0ea1e3c60a32b297515d63e338b06d7ecf8a7a18fd9efd7c6b9c729f8fbd'
 TITLE='KFAAH_OWNER_STAGE_ONLY_V1'
-REPO='gaberalhrese-cloud/shop-soulmate-04'
-HASHES={'release.py':'18fceb0de983aa8a334cd258df0d648c6bd9bd384b8c09137b6701bdb2ce90ef','provenance.py':'adbe647ff3b8e4fd05d902c54a9465b17dd6ec34a8792ac4a7635b2853bb9e1f'}
+REPO='Kfaah/Kfaah.sa'
+HASHES={'release.py': 'a3689500b2a1b6be213f2c7a70274033168e1a53ff00a095ec24ad3274694a16', 'provenance.py': 'f8c0f20e7b1a5342fd7f770d5287e636520557732926ec363e67d3c8fc1c381b'}
 
 def must(v):
  if not v:raise ValueError('STAGE_REQUEST_OR_DEPENDENCY_REJECTED')
@@ -20,13 +21,15 @@ def dependency_modules(tools):
  return p.r,p
 
 def request_from_event(event,workflow_sha,attempt,r):
- must(attempt=='1' and event.get('action')=='opened' and event.get('sender',{}).get('id')==253139283)
- must(event.get('repository',{}).get('full_name')==REPO and event.get('repository',{}).get('owner',{}).get('id')==253139283)
- i=event.get('issue',{});must(i.get('title')==TITLE and i.get('user',{}).get('id')==253139283 and i.get('author_association')=='OWNER' and 'pull_request' not in i)
+ must(attempt=='1' and event.get('action')=='opened' and event.get('sender',{}).get('id')==341028123)
+ must(event.get('repository',{}).get('full_name')==REPO and event.get('repository',{}).get('owner',{}).get('id')==341028123)
+ i=event.get('issue',{});must(i.get('title')==TITLE and i.get('user',{}).get('id')==341028123 and i.get('author_association')=='OWNER' and 'pull_request' not in i)
  body=i.get('body');must(type(body) is str and len(body.encode())<=4096)
  q=json.loads(body,object_pairs_hook=r.unique)
  fields={'version','operation','workflow_sha','build_workflow_sha','source_sha','build_run_id','build_attempt','artifact_id','manifest_sha256','archive_sha256','expected_current','baseline_manifest_sha256','expected_receive_sha256','expected_promote_sha256','quiet_window_confirmed'}
  must(type(q) is dict and set(q)==fields and type(q['version']) is int and q['version']==1 and q['operation']=='STAGE_ONLY')
+ r.check(r.H40,TOOLS_SHA);r.check(r.H40,AUDIT_SHA);r.check(r.H64,BASELINE_SHA)
+ must(type(CURRENT) is str and re.fullmatch(r'/var/www/kfaah-releases/[A-Za-z0-9-]+',CURRENT))
  r.check(r.H40,workflow_sha);must(q['workflow_sha']==workflow_sha and q['build_workflow_sha']==TOOLS_SHA)
  r.check(r.H40,q['source_sha'])
  for k in ('build_run_id','build_attempt','artifact_id'):r.check(r.POSITIVE,q[k])
@@ -34,8 +37,11 @@ def request_from_event(event,workflow_sha,attempt,r):
  must(q['expected_current']==CURRENT and q['baseline_manifest_sha256']==BASELINE_SHA and q['expected_receive_sha256']==RECEIVE_SHA and q['expected_promote_sha256']==PROMOTE_SHA and q['quiet_window_confirmed'] is True)
  return q
 
-def api_get(token,p,suffix):
- req=urllib.request.Request('https://api.github.com/repos/'+REPO+'/'+suffix,headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'})
+LEGACY_REPO='gaberalhrese-cloud/shop-soulmate-04'
+
+def api_get(token,p,suffix,repository=REPO):
+ must(repository in (REPO,LEGACY_REPO))
+ req=urllib.request.Request('https://api.github.com/repos/'+repository+'/'+suffix,headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'})
  opener=urllib.request.build_opener(urllib.request.ProxyHandler({}),p.NoRedirect())
  try:
   with opener.open(req,timeout=20) as response:data=response.read(8*1024*1024+1)
@@ -52,7 +58,7 @@ def nonapplicable_issue_peer(row,get,workflow_sha):
  # Empty, pending, executing, foreign-head or partial job evidence stays blocking.
  return type(jobs) is list and obj.get('total_count')==len(names)==len(jobs) and all(type(job) is dict for job in jobs) and {job.get('name') for job in jobs}==names and all(job.get('status')=='completed' and job.get('conclusion')=='skipped' for job in jobs)
 
-def publishers_quiet(get,this_run,workflow_sha=None):
+def _publishers_quiet_single(get,this_run,workflow_sha=None):
  for status in ('queued','in_progress','waiting','pending','requested'):
   for page in range(1,11):
    obj=get('actions/runs?status='+status+'&per_page=100&page='+str(page));rows=obj['workflow_runs']
@@ -64,8 +70,18 @@ def publishers_quiet(get,this_run,workflow_sha=None):
    if len(rows)<100:break
   else:raise ValueError('PUBLISHER_SCAN_INCOMPLETE')
 
+def publishers_quiet(get,this_run,workflow_sha=None,legacy_get=None):
+ _publishers_quiet_single(get,this_run,workflow_sha)
+ if legacy_get is None:raise ValueError('LEGACY_PUBLISHER_STATE_NOT_CONFIRMED')
+ _publishers_quiet_single(legacy_get,this_run,None)
+
+def legacy_reader(p):
+ token=os.environ.get('KFAAH_LEGACY_READ_TOKEN','')
+ if not token:raise ValueError('LEGACY_READONLY_TOKEN_REQUIRED')
+ return lambda suffix:api_get(token,p,suffix,LEGACY_REPO)
+
 def approved_audit_source(file):
- raw=file.read_bytes();must(hashlib.sha256(raw).hexdigest()=='0776f2571fd873e234c5fe1b59dac51b60cb95f1b9b5c090fd1aac2fd46efb67')
+ raw=file.read_bytes();must(hashlib.sha256(raw).hexdigest()=='c0256667ac20a8e9ec4a79ecf3059368846867711ea326c8f077c43b9731c942')
  text=raw.decode();start=text.index('          import hashlib, json, os, pwd, stat, time\n');end=text.index('          PYTHON\n',start)
  code='\n'.join(line[10:] for line in text[start:end].splitlines())+'\n';compile(code,'approved-audit','exec');return code
 
@@ -107,7 +123,7 @@ def main():
     must(len(raw)<=262144);print(json.dumps(sanitize(json.loads(raw),r),sort_keys=True))
   return
  token=os.environ.get('GH_TOKEN','');must(bool(token));get=lambda suffix:api_get(token,p,suffix)
- head=p.verify_run(q,get);publishers_quiet(get,run_id,os.environ['WORKFLOW_SHA'])
+ head=p.verify_run(q,get);publishers_quiet(get,run_id,os.environ['WORKFLOW_SHA'],legacy_reader(p))
  if args.action=='verify':
   manifest,_=r.verify(args.bundle,q['manifest_sha256'],q['archive_sha256']);p.compare_origin(manifest,q,head)
   print('STAGE_CANDIDATE_GITHUB_PROVENANCE_AND_BYTES_VERIFIED');return
