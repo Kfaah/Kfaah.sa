@@ -187,7 +187,7 @@ export default function AdminHub() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center shadow-sm backdrop-blur-sm">
-              <Crown className="w-6 h-6 text-white" />
+              <Crown className="w-6 h-6 text-[#FFD700]" />
             </div>
             <div>
               <h1 className="text-white font-bold text-lg leading-tight">لوحة مدير النظام</h1>
